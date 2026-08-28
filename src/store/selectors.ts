@@ -105,35 +105,34 @@ export type UnfinishedWidget = {
 }
 
 export function unfinishedWidgets(document: BoardDocument): UnfinishedWidget[] {
-  return document.widgets.flatMap((widget) => {
-    if (widget.type === 'note' || widget.type === 'chart') return []
+  const unfinished: UnfinishedWidget[] = []
+  for (const widget of document.widgets) {
+    if (widget.type === 'note' || widget.type === 'chart') continue
     const dataset = effectiveDataset(widget, document.widgets)
     const rowCount = dataset?.rows.length ?? 0
     const fieldCount = dataset?.fields.length ?? 0
-    if (rowCount > 0) return []
+    if (rowCount > 0) continue
     if (widget.type !== 'checklist' && fieldCount === 0) {
-      return [
-        {
-          widgetId: widget.id,
-          title: widget.title,
-          type: widget.type,
-          reason: 'No fields yet. Call bind_data, then add_rows.',
-          action: 'bind_data' as const,
-        },
-      ]
-    }
-    const empty =
-      widget.type === 'checklist' ? 'No items yet' : 'No rows yet'
-    return [
-      {
+      unfinished.push({
         widgetId: widget.id,
         title: widget.title,
         type: widget.type,
-        reason: `${empty}. Call add_rows before you stop.`,
-        action: 'add_rows' as const,
-      },
-    ]
-  })
+        reason: 'No fields yet. Call bind_data, then add_rows.',
+        action: 'bind_data',
+      })
+      continue
+    }
+    const empty =
+      widget.type === 'checklist' ? 'No items yet' : 'No rows yet'
+    unfinished.push({
+      widgetId: widget.id,
+      title: widget.title,
+      type: widget.type,
+      reason: `${empty}. Call add_rows before you stop.`,
+      action: 'add_rows',
+    })
+  }
+  return unfinished
 }
 
 export type BoardSnapshot = {
