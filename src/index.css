@@ -19,6 +19,7 @@ body {
 }
 
 .react-grid-item {
+  overflow: hidden;
   transition:
     transform var(--duration-fast, 150ms) ease,
     width var(--duration-fast, 150ms) ease,
@@ -32,6 +33,7 @@ body {
 
 .widget-drag-handle {
   cursor: grab;
+  width: 100%;
 }
 
 .widget-drag-handle:active {
@@ -39,7 +41,10 @@ body {
 }
 
 .react-grid-item > .react-resizable-handle {
-  opacity: 1;
+  opacity: 1 !important;
+  z-index: 20;
+  width: var(--spacing-6);
+  height: var(--spacing-6);
 }
 
 .react-grid-item > .react-resizable-handle::after {

@@ -1,45 +1,12 @@
-import { Badge } from '@astryxdesign/core/Badge'
-import { Card } from '@astryxdesign/core/Card'
-import { Heading } from '@astryxdesign/core/Heading'
-import { HStack } from '@astryxdesign/core/HStack'
-import { Text } from '@astryxdesign/core/Text'
-import { VStack } from '@astryxdesign/core/VStack'
 import {
   GridLayout,
   useContainerWidth,
   type LayoutItem,
 } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
+import { LIMITS } from '../model/limits'
 import { useBoardStore } from '../store/boardStore'
-
-function WidgetPreview({
-  title,
-  type,
-  content,
-}: {
-  title: string
-  type: 'note' | 'table'
-  content: string
-}) {
-  return (
-    <Card height="100%" padding={4} elevation="low">
-      <VStack gap={3} height="100%">
-        <HStack hAlign="between" vAlign="center">
-          <Heading level={2} maxLines={1}>
-            {title}
-          </Heading>
-          <Badge variant="neutral" label={type} />
-        </HStack>
-        <Text as="p" color="secondary">
-          {content}
-        </Text>
-        <Text type="supporting" color="secondary">
-          Drag this card by its header · Resize from the corner
-        </Text>
-      </VStack>
-    </Card>
-  )
-}
+import { WidgetView } from '../widgets/registry'
 
 export function BoardGrid() {
   const widgets = useBoardStore((state) => state.document.widgets)
@@ -80,8 +47,10 @@ export function BoardGrid() {
   const layout = widgets.map((widget) => ({
     i: widget.id,
     ...widget.position,
-    minW: 3,
-    minH: 3,
+    minW: LIMITS.minWidgetW,
+    minH: LIMITS.minWidgetH,
+    maxW: LIMITS.maxWidgetW,
+    maxH: LIMITS.maxWidgetH,
   }))
 
   return (
@@ -90,10 +59,14 @@ export function BoardGrid() {
         <GridLayout
           width={width}
           layout={layout}
-          gridConfig={{ cols: 12, rowHeight: 44, margin: [16, 16] }}
+          gridConfig={{
+            cols: LIMITS.gridCols,
+            rowHeight: LIMITS.rowHeightPx,
+            margin: [16, 16],
+          }}
           dragConfig={{
             handle: '.widget-drag-handle',
-            cancel: '.react-resizable-handle',
+            cancel: '.react-resizable-handle, textarea, input, button',
           }}
           resizeConfig={{ enabled: true, handles: ['se'] }}
           onDragStop={(_layout, _oldItem, newItem) =>
@@ -104,12 +77,8 @@ export function BoardGrid() {
           }
         >
           {widgets.map((widget) => (
-            <article key={widget.id} className="widget-drag-handle">
-              <WidgetPreview
-                title={widget.title}
-                type={widget.type}
-                content={widget.content}
-              />
+            <article key={widget.id}>
+              <WidgetView widget={widget} />
             </article>
           ))}
         </GridLayout>
