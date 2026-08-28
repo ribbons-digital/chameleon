@@ -10,6 +10,7 @@ import { appendRows } from '../store/submit'
 import { useBoardStore } from '../store/boardStore'
 import { makeTool } from './makeTool'
 import type { RegisterableTool } from './modelContext'
+import { queueMintedSync } from './mintedSync'
 import { ToolRegistry } from './registry'
 import { err, ok } from './result'
 import { STATIC_TOOL_NAMES } from './staticToolNames'
@@ -114,11 +115,6 @@ export function makeMintedTool(
 
 const managedNames = new WeakMap<ToolRegistry, Set<string>>()
 let activeRegistry: ToolRegistry | undefined
-let watchQueue: Promise<void> = Promise.resolve()
-
-export function awaitMintedSync(): Promise<void> {
-  return watchQueue.then(() => undefined)
-}
 
 export function registeredToolKind(
   name: string,
@@ -239,11 +235,9 @@ export function watchMintedTools(registry: ToolRegistry): () => void {
     if (nextSignature === signature) return
     signature = nextSignature
     const document = state.document
-    watchQueue = watchQueue
-      .then(async () => {
-        if (active) await syncMintedRegistry(registry, document)
-      })
-      .catch(() => undefined)
+    queueMintedSync(async () => {
+      if (active) await syncMintedRegistry(registry, document)
+    })
   })
   return () => {
     active = false
