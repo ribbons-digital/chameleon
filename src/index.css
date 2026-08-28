@@ -1,0 +1,39 @@
+@import '@astryxdesign/core/reset.css';
+@import '@astryxdesign/core/astryx.css';
+@import '@astryxdesign/theme-neutral/theme.css';
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background-body);
+}
+
+.board-grid {
+  width: 100%;
+  min-height: calc(var(--spacing-10) * 6);
+}
+
+.react-grid-item {
+  transition:
+    transform var(--duration-fast, 150ms) ease,
+    width var(--duration-fast, 150ms) ease,
+    height var(--duration-fast, 150ms) ease;
+}
+
+.react-grid-item.react-draggable-dragging {
+  cursor: grabbing;
+  z-index: 10;
+}
+
+.widget-drag-handle {
+  cursor: grab;
+}
+
+.widget-drag-handle:active {
+  cursor: grabbing;
+}

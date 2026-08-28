@@ -20,7 +20,7 @@ freeze features 48h before the deadline.
 - Scaffold Vite + React 19 + TypeScript; TanStack Router (file-based, single route, **no SSR**).
 - Astryx: install core + all 7 themes + CLI; run `astryx init` (AGENTS.md cheat sheet); pre-built
   CSS imports in `__root.tsx`; ThemeProvider; `astryx doctor` to pin the StyleX peer range.
-- **Retire the styling risk (timeboxed ~2h)**: wire `vite-plugin-stylex`, write one
+- **Retire the styling risk (timeboxed ~2h)**: wire the official `@stylexjs/unplugin`, write one
   `stylex.create()` style, pass via `xstyle`, verify in dev AND `vite build` output.
   **Fallback if the plugin fights StyleX/Vite versions**: drop the plugin, write custom styles
   as plain CSS + `className` (Astryx supports any styling for our own code). Decide by EOD; do
@@ -152,7 +152,7 @@ streaming/partial results, form field types beyond the six, import/export.
 |---|---|
 | ChatGPT browser behaves differently from Canary (schema strictness, tool-call limits) | Checkpoint from day 2 in **both**; envelope-not-throw design; inline schemas, no $refs |
 | API entry point drift (`document.` vs `navigator.modelContext`, flag rename) | Detection helper checks both; flag verified at checkpoint #1; polyfill `@mcp-b/global` as last-resort shim for the demo, decided day 2 |
-| `vite-plugin-stylex` incompatibility | Day-1 timebox + plain-CSS fallback (Astryx unaffected) |
+| StyleX Vite integration incompatibility | Day-1 timebox + plain-CSS fallback (Astryx unaffected) |
 | react-grid-layout + React 19 friction | Day-1 dummy-widget test surfaces it immediately; fallback `gridstack.js` wrapper, decided day 1 |
 | Judge opens URL in a non-WebMCP browser | Banner with enable instructions + a 20-sec looping GIF of the app working, embedded on the empty state |
 | localStorage cleared by judge / private mode | App boots to a well-designed EmptyState — the blank page IS the product's first screen anyway |

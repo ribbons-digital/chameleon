@@ -6,7 +6,7 @@
 chameleon/
 ├── index.html                      # SPA shell; <meta> for agents lives here too
 ├── package.json
-├── vite.config.ts                  # @vitejs/plugin-react + @tanstack/router-plugin + vite-plugin-stylex
+├── vite.config.ts                  # @vitejs/plugin-react + @tanstack/router-plugin + @stylexjs/unplugin
 ├── tsconfig.json                   # "types": ["@mcp-b/webmcp-types", "vite/client"]
 ├── vitest.config.ts                # environment: 'jsdom'
 ├── wrangler.toml                   # Cloudflare Workers static assets deploy
@@ -150,7 +150,7 @@ summary. Both read from the command log, not from tool code.
     "@mcp-b/webmcp-types": "latest",
     "@tanstack/router-plugin": "^1",
     "vite": "^7", "@vitejs/plugin-react": "^5",
-    "vite-plugin-stylex": "latest",           // day-1 verification item; see build plan
+    "@stylexjs/unplugin": "latest",           // official StyleX 0.19 Vite integration
     "vitest": "^3", "jsdom": "^26",
     "typescript": "^5", "wrangler": "^4"
   },
@@ -164,11 +164,10 @@ summary. Both read from the command log, not from tool code.
 
 Notes:
 - Astryx via the **pre-built CSS path** (`reset.css` + `astryx.css` + theme CSS imported in
-  `__root.tsx`) — no build plugin needed for Astryx itself. `vite-plugin-stylex` is only for
-  **our own** `stylex.create()` styles passed through `xstyle`. If day-1 verification of the
-  plugin fails against current StyleX, the fallback is stated in the build plan (plain
-  `className` + CSS files for custom styles; Astryx explicitly supports this) — **the widget
-  grammar and tools are unaffected**.
+  `__root.tsx`) — no build plugin needed for Astryx itself. `@stylexjs/unplugin` is the official
+  StyleX 0.19 Vite integration and compiles **our own** `stylex.create()` styles passed through
+  `xstyle`. Day-1 production output was verified to contain the generated rules and no runtime
+  `stylex.create` calls.
 - All seven `@astryxdesign/theme-*` packages installed so `set_theme`'s enum is real; themes are
   CSS-only. (Cut line: neutral + matcha.)
 - `astryx init` runs once at scaffold time → component cheat sheet in `AGENTS.md`; use

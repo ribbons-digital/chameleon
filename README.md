@@ -18,8 +18,11 @@ Built for the [OpenAI WebMCP Challenge](https://webmcp.devpost.com/) (deadline S
 
 ## Status
 
-**Spec and build-plan phase.** This repo currently contains the complete engineering spec; the
-implementation lands next, following `docs/04-build-plan.md` day by day.
+**Day 1 foundation is live.** The Vite/React/Astryx application now has a persisted
+Zustand + Immer board, a complete human/agent command-log mutation gate, inverse-patch undo,
+and a draggable/resizable react-grid-layout canvas. Custom StyleX styles compile through the
+official `@stylexjs/unplugin` Vite integration and are passed to Astryx via `xstyle`.
+Implementation continues following `docs/04-build-plan.md` day by day.
 
 | Doc | Contents |
 |---|---|
@@ -37,7 +40,7 @@ Vite + React 19 SPA (TanStack Router, no SSR) · Astryx design system (pre-built
 schema per tool for both runtime validation and WebMCP `inputSchema`) · react-grid-layout ·
 Recharts · Vitest · Cloudflare Workers static deploy.
 
-## Running (once implemented)
+## Running
 
 ```bash
 npm install
