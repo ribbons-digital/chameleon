@@ -20,6 +20,7 @@ import { ActivityDrawer } from './components/ActivityDrawer'
 import { AgentPulse } from './components/AgentPulse'
 import { BoardGrid } from './grid/BoardGrid'
 import { useBoardStore } from './store/boardStore'
+import { getBootResult } from './webmcp/boot'
 import {
   getModelContextSource,
   WEBMCP_ENABLE_HINT,
@@ -53,7 +54,9 @@ function App() {
   )
   const webmcpSource = getModelContextSource()
   const hosted = Boolean(webmcpSource)
-  const toolCount = STATIC_TOOL_NAMES.length + mintedCount
+  const toolCount =
+    getBootResult()?.registry.size ??
+    STATIC_TOOL_NAMES.length + mintedCount
 
   return (
     <Theme theme={THEMES[boardTheme.name]} mode={boardTheme.mode}>
