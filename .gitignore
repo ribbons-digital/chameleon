@@ -8,3 +8,4 @@ coverage/
 .wrangler/
 agent-tools/
 terminals/
+.cursor/skills/verify-chameleon/artifacts/
