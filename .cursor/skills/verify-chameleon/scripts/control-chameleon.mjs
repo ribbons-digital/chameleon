@@ -7,6 +7,8 @@ import {
   writeFileSync,
   appendFileSync,
   rmSync,
+  openSync,
+  closeSync,
 } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
@@ -187,15 +189,15 @@ async function waitForHttp(url, timeoutMs) {
 function spawnLogged(command, args, { cwd, logPath }) {
   mkdirSync(dirname(logPath), { recursive: true })
   appendFileSync(logPath, `\n$ ${command} ${args.join(' ')}\n`)
+  const fd = openSync(logPath, 'a')
   const child = spawn(command, args, {
     cwd,
     detached: true,
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ['ignore', fd, fd],
     env: process.env,
   })
-  child.stdout.on('data', (buf) => appendFileSync(logPath, buf))
-  child.stderr.on('data', (buf) => appendFileSync(logPath, buf))
   child.unref()
+  closeSync(fd)
   return child
 }
 
