@@ -1,0 +1,16 @@
+export const LIMITS = {
+  widgetsPerBoard: 24,
+  fieldsPerDataset: 20,
+  rowsPerWidget: 5_000,
+  rowsPerMutation: 50,
+  selectOptions: 30,
+  mintedTools: 12,
+  commandLogEntries: 500,
+  noteMarkdown: 20_000,
+  gridCols: 12,
+  rowHeightPx: 40,
+  minWidgetW: 2,
+  maxWidgetW: 12,
+  minWidgetH: 2,
+  maxWidgetH: 20,
+} as const

@@ -7,43 +7,17 @@ import {
 } from 'immer'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { LIMITS } from '../model/limits'
 import type {
   BoardDocument,
   Command,
   MutationMeta,
 } from '../model/types'
+import { initialDocument, migrateDocument } from './migrateDocument'
 
 enablePatches()
 
 const now = () => new Date().toISOString()
-
-export const initialDocument: BoardDocument = {
-  title: 'Untitled workspace',
-  stateVersion: 0,
-  widgets: [
-    {
-      id: 'w_welcome',
-      type: 'note',
-      title: 'A canvas that listens',
-      content:
-        'Tell your agent what you are working on. Chameleon will turn this quiet space into the software you need.',
-      position: { x: 0, y: 0, w: 5, h: 5 },
-      createdAt: now(),
-      updatedAt: now(),
-      lastModifiedBy: 'agent',
-    },
-    {
-      id: 'w_first_steps',
-      type: 'table',
-      title: 'What happens next',
-      content: '1. Your agent reads the board\n2. Widgets appear live\n3. You keep editing by hand',
-      position: { x: 5, y: 0, w: 7, h: 5 },
-      createdAt: now(),
-      updatedAt: now(),
-      lastModifiedBy: 'agent',
-    },
-  ],
-}
 
 type BoardStore = {
   document: BoardDocument
@@ -56,12 +30,13 @@ type BoardStore = {
   undo: () => Command | undefined
   reset: () => void
   setHydrated: (hydrated: boolean) => void
+  resetHumanEditCount: () => number
 }
 
 export const useBoardStore = create<BoardStore>()(
   persist(
     (set, get) => ({
-      document: initialDocument,
+      document: structuredClone(initialDocument),
       commands: [],
       hydrated: false,
 
@@ -72,10 +47,18 @@ export const useBoardStore = create<BoardStore>()(
             state.document,
             (draft) => {
               recipe(draft)
+              if (meta.actor === 'human') {
+                draft.humanEditsSinceLastDescribe += 1
+              }
               draft.stateVersion += 1
             },
           )
-          if (patches.length === 1 && patches[0]?.path[0] === 'stateVersion') {
+          const meaningful = patches.filter(
+            (patch) =>
+              patch.path[0] !== 'stateVersion' &&
+              patch.path[0] !== 'humanEditsSinceLastDescribe',
+          )
+          if (meaningful.length === 0) {
             return state
           }
           nextVersion = document.stateVersion
@@ -86,7 +69,12 @@ export const useBoardStore = create<BoardStore>()(
             inversePatches,
             undone: false,
           }
-          return { document, commands: [...state.commands, command].slice(-500) }
+          return {
+            document,
+            commands: [...state.commands, command].slice(
+              -LIMITS.commandLogEntries,
+            ),
+          }
         })
         return nextVersion
       },
@@ -118,19 +106,49 @@ export const useBoardStore = create<BoardStore>()(
             inversePatches: [],
             undone: false,
           })
-          return { document: restored, commands: commands.slice(-500) }
+          return {
+            document: restored,
+            commands: commands.slice(-LIMITS.commandLogEntries),
+          }
         })
         return target
       },
 
-      reset: () => set({ document: initialDocument, commands: [] }),
+      reset: () =>
+        set({
+          document: structuredClone(initialDocument),
+          commands: [],
+        }),
       setHydrated: (hydrated) => set({ hydrated }),
+      resetHumanEditCount: () => {
+        const current = get().document.humanEditsSinceLastDescribe
+        set((state) => ({
+          document: {
+            ...state.document,
+            humanEditsSinceLastDescribe: 0,
+          },
+        }))
+        return current
+      },
     }),
     {
       name: 'chameleon-board-v1',
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       partialize: ({ document, commands }) => ({ document, commands }),
+      migrate: (persisted) => {
+        const raw = (persisted ?? {}) as {
+          document?: unknown
+          commands?: Command[]
+        }
+        return {
+          document: migrateDocument(raw.document),
+          commands: Array.isArray(raw.commands) ? raw.commands : [],
+        }
+      },
       onRehydrateStorage: () => (state) => state?.setHydrated(true),
     },
   ),
 )
+
+export { initialDocument }
