@@ -61,15 +61,21 @@ function SubmissionField({
   field,
   value,
   onChange,
+  defaultOptionality,
 }: {
   field: Field
   value: FormValue
   onChange: (value: FormValue) => void
+  defaultOptionality: 'optional' | 'required'
 }) {
-  const optionality = {
-    isRequired: field.required,
-    isOptional: !field.required,
-  }
+  const optionality =
+    defaultOptionality === 'required'
+      ? field.required
+        ? {}
+        : { isOptional: true as const }
+      : field.required
+        ? { isRequired: true as const }
+        : {}
   switch (field.type) {
     case 'text':
     case 'url':
@@ -189,9 +195,12 @@ export function FormWidgetView({
   const requiredCount = fields.filter((field) => field.required).length
   const defaultOptionality =
     requiredCount > fields.length / 2 ? 'required' : 'optional'
-  const recent = widget.dataset.rows
-    .slice(-widget.config.showRecentSubmissions)
-    .reverse()
+  const recent =
+    widget.config.showRecentSubmissions > 0
+      ? widget.dataset.rows
+          .slice(-widget.config.showRecentSubmissions)
+          .reverse()
+      : []
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -219,6 +228,7 @@ export function FormWidgetView({
               key={field.key}
               field={field}
               value={values[field.key]}
+              defaultOptionality={defaultOptionality}
               onChange={(value) =>
                 setValues((current) => ({
                   ...current,

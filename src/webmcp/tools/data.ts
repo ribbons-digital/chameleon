@@ -111,7 +111,7 @@ function assignBoundConfig(
 export const bindData = makeTool({
   name: 'bind_data',
   description:
-    'Sets columns only — it does not insert data. After this you MUST call add_rows. Leaving "No rows yet" is unfinished. Skip for checklist (fixed keys text, done, due, note — use add_rows) and note. Fields: snake_case key, label, type text|number|date (yyyy-mm-dd)|select|boolean|url (select needs options). Kanban config.groupByField must stay a select field in the new schema. Existing rows migrate: kept keys survive, removed keys drop, new keys start empty, select values outside new options clear.',
+    'Defines or replaces fields for a table, kanban, chart, or form; it never inserts rows. Existing rows migrate: kept keys survive, removed keys drop, and invalid select values clear. Form minted tools re-register with the new schema; call create_form_tool if none exists. Otherwise call add_rows next because "No rows yet" is unfinished. Checklist and note reject this tool. Fields use snake_case keys and text|number|date|select|boolean|url types; select needs options.',
   input: BindDataInput,
   handler: (input) => {
     const widget = findWidget(input.widgetId)

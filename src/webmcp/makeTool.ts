@@ -34,6 +34,8 @@ export function makeTool<I>(def: {
       const result = parsed.success
         ? safeRun(() => def.handler(parsed.data))
         : err('INVALID_INPUT', 'Arguments failed schema validation.', formatZodIssues(parsed.error))
+      const { awaitMintedSync } = await import('./minted')
+      await awaitMintedSync()
       return { content: [{ type: 'text', text: JSON.stringify(result) }] }
     },
   }

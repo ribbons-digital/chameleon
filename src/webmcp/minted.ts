@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { fieldSchema } from '../model/fields'
+import { uniqueFieldKeys } from '../model/migrate'
 import type {
   BoardDocument,
   Field,
@@ -35,9 +37,11 @@ function schemaForField(field: Field): z.ZodType {
     case 'date':
       schema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
       break
-    case 'select':
-      schema = z.enum(field.options ?? [])
+    case 'select': {
+      const [first, ...rest] = field.options ?? []
+      schema = first ? z.enum([first, ...rest]) : z.string()
       break
+    }
     case 'boolean':
       schema = z.boolean()
       break
@@ -110,6 +114,11 @@ export function makeMintedTool(
 
 const managedNames = new WeakMap<ToolRegistry, Set<string>>()
 let activeRegistry: ToolRegistry | undefined
+let watchQueue: Promise<void> = Promise.resolve()
+
+export function awaitMintedSync(): Promise<void> {
+  return watchQueue.then(() => undefined)
+}
 
 export function registeredToolKind(
   name: string,
@@ -139,7 +148,14 @@ function mintedDefinitions(document: BoardDocument): {
     const widget = document.widgets.find(
       (candidate) => candidate.id === record.widgetId,
     )
-    if (!widget || widget.type !== 'form' || widget.dataset.fields.length === 0) {
+    const fieldsAreValid =
+      widget?.type === 'form' &&
+      widget.dataset.fields.length > 0 &&
+      widget.dataset.fields.every(
+        (field) => fieldSchema.safeParse(field).success,
+      ) &&
+      uniqueFieldKeys(widget.dataset.fields) === undefined
+    if (!widget || widget.type !== 'form' || !fieldsAreValid) {
       dropped.push(record.toolName)
       console.info(
         `[chameleon] Dropped tool "${record.toolName}" because its form is unavailable.`,
@@ -218,13 +234,12 @@ export function watchMintedTools(registry: ToolRegistry): () => void {
   activeRegistry = registry
   let signature = mintedSignature(useBoardStore.getState().document)
   let active = true
-  let queue = Promise.resolve()
   const unsubscribe = useBoardStore.subscribe((state) => {
     const nextSignature = mintedSignature(state.document)
     if (nextSignature === signature) return
     signature = nextSignature
     const document = state.document
-    queue = queue
+    watchQueue = watchQueue
       .then(async () => {
         if (active) await syncMintedRegistry(registry, document)
       })

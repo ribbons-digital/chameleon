@@ -7,20 +7,13 @@ import { makeTool } from '../makeTool'
 import { err, ok } from '../result'
 import { Position, Rationale, WidgetId } from '../schemas'
 
-const ThemeName = z.enum([
-  'neutral',
-  'butter',
-  'chocolate',
-  'matcha',
-  'stone',
-  'gothic',
-  'y2k',
-])
-
 const LayoutItem = z
   .object({
     widgetId: WidgetId,
-    ...Position.shape,
+    x: Position.shape.x,
+    y: Position.shape.y,
+    w: Position.shape.w,
+    h: Position.shape.h,
   })
   .strict()
 
@@ -29,7 +22,10 @@ export const SetLayoutInput = z
     items: z
       .array(LayoutItem)
       .min(1)
-      .max(LIMITS.widgetsPerBoard),
+      .max(LIMITS.widgetsPerBoard)
+      .describe(
+        'Widgets to move or resize. Unlisted widgets keep their position but may be pushed down.',
+      ),
     rationale: Rationale,
   })
   .strict()
@@ -37,7 +33,18 @@ export const SetLayoutInput = z
 export const SetThemeInput = z
   .object({
     boardTitle: z.string().min(1).max(60).optional(),
-    theme: ThemeName.optional(),
+    theme: z
+      .enum([
+        'neutral',
+        'butter',
+        'chocolate',
+        'matcha',
+        'stone',
+        'gothic',
+        'y2k',
+      ])
+      .optional()
+      .describe('Astryx theme name. matcha suits a health log; neutral suits a job search.'),
     mode: z.enum(['light', 'dark']).optional(),
     density: z.enum(['comfortable', 'compact']).optional(),
     rationale: Rationale,
@@ -47,128 +54,119 @@ export const SetThemeInput = z
 export const setLayout = makeTool({
   name: 'set_layout',
   description:
-    'Repositions and resizes multiple widgets atomically on the 12-column grid. Prefer this over update_widget.position for coordinated moves after describe_current_state. Pass 1–24 unique widget ids with x, y, w, and h. Unlisted widgets keep their positions unless pushed down to prevent a collision. The returned layout is the final non-overlapping truth. Include a rationale because the activity log shows it.',
+    'Repositions and resizes widgets in one atomic call on the 12-column grid. Pass every widget you want to move; unlisted widgets keep their position but may be pushed down so nothing overlaps. Prefer this over update_widget.position when several widgets move together. Call describe_current_state first so coordinates include any human dragging. Give a rationale shown in the activity log. Typical use: group related widgets, put the most actionable widget top-left, give charts at least w=6. Returns the final layout after collision-push.',
   input: SetLayoutInput,
   handler: (input) => {
     const seen = new Set<string>()
-    const duplicate = input.items.find((item) => {
-      if (seen.has(item.widgetId)) return true
+    const duplicates: string[] = []
+    for (const item of input.items) {
+      if (seen.has(item.widgetId)) duplicates.push(item.widgetId)
       seen.add(item.widgetId)
-      return false
-    })
-    if (duplicate) {
+    }
+    if (duplicates.length > 0) {
       return err(
         'DUPLICATE_ID',
-        `Widget "${duplicate.widgetId}" appears more than once in items.`,
+        'The same widgetId appears more than once in items.',
+        { widgetIds: [...new Set(duplicates)] },
       )
     }
 
     const state = useBoardStore.getState()
-    const known = new Set(
-      state.document.widgets.map((widget) => widget.id),
-    )
     const missing = input.items
       .map((item) => item.widgetId)
-      .filter((widgetId) => !known.has(widgetId))
+      .filter(
+        (widgetId) =>
+          !state.document.widgets.some((widget) => widget.id === widgetId),
+      )
     if (missing.length > 0) {
       return err(
         'WIDGET_NOT_FOUND',
-        'One or more layout items reference a missing widget.',
+        'One or more widget ids are not on the board.',
         { widgetIds: missing },
       )
     }
 
-    const widgets = applyLayout(state.document.widgets, input.items)
+    let layout: Array<{
+      widgetId: string
+      x: number
+      y: number
+      w: number
+      h: number
+    }> = []
     const timestamp = new Date().toISOString()
     mutate(
       {
         actor: 'agent',
         action: 'set_layout',
-        summary: `Reorganized ${input.items.length} widget${input.items.length === 1 ? '' : 's'}`,
+        summary: `Rearranged ${input.items.length} widget${input.items.length === 1 ? '' : 's'}`,
         rationale: input.rationale,
       },
       (draft) => {
+        const resolved = applyLayout(draft.widgets, input.items)
         const byId = new Map(
-          widgets.map((widget) => [widget.id, widget.position]),
+          resolved.map((widget) => [widget.id, widget.position]),
         )
         for (const widget of draft.widgets) {
-          const position = byId.get(widget.id)
-          if (!position) continue
+          const next = byId.get(widget.id)
+          if (!next) continue
           if (
-            widget.position.x === position.x &&
-            widget.position.y === position.y &&
-            widget.position.w === position.w &&
-            widget.position.h === position.h
+            widget.position.x === next.x &&
+            widget.position.y === next.y &&
+            widget.position.w === next.w &&
+            widget.position.h === next.h
           ) {
             continue
           }
-          widget.position = position
+          widget.position = next
           widget.updatedAt = timestamp
           widget.lastModifiedBy = 'agent'
         }
+        layout = resolved.map((widget) => ({
+          widgetId: widget.id,
+          ...widget.position,
+        }))
       },
     )
 
-    return ok({
-      layout: useBoardStore
-        .getState()
-        .document.widgets.map((widget) => ({
-          widgetId: widget.id,
-          ...widget.position,
-        })),
-    })
+    return ok({ layout })
   },
 })
 
 export const setTheme = makeTool({
   name: 'set_theme',
   description:
-    "Restyles the board and can rename it. Set any combination of boardTitle, theme neutral|butter|chocolate|matcha|stone|gothic|y2k, mode light|dark, or density comfortable|compact. Use this for the whole board, not one widget, and pick a theme that fits the user's goal. Omitted values stay unchanged. Returns the complete theme and title. Repeating current values returns NO_CHANGES.",
+    "Restyles the whole board. Set theme name neutral|butter|chocolate|matcha|stone|gothic|y2k, mode light|dark, density comfortable|compact, or board title. All arguments are optional; only passed values change. Use sparingly. Pick a theme that fits the user's stated goal, such as matcha for a health log or neutral for a job search, and stick with it. Returns the applied theme and title.",
   input: SetThemeInput,
   handler: (input) => {
     const current = useBoardStore.getState().document
-    const changed =
-      (input.boardTitle !== undefined &&
-        input.boardTitle !== current.title) ||
-      (input.theme !== undefined &&
-        input.theme !== current.theme.name) ||
-      (input.mode !== undefined && input.mode !== current.theme.mode) ||
-      (input.density !== undefined &&
-        input.density !== current.theme.density)
-    if (!changed) {
-      return err(
-        'NO_CHANGES',
-        'No board title or theme value would change.',
-      )
+    const theme = {
+      name: input.theme ?? current.theme.name,
+      mode: input.mode ?? current.theme.mode,
+      density: input.density ?? current.theme.density,
+    }
+    const boardTitle = input.boardTitle ?? current.title
+    if (
+      theme.name === current.theme.name &&
+      theme.mode === current.theme.mode &&
+      theme.density === current.theme.density &&
+      boardTitle === current.title
+    ) {
+      return err('NO_CHANGES', 'No theme, mode, density, or title change was provided.')
     }
 
     mutate(
       {
         actor: 'agent',
         action: 'set_theme',
-        summary: `Restyled “${input.boardTitle ?? current.title}”`,
+        summary: `Set theme to ${theme.name} ${theme.mode}`,
         rationale: input.rationale,
       },
       (draft) => {
-        if (input.boardTitle !== undefined) {
-          draft.title = input.boardTitle
-        }
-        if (input.theme !== undefined) {
-          draft.theme.name = input.theme
-        }
-        if (input.mode !== undefined) {
-          draft.theme.mode = input.mode
-        }
-        if (input.density !== undefined) {
-          draft.theme.density = input.density
-        }
+        draft.theme = theme
+        draft.title = boardTitle
       },
     )
 
-    const document = useBoardStore.getState().document
-    return ok({
-      theme: document.theme,
-      boardTitle: document.title,
-    })
+    return ok({ theme, boardTitle })
   },
 })
