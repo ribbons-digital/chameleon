@@ -1,12 +1,12 @@
 # Persist across reload
 
-Persist across reload keeps widget positions and the command log when the user reloads the tab, using the same Chrome profile's localStorage.
+Persist across reload keeps widget positions, hand edits, and the command log when the user reloads the tab, using the same Chrome profile's localStorage.
 
 ## Sub-features
 
 - `persist-after-move` keeps the moved layout and `Latest: Moved “A canvas that listens”` after reload.
 - `persist-storage` writes key `chameleon-board-v1` in this profile.
-- `persist-reset` keeps the seed board after reset then reload.
+- `persist-reset` keeps the seed widgets after reset then reload.
 
 ## How to get to it (user POV)
 
@@ -32,3 +32,4 @@ Preconditions:
 - Dumping `chameleon-board-v1` is a side-effect check. The visible footer after reload is the user-facing proof.
 - Do not `localStorage.setItem` in `evaluate` to arrange state. Arrange by dragging, then reload.
 - Hydration can flash the seed widgets for a moment. Wait for the `Latest: Moved` line, not a fixed sleep.
+- Persist version is 3. A dump that still mentions Day 1 `content` on a command patch is a migration miss, not a pass.

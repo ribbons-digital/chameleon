@@ -1,15 +1,17 @@
 ---
 name: verify-chameleon
-description: Drive the Chameleon Vite/React canvas the way a user does. Open the seeded workspace, drag and resize widgets, undo, reset, and prove localStorage persistence. Use when proving a Chameleon UI change, before claiming a board mutation works, or when a PR touches src/App.tsx, src/grid, or src/store.
+description: Drive the Chameleon Vite/React canvas the way a user does. Open the seeded workspace, drag and resize widgets, edit a note or table cell, undo, reset, and prove localStorage persistence. Use when proving a Chameleon UI change, before claiming a board mutation works, or when a PR touches src/App.tsx, src/grid, src/store, or src/widgets.
 ---
 
 # Verify Chameleon
 
-Chameleon is a single-route web canvas. A user sees a header, two seed widgets on a 12-column grid, Undo last change, Reset canvas, and a footer activity line. There is no login. State lives in the browser under localStorage key `chameleon-board-v1`.
+Chameleon is a single-route web canvas. A user sees a header, two seed widgets on a 12-column grid, Undo last change, Reset canvas, Show activity, and a footer version line. There is no login. State lives in the browser under localStorage key `chameleon-board-v1`.
 
 This skill is for agents that need to prove a change on the running page. Unit tests in `tests/` do not count as proof. Do not call Zustand setters, do not seed localStorage by hand, and do not drive `http://localhost:4711` unless this run launched it (it did not: launch refuses 4711).
 
-WebMCP tools (`document.modelContext`) are not a user path in the Day 1 UI. Do not treat tool calls as verification of the canvas.
+WebMCP tools (`document.modelContext`) are not a user path in this browser. Stable Chrome here shows the dismissable `WebMCP not detected in this browser` banner and a token like `11 tools ready`. Do not treat tool calls as verification of the canvas. Checklist, kanban, chart, and form widgets are not on the seed board; a human cannot add them without an agent host, so they are out of scope for this skill until a user-facing add-widget control exists.
+
+Each `browser` command opens Chrome against this run's profile, does the work, and closes it. Open editors and the activity list are React state, not persisted. Finish those in one command (`browser note`, `browser cell`, or a click with `--wait-text` / `--aria-snapshot` / `--screenshot`). Layout, cells, and the command log persist, so drag, reload, and undo can be separate commands.
 
 ## Launch
 
@@ -51,11 +53,11 @@ It checks:
 
 - Heading `Untitled workspace`
 - Headings `A canvas that listens` and `What happens next`
-- Activity copy starting `Drag or resize a widget to create the first activity entry.`
-- Footer `state v0 · 0 commands` (middle dot is `·`)
+- Activity copy `Drag, edit, or ask an agent to create the first activity entry.`
+- Footer matching `state vN · 0 commands` (middle dot is `·`). A fresh profile is `v0`. Reset keeps the current `N` and clears the log, so a reset board can be `state v1 · 0 commands`.
 - `Undo last change` disabled
 
-A board that already has commands will fail `--expect-seed`. Use `Reset canvas` or a new run id.
+A board that still has commands will fail `--expect-seed`. Use `Reset canvas` or a new run id.
 
 ## Drive
 
@@ -72,24 +74,40 @@ Stable handles:
 | Next-steps table | heading `What happens next` |
 | Undo | button `Undo last change` |
 | Reset | button `Reset canvas` |
-| Empty activity | `Drag or resize a widget to create the first activity entry.` |
+| Activity toggle | button `Show activity` / `Hide activity` |
+| Empty activity | `Drag, edit, or ask an agent to create the first activity entry.` |
+| Empty activity list | `No activity yet` |
 | After a move | `Latest: Moved “A canvas that listens”` (curly quotes) |
 | After a resize | `Latest: Resized “A canvas that listens”` |
+| After a note edit | `Latest: Edited note “A canvas that listens”` |
+| After a table edit | `Latest: Edited “What happens next”` |
+| After add row | `Latest: Added a row to “What happens next”` |
+| After delete widget | `Latest: Removed “A canvas that listens”` |
+| After undo | `Latest: Undid: Moved “A canvas that listens”` |
 | Version line | `state vN · M commands` |
+| Unhosted token | `11 tools ready` |
+| Unhosted banner | `WebMCP not detected in this browser` |
+| Delete widget | button `Delete A canvas that listens` |
+| Add table row | button `Add row` |
+| Note editor | textbox `Note markdown` |
+| Seed table cell | button whose name is the cell text, then textbox `Step` |
 
-Drag the widget `article.widget-drag-handle` (the whole card, including the heading). Resize from that card's `.react-resizable-handle` (southeast corner).
+Drag from `header.widget-drag-handle` (the card header, including the heading). Resize from that card's `.react-resizable-handle` (southeast corner). Clicking markdown or a table cell does not drag; the grid cancels drag on `textarea`, `input`, `button`, and `[role="checkbox"]`.
 
 ```bash
 control-chameleon browser click --role button --name "Reset canvas"
 control-chameleon browser assert --role button --name "Undo last change" --disabled
 control-chameleon browser drag --name "A canvas that listens" --dx 320 --dy 0
 control-chameleon browser wait --text "Latest: Moved “A canvas that listens”"
+control-chameleon browser note --name "A canvas that listens" --markdown "Edited from verification." --wait-text "Latest: Edited note “A canvas that listens”"
+control-chameleon browser cell --from "Your agent reads the board" --value "Hand edits land in the log" --wait-text "Latest: Edited “What happens next”"
+control-chameleon browser click --role button --name "Show activity" --wait-text "No activity yet" --aria-snapshot artifacts/open-canvas/activity.aria.txt --screenshot artifacts/open-canvas/activity.png
 control-chameleon browser snapshot --aria --path artifacts/open-canvas/home.aria.txt
 control-chameleon browser screenshot --path artifacts/open-canvas/home.png
 control-chameleon browser storage --path artifacts/open-canvas/board.json
 ```
 
-Relative `--path` values resolve to `.cursor/skills/verify-chameleon/`. One Chrome profile is locked per run. Do not run two `browser` commands in parallel against the same `CHAMELEON_VERIFY_RUN`.
+Relative `--path`, `--aria-snapshot`, and `--screenshot` values resolve to `.cursor/skills/verify-chameleon/`. One Chrome profile is locked per run. Do not run two `browser` commands in parallel against the same `CHAMELEON_VERIFY_RUN`.
 
 Read the feature map before driving. Cover the entry points the map lists for the feature you claim. An unreachable entry is a skip with the attempted command, not a pass through a different path.
 
@@ -99,7 +117,7 @@ Proof lives in `.cursor/skills/verify-chameleon/artifacts/<feature>/`. Keep it a
 
 A passing proof has:
 
-1. The user action (click, drag, resize, reload) and the resulting screen, not only the final screen.
+1. The user action (click, drag, resize, type, reload) and the resulting screen, not only the final screen.
 2. An ARIA snapshot and a screenshot that show the `CHAMELEON` mark plus the widget titles or activity line you assert.
 3. For persistence, the activity line after reload plus a dump of `chameleon-board-v1` from that same profile. The dump is a side-effect check. It is not a substitute for the visible footer.
 4. The feature file id and entry point in the artifact names or the command log.

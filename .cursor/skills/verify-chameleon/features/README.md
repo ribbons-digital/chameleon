@@ -7,15 +7,15 @@ This directory is the maintained source for verifying the user-facing behavior o
 - Launch Chameleon with `control-chameleon launch` so Vite listens on `http://127.0.0.1:$CHAMELEON_VERIFY_PORT/` (default 14711).
 - Use a unique `CHAMELEON_VERIFY_RUN` per concurrent job. The Chrome profile is `/tmp/chameleon-verify/<run>/chrome-profile`.
 - Put `.cursor/skills/verify-chameleon/scripts` on `PATH`.
-- Run `control-chameleon doctor --expect-seed` and require the `CHAMELEON` mark, `Untitled workspace`, both seed widgets, empty activity copy, and `state v0 · 0 commands`.
+- Run `control-chameleon doctor --expect-seed` and require the `CHAMELEON` mark, `Untitled workspace`, both seed widgets, empty activity copy, and a footer matching `state vN · 0 commands`.
 - Never drive `localhost:4711` or any instance whose `state.json` this run did not write.
 
 ## Driving conventions
 
-- Start every recipe from the seed board unless its preconditions say otherwise. `Reset canvas` returns to seed inside the same profile.
+- Start every recipe from the seed board unless its preconditions say otherwise. `Reset canvas` returns widgets and an empty log inside the same profile. It does not rewind `stateVersion` to 0.
 - Prefer ARIA roles and accessible names over CSS selectors or DOM position. The drag handle class `widget-drag-handle` and resize handle `.react-resizable-handle` are the exceptions the grid requires.
 - Treat every command as literal. Keep quoted names, curly quotes in activity copy, and the middle dot in `state v0 · 0 commands` unchanged.
-- Run browser actions through `control-chameleon browser`.
+- Run browser actions through `control-chameleon browser`. Open editors and the activity list must finish in that same command.
 - Restore the seed board after a mutation when the next recipe needs it. Do not remove proof artifacts during cleanup.
 
 ## Proof and skip reporting
@@ -40,8 +40,9 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Features
 
-- [Open the seeded canvas](./open-canvas.md) covers first paint, identity, seed widgets, and empty activity.
+- [Open the seeded canvas](./open-canvas.md) covers first paint, identity, seed widgets, empty activity, and the unhosted WebMCP banner.
 - [Move and resize widgets](./move-and-resize.md) covers dragging and resizing a card and the activity line that follows.
+- [Edit widgets by hand](./edit-widgets.md) covers note markdown, table cells, adding a row, and deleting a widget.
 - [Undo last change](./undo.md) covers enabling undo after a mutation and restoring the prior layout.
-- [Reset the canvas](./reset-canvas.md) covers wiping commands and returning to the seed board.
+- [Reset the canvas](./reset-canvas.md) covers wiping commands and returning to the seed widgets.
 - [Persist across reload](./persist-reload.md) covers localStorage surviving a browser reload.

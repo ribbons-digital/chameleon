@@ -30,3 +30,4 @@ Preconditions:
 - The button disables again only when every non-undo command is marked undone. After one undo of one move it stays enabled if other mutations remain.
 - There is no redo control. Re-drag if the user wants the layout back.
 - Do not call `useBoardStore.getState().undo()` as proof. The header button is the user path.
+- The header button records actor `human`. That is distinct from the WebMCP `undo` tool, which this skill does not drive.

@@ -20,6 +20,9 @@ const SKILL_DIR = resolve(SCRIPT_DIR, '..')
 const DEFAULT_PORT = 14711
 const READY_TIMEOUT_MS = 60_000
 const ACTION_TIMEOUT_MS = 15_000
+const EMPTY_ACTIVITY =
+  'Drag, edit, or ask an agent to create the first activity entry.'
+const SEED_COMMANDS_RE = /^state v\d+ · 0 commands$/
 
 function fail(message, extra) {
   process.stderr.write(`error: ${message}\n`)
@@ -36,9 +39,13 @@ Commands:
   status                 Print the run state JSON
   cleanup                Stop processes this run started (keeps artifacts)
   browser click --role <role> --name <name>
+  browser click --text <text>
   browser assert --text <text>
   browser assert --role <role> --name <name> [--disabled|--enabled]
   browser refute --text <text>
+  browser fill --role <role> --name <name> --value <text> [--blur|--press <key>]
+  browser note --name <heading> --markdown <text>
+  browser cell --from <button-label> --value <text> [--field <textbox-name>]
   browser drag --name <heading> --dx <px> --dy <px>
   browser resize --name <heading> --dx <px> --dy <px>
   browser reload
@@ -46,6 +53,11 @@ Commands:
   browser snapshot --aria --path <file>
   browser screenshot --path <file>
   browser storage --path <file>
+
+Follow-up flags (same Chrome session as the action):
+  --wait-text <text>
+  --aria-snapshot <file>
+  --screenshot <file>
 
 Env:
   CHAMELEON_VERIFY_RUN     Run id (default: default)
@@ -264,13 +276,41 @@ function roleLocator(page, flags) {
 function widgetHandle(page, name) {
   return page
     .getByRole('heading', { name, exact: true })
-    .locator('xpath=ancestor::article[contains(@class,"widget-drag-handle")][1]')
+    .locator('xpath=ancestor::*[contains(@class,"widget-drag-handle")][1]')
+}
+
+function widgetCard(page, name) {
+  return page
+    .getByRole('heading', { name, exact: true })
+    .locator('xpath=ancestor::article[1]')
 }
 
 function gridItem(page, name) {
   return page
     .getByRole('heading', { name, exact: true })
     .locator('xpath=ancestor::*[contains(@class,"react-grid-item")][1]')
+}
+
+async function maybeFollowup(page, flags) {
+  const extra = {}
+  if (flags['wait-text'] && flags['wait-text'] !== true) {
+    await page.getByText(flags['wait-text']).first().waitFor({ state: 'visible' })
+    extra.waited = flags['wait-text']
+  }
+  if (flags['aria-snapshot'] && flags['aria-snapshot'] !== true) {
+    const path = resolveArtifactPath(flags['aria-snapshot'])
+    mkdirSync(dirname(path), { recursive: true })
+    const snapshot = await page.locator('body').ariaSnapshot()
+    writeFileSync(path, `${snapshot}\n`)
+    extra.snapshot = path
+  }
+  if (typeof flags.screenshot === 'string') {
+    const path = resolveArtifactPath(flags.screenshot)
+    mkdirSync(dirname(path), { recursive: true })
+    await page.screenshot({ path, fullPage: true })
+    extra.screenshot = path
+  }
+  return extra
 }
 
 async function launch() {
@@ -347,17 +387,29 @@ async function doctor(flags) {
     const canvas = await page.getByRole('region', { name: 'Widget canvas' }).isVisible()
     const undo = page.getByRole('button', { name: 'Undo last change', exact: true })
     const reset = page.getByRole('button', { name: 'Reset canvas', exact: true })
+    const showActivity = page.getByRole('button', { name: 'Show activity', exact: true })
     const info = {
       chameleon,
       canvas,
       undoVisible: await undo.isVisible(),
       undoDisabled: await undo.isDisabled(),
       resetVisible: await reset.isVisible(),
+      showActivityVisible: await showActivity.isVisible(),
       title: (await page.getByRole('heading', { level: 1 }).textContent())?.trim() ?? '',
       activity:
-        (await page.getByText(/Latest:|Drag or resize a widget/).first().textContent())?.trim() ??
-        '',
+        (
+          await page
+            .getByText(/Latest:|Drag, edit, or ask an agent/)
+            .first()
+            .textContent()
+        )?.trim() ?? '',
       versionLine: (await page.getByText(/state v\d+/).first().textContent())?.trim() ?? '',
+      toolsToken:
+        (await page.getByText(/tools (ready|via)/).first().textContent())?.trim() ?? '',
+      webmcpBanner: await page
+        .getByText('WebMCP not detected in this browser')
+        .isVisible()
+        .catch(() => false),
     }
     if (flags['expect-seed']) {
       info.welcome = await page
@@ -372,11 +424,11 @@ async function doctor(flags) {
       if (!info.welcome || !info.next) {
         fail('Seed widgets are missing. Reset the canvas or launch a fresh run.')
       }
-      if (!info.activity.includes('Drag or resize a widget')) {
+      if (info.activity !== EMPTY_ACTIVITY) {
         fail(`Expected empty activity copy, got ${JSON.stringify(info.activity)}`)
       }
-      if (info.versionLine !== 'state v0 · 0 commands') {
-        fail(`Expected seed version line, got ${JSON.stringify(info.versionLine)}`)
+      if (!SEED_COMMANDS_RE.test(info.versionLine)) {
+        fail(`Expected seed version line with 0 commands, got ${JSON.stringify(info.versionLine)}`)
       }
       if (!info.undoDisabled) fail('Undo last change should be disabled on a seed board.')
     }
@@ -390,21 +442,53 @@ async function doctor(flags) {
   )
 }
 
+async function editNote(page, flags) {
+  if (!flags.name || flags.name === true) fail('Missing --name')
+  if (!flags.markdown || flags.markdown === true) fail('Missing --markdown')
+  const card = widgetCard(page, flags.name)
+  await card.waitFor({ state: 'visible' })
+  const editor = page.getByRole('textbox', { name: 'Note markdown', exact: true })
+  if (!(await editor.isVisible().catch(() => false))) {
+    const body = card.locator('header.widget-drag-handle ~ *').first()
+    await body.click()
+  }
+  await editor.waitFor({ state: 'visible' })
+  await editor.fill(String(flags.markdown))
+  await editor.blur()
+  return { edited: flags.name }
+}
+
+async function editCell(page, flags) {
+  if (!flags.from || flags.from === true) fail('Missing --from')
+  if (flags.value === undefined || flags.value === true) fail('Missing --value')
+  const field = flags.field && flags.field !== true ? flags.field : 'Step'
+  await page.getByRole('button', { name: flags.from, exact: true }).click()
+  const box = page.getByRole('textbox', { name: field, exact: true })
+  await box.waitFor({ state: 'visible' })
+  await box.fill(String(flags.value))
+  await box.press('Enter')
+  return { from: flags.from, value: flags.value, field }
+}
+
 async function browserCommand(subcommand, flags) {
   const cfg = runConfig()
   const state = readState(cfg)
   const result = await withPage(state, async (page) => {
     switch (subcommand) {
       case 'click': {
+        if (flags.text) {
+          await page.getByText(flags.text).first().click()
+          return { clicked: flags.text, ...(await maybeFollowup(page, flags)) }
+        }
         const locator = roleLocator(page, flags)
         await locator.click()
-        return { clicked: `${flags.role}:${flags.name}` }
+        return { clicked: `${flags.role}:${flags.name}`, ...(await maybeFollowup(page, flags)) }
       }
       case 'assert': {
         if (flags.text) {
           const visible = await page.getByText(flags.text).first().isVisible()
           if (!visible) fail(`Not visible: ${JSON.stringify(flags.text)}`)
-          return { assert: 'text', text: flags.text }
+          return { assert: 'text', text: flags.text, ...(await maybeFollowup(page, flags)) }
         }
         const locator = roleLocator(page, flags)
         const visible = await locator.isVisible()
@@ -415,7 +499,7 @@ async function browserCommand(subcommand, flags) {
         if (flags.enabled) {
           if (await locator.isDisabled()) fail(`Expected enabled: ${flags.name}`)
         }
-        return { assert: 'role', role: flags.role, name: flags.name }
+        return { assert: 'role', role: flags.role, name: flags.name, ...(await maybeFollowup(page, flags)) }
       }
       case 'refute': {
         if (!flags.text) fail('Missing --text')
@@ -423,12 +507,28 @@ async function browserCommand(subcommand, flags) {
         if (count > 0 && (await page.getByText(flags.text).first().isVisible())) {
           fail(`Unexpectedly visible: ${JSON.stringify(flags.text)}`)
         }
-        return { refute: flags.text }
+        return { refute: flags.text, ...(await maybeFollowup(page, flags)) }
+      }
+      case 'fill': {
+        if (flags.value === undefined || flags.value === true) fail('Missing --value')
+        const locator = roleLocator(page, flags)
+        await locator.fill(String(flags.value))
+        if (flags.blur) await locator.blur()
+        if (flags.press && flags.press !== true) await locator.press(String(flags.press))
+        return { filled: flags.name, ...(await maybeFollowup(page, flags)) }
+      }
+      case 'note': {
+        const edited = await editNote(page, flags)
+        return { ...edited, ...(await maybeFollowup(page, flags)) }
+      }
+      case 'cell': {
+        const edited = await editCell(page, flags)
+        return { ...edited, ...(await maybeFollowup(page, flags)) }
       }
       case 'wait': {
         if (!flags.text) fail('Missing --text')
         await page.getByText(flags.text).first().waitFor({ state: 'visible' })
-        return { waited: flags.text }
+        return { waited: flags.text, ...(await maybeFollowup(page, flags)) }
       }
       case 'drag': {
         if (!flags.name) fail('Missing --name')
@@ -445,7 +545,7 @@ async function browserCommand(subcommand, flags) {
         await page.mouse.down()
         await page.mouse.move(startX + dx, startY + dy, { steps: 30 })
         await page.mouse.up()
-        return { dragged: flags.name, dx, dy }
+        return { dragged: flags.name, dx, dy, ...(await maybeFollowup(page, flags)) }
       }
       case 'resize': {
         if (!flags.name) fail('Missing --name')
@@ -463,12 +563,12 @@ async function browserCommand(subcommand, flags) {
         await page.mouse.down()
         await page.mouse.move(startX + dx, startY + dy, { steps: 30 })
         await page.mouse.up()
-        return { resized: flags.name, dx, dy }
+        return { resized: flags.name, dx, dy, ...(await maybeFollowup(page, flags)) }
       }
       case 'reload': {
         await page.reload({ waitUntil: 'domcontentloaded' })
         await page.getByText('CHAMELEON', { exact: true }).waitFor({ state: 'visible' })
-        return { reloaded: state.url }
+        return { reloaded: state.url, ...(await maybeFollowup(page, flags)) }
       }
       case 'snapshot': {
         if (!flags.aria) fail('Pass --aria')
@@ -476,7 +576,7 @@ async function browserCommand(subcommand, flags) {
         mkdirSync(dirname(path), { recursive: true })
         const snapshot = await page.locator('body').ariaSnapshot()
         writeFileSync(path, `${snapshot}\n`)
-        return { snapshot: path }
+        return { snapshot: path, ...(await maybeFollowup(page, flags)) }
       }
       case 'screenshot': {
         const path = resolveArtifactPath(flags.path)

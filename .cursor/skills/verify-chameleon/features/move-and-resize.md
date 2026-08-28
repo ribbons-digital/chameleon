@@ -4,14 +4,14 @@ Move and resize lets a user drag a widget card or pull its southeast handle, the
 
 ## Sub-features
 
-- `move-drag` moves the welcome note by dragging the card.
+- `move-drag` moves the welcome note by dragging the card header.
 - `resize-handle` changes the welcome note size from the southeast handle.
 - `move-activity` writes `Latest: Moved “A canvas that listens”` and increments the command count.
 - `resize-activity` writes `Latest: Resized “A canvas that listens”`.
 
 ## How to get to it (user POV)
 
-- Drag the welcome note card (`A canvas that listens`) by its body or header.
+- Drag the welcome note header (`A canvas that listens`) by the heading or the type token.
 - Drag the southeast resize handle on that same card.
 
 ## Driving it with control-chameleon
@@ -33,3 +33,4 @@ Preconditions:
 - A drag shorter than one grid cell records nothing. If activity stays on the empty-state sentence, increase `--dx` and retry from seed.
 - The resize handle sits on the card corner. Clicking the heading drags; it does not resize.
 - `dx` 320 is about two columns on a 1400px window. Do not use coordinate clicks against another machine's layout.
+- Drag from the header. Clicks on markdown, table cells, or `Add row` are cancelled as drags on purpose.
