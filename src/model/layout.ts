@@ -37,7 +37,7 @@ function overlaps(left: GridPosition, right: GridPosition): boolean {
 export function applyLayout(
   widgets: Widget[],
   items: LayoutUpdate[],
-): Widget[] {
+): Array<GridPosition & { widgetId: string }> {
   const requested = new Map(
     items.map(({ widgetId, x, y, w, h }) => [
       widgetId,
@@ -71,8 +71,8 @@ export function applyLayout(
   }
 
   return widgets.map((widget) => ({
-    ...widget,
-    position: resolved.get(widget.id) ?? widget.position,
+    widgetId: widget.id,
+    ...(resolved.get(widget.id) ?? widget.position),
   }))
 }
 

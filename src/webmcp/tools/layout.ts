@@ -104,7 +104,7 @@ export const setLayout = makeTool({
       (draft) => {
         const resolved = applyLayout(draft.widgets, input.items)
         const byId = new Map(
-          resolved.map((widget) => [widget.id, widget.position]),
+          resolved.map((item) => [item.widgetId, item]),
         )
         for (const widget of draft.widgets) {
           const next = byId.get(widget.id)
@@ -117,14 +117,16 @@ export const setLayout = makeTool({
           ) {
             continue
           }
-          widget.position = next
+          widget.position = {
+            x: next.x,
+            y: next.y,
+            w: next.w,
+            h: next.h,
+          }
           widget.updatedAt = timestamp
           widget.lastModifiedBy = 'agent'
         }
-        layout = resolved.map((widget) => ({
-          widgetId: widget.id,
-          ...widget.position,
-        }))
+        layout = resolved
       },
     )
 

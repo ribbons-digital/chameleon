@@ -20,7 +20,6 @@ import { ActivityDrawer } from './components/ActivityDrawer'
 import { AgentPulse } from './components/AgentPulse'
 import { BoardGrid } from './grid/BoardGrid'
 import { useBoardStore } from './store/boardStore'
-import { getBootResult } from './webmcp/boot'
 import {
   getModelContextSource,
   WEBMCP_ENABLE_HINT,
@@ -49,9 +48,12 @@ function App() {
   const canUndo = commands.some(
     (command) => !command.undone && command.action !== 'undo',
   )
+  const mintedCount = useBoardStore(
+    (state) => state.document.mintedTools.length,
+  )
   const webmcpSource = getModelContextSource()
   const hosted = Boolean(webmcpSource)
-  const toolCount = getBootResult()?.registry.size ?? STATIC_TOOL_NAMES.length
+  const toolCount = STATIC_TOOL_NAMES.length + mintedCount
 
   return (
     <Theme theme={THEMES[boardTheme.name]} mode={boardTheme.mode}>
