@@ -80,11 +80,38 @@ function hasRef(value: unknown): boolean {
   return Object.values(value).some(hasRef)
 }
 
+const UNREGISTERED_TOOL_NAMES = [
+  'bind_data',
+  'create_form_tool',
+  'remove_minted_tool',
+  'add_rows',
+  'update_rows',
+  'delete_rows',
+  'read_widget_data',
+  'set_layout',
+  'set_theme',
+]
+
 describe('schema round-trip', () => {
   it('publishes inline Draft-7 schemas for every Day 2 tool', () => {
     for (const tool of DAY2_STATIC_TOOLS) {
       expect(tool.inputSchema).toMatchObject({ type: 'object' })
       expect(hasRef(tool.inputSchema)).toBe(false)
+    }
+  })
+
+  it('does not advertise tools that are not registered', () => {
+    for (const tool of DAY2_STATIC_TOOLS) {
+      const published = `${tool.description}\n${JSON.stringify(tool.inputSchema)}`
+      for (const name of UNREGISTERED_TOOL_NAMES) {
+        expect(published, `${tool.name} mentions ${name}`).not.toContain(name)
+      }
+      expect(published.toLowerCase(), `${tool.name} mentions row tools`).not.toContain(
+        'row tools',
+      )
+      expect(published.toLowerCase(), `${tool.name} mentions undo tool`).not.toContain(
+        'undo tool',
+      )
     }
   })
 

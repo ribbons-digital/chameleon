@@ -16,7 +16,7 @@ export const DescribeInput = z
 export const describeCurrentState = makeTool({
   name: 'describe_current_state',
   description:
-    'Returns the full ground-truth snapshot of the board: title, theme, every widget (id, type, title, grid position, config, data field schema, row count, up to 3 sample rows), all dynamically minted tools, the last 10 activity-log entries including edits the human made by hand, and the current stateVersion. Call this before your first mutation and again whenever a tool reports a stale or missing id. This is the only tool that shows you what the human has changed.',
+    'Returns the full ground-truth snapshot of the board: title, theme, every widget (id, type, title, grid position, config, data field schema, row count, up to 3 sample rows), minted tools if any, the last 10 activity-log entries including human hand-edits, and stateVersion. Call this before your first mutation and again whenever a tool reports a stale or missing id. This is the only tool that shows you what the human has changed.',
   input: DescribeInput,
   handler: (input) => {
     const snapshot = currentSnapshot(input.include_sample_rows)

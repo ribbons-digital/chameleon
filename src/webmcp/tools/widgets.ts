@@ -31,7 +31,7 @@ export const AddWidgetInput = z
       .max(LIMITS.fieldsPerDataset)
       .optional()
       .describe(
-        'Optional shortcut: define the data schema at creation time instead of calling bind_data.',
+        'Optional column schema at creation. Pass this when you know the fields for a table, kanban, chart, or form. Rows cannot be added yet.',
       ),
     position: Position.optional(),
     rationale: Rationale,
@@ -45,7 +45,7 @@ function summaryForAdd(type: string, title: string): string {
 export const addWidget = makeTool({
   name: 'add_widget',
   description:
-    'Creates one widget on the board and returns its id. type is one of: table (spreadsheet-like records), kanban (cards grouped by a select field), checklist (todo items with optional due dates), chart (line/bar/area/pie over a dataset), note (markdown text), form (input fields the human fills in — and the only widget that can mint a new tool via create_form_tool). For table, kanban, chart and form you should usually call bind_data next to define fields, unless you pass `fields` here. Omit position to auto-place. Prefer several small focused widgets over one giant one.',
+    'Creates one widget on the board and returns its id. type is table, kanban, checklist, chart, note, or form. Notes store markdown in config.markdown. That is the only type you can fill with written content today. For table, kanban, chart, and form, pass fields now if you know the columns. Rows cannot be added yet, so those widgets stay empty. Checklist, kanban, chart, and form render as shells until later passes. Omit position to auto-place. Prefer several small focused widgets over one giant one.',
   input: AddWidgetInput,
   handler: (input) => {
     const state = useBoardStore.getState()
@@ -120,7 +120,7 @@ export const UpdateWidgetInput = z
 export const updateWidget = makeTool({
   name: 'update_widget',
   description:
-    "Updates a widget's title, config, and/or position. Only the keys you pass change; config is deep-merged per key (pass a key with null to clear it). Does not touch data rows — use the row tools for that — and does not change the field schema — use bind_data. If the widget is a form with a minted tool, changing config does not affect the minted tool.",
+    "Updates a widget's title, config, and/or position. Only the keys you pass change. Config is deep-merged per key; pass a key with null to clear it. Change a note's text by patching config.markdown. This does not add rows or change field schemas.",
   input: UpdateWidgetInput,
   handler: (input) => {
     if (
@@ -197,7 +197,7 @@ export const RemoveWidgetInput = z
 export const removeWidget = makeTool({
   name: 'remove_widget',
   description:
-    'Deletes a widget and its data rows. If the widget is a form with a minted tool, that tool is unregistered immediately and will not come back on reload. If any chart uses this widget as its data source, the chart stays but shows an empty state until re-pointed. The human can undo this from the UI, and you can undo it with the undo tool.',
+    'Deletes a widget and its data. The human can undo this from the UI. Other widgets on the board are unchanged.',
   input: RemoveWidgetInput,
   handler: (input) => {
     const state = useBoardStore.getState()

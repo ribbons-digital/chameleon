@@ -1,23 +1,20 @@
 # Agent checkpoint notes
 
 Living log of real-agent and inspector findings. Day 2 is the first checkpoint.
-Rewrite tool descriptions from evidence here — do not paper over a misuse by
+Rewrite tool descriptions from evidence here. Do not paper over a misuse by
 changing the human prompt.
 
 ## 2026-08-28 — Day 2 checkpoint
 
 ### Environment of this run
 
-This session is a Cloud Agent VM. It can deploy to Cloudflare and drive a
-normal Chromium for UI verification. It cannot launch:
+Cloud Agent VM plus one real ChatGPT session driven by Ryan.
 
-- ChatGPT’s desktop-app browser
-- Chrome Canary with `chrome://flags/#enable-webmcp-testing`
+This VM can deploy to Cloudflare and drive a normal Chromium for UI
+verification. It cannot launch ChatGPT’s desktop-app browser or Chrome Canary
+with `chrome://flags/#enable-webmcp-testing`.
 
-Those two runtimes are still required before we treat descriptions as
-empirically tuned. Recorded below is everything this environment *could*
-verify, plus the compatibility adapter we shipped so a later Canary/ChatGPT
-pass can be a description-tuning pass instead of a rewrite of the handlers.
+ChatGPT checkpoint #1 is captured below. Canary Tool Inspector is still open.
 
 ### Detection (implementation)
 
@@ -29,8 +26,8 @@ pass can be a description-tuning pass instead of a rewrite of the handlers.
 3. If neither exists, the registry still tracks tools so the UI can show
    “N tools ready”, and a Banner + console line explain how to enable WebMCP.
 
-Unit tests cover the preference order. Live UI in this VM (stable Chromium)
-correctly reports **WebMCP not detected** and still renders the board.
+Unit tests cover the preference order. Stable Chromium in this VM reports
+**WebMCP not detected** and still renders the board.
 
 ### Registration contract vs. known implementation drift
 
@@ -41,7 +38,7 @@ Evidence from `@mcp-b/webmcp-types` 5.0.1 (not weakened in handlers):
 | `registerTool` | object `inputSchema`, returns `Promise<void>`, lifetime via `AbortSignal` | `getTools()` on Chrome 149–153 returned the schema as a **string**; 154+ returns an object. Some polyfills mirrored the string form on register. |
 | `unregisterTool` | **absent** | Older snippets still mention it. Registry always `abort()`s, then calls `unregisterTool(name)` if that function exists. |
 | `provideContext` / `clearContext` | removed March 2026 | We never call them. |
-| Tool execute input | one object argument | If a runtime ever delivers a JSON string, that would be an adapter concern at the registry edge — handlers always receive Zod-parsed objects. |
+| Tool execute input | one object argument | If a runtime ever delivers a JSON string, that would be an adapter concern at the registry edge. Handlers always receive Zod-parsed objects. |
 
 Adapter (`registerToolCompatible`): try object schema first; if the host throws
 a type error mentioning `inputSchema` / string, retry once with
@@ -62,19 +59,84 @@ After Zustand persist hydration:
 - `update_widget`
 - `remove_widget`
 
-### Still to capture on ChatGPT desktop + Canary
+### ChatGPT desktop / Sol — dinner-party prompt
 
-Prompt: “set up a page for planning a small dinner party”.
+Screenshot: `docs/day-2-chatgpt-dinner-party.png`
 
-Watch and paste here:
+**URL:** https://chameleon-webmcp.ryan-970.workers.dev
+**Model:** GPT-5.6 Sol Medium
+**Runtime:** ChatGPT with the live Chameleon tab open. Header token read
+`5 tools via document`, so ChatGPT’s browser hosted `document.modelContext`
+(not navigator, not unhosted). Undo was enabled. No “WebMCP not detected”
+banner.
 
-- Which tools were discovered (names + whether schemas look Draft-7 / inline).
-- Which tools it actually called, in order.
-- Any argument mistakes (wrong `type` enum, missing `title`, config-as-string).
-- Whether `document.modelContext`, `navigator.modelContext`, or both appear.
+**Prompt actually typed** (spec prompt plus a routing nudge after a ChatGPT
+Sites misfire; do not bake the nudge into tool copy):
+
+> set up a page for planning a small dinner party - run this prompt using the
+> url opened in the browser now which has webmcp
+
+Worked for 3m 33s. ChatGPT’s recap: Dinner details, Guest and RSVP table,
+Three-course menu, Preparation checklist, Shopping list, Saturday hosting
+schedule.
+
+**Board after the run** (footer: `Latest: Updated 'What happens next'`,
+state v10, 10 commands):
+
+| Widget | Type | What landed |
+|---|---|---|
+| Dinner at home | note | Saturday 6:30pm, six people, warm / casual / seasonal |
+| Guest list | table | Empty-state **No rows yet** (fields exist; no rows) |
+| Menu | note | Three vegetarian courses in markdown |
+| Before guests arrive | checklist | Placeholder shell only |
+| Shopping list | table | Empty-state **No rows yet** (fields exist; no rows) |
+| Saturday game plan | note | Timeline 3:00pm–7:15pm in markdown |
+| Workspace tips | table | Seed rows from **What happens next** (renamed) |
+
+Seed note **A canvas that listens** is gone. Most likely `update_widget` on
+`w_welcome` (title + `config.markdown`) rather than remove + add: the dinner
+note sits where the seed note sat, and ChatGPT did not list a deletion.
+
+Last command summary `Updated 'What happens next'` matches `update_widget`
+capturing the title *before* the rename to Workspace tips. The three seed
+rows (`Your agent reads the board`, `Widgets appear live`, `You keep editing
+by hand`) are unchanged. There is still no row tool, so that is expected.
+
+**What we can say without a tool-call list**
+
+- Discovery worked. Five tools via `document.modelContext`.
+- `add_widget` accepted `note`, `table`, and `checklist`.
+- Guest list and Shopping list used the **No rows yet** empty state, not **No
+  columns yet**, so `fields` was passed at creation. The `fields` shortcut
+  works. `bind_data` is not required to get a typed empty table.
+- Written content went into notes (`config.markdown`). Tables and the
+  checklist stayed hollow. That is Day 2’s real surface, not a failed call.
+- No form, kanban, or chart widget. `create_form_tool` was not needed for this
+  prompt and was not evidenced as a successful call.
+- 10 commands / state v10 from a seed of 0 is consistent with ~5 adds plus
+  several updates (seed note, seed table title, note bodies).
+- 3m 33s is slow for ten mutations. The screenshot does not show Site tools →
+  Recently used, so we cannot tell whether Sol retried ghost names
+  (`bind_data`, row tools, `create_form_tool`, undo-as-tool).
+
+**Description changes made from this run** (live tool strings only, not
+`docs/01-tool-spec.md`):
+
+- Stop naming tools that are not registered.
+- Say notes are the only fillable type today.
+- Say `fields` at `add_widget` is how you get columns; rows cannot be added
+  yet.
+- Say checklist / kanban / chart / form render as shells.
+
+**Still missing (Canary)**
+
 - Model Context Tool Inspector listing vs. our five tools.
+- Whether schemas look Draft-7 / inline.
+- Whether `navigator.modelContext` is also present beside document.
+- Confirm `ToolRegistry.schemaEncoding` (`object` vs `string`) in that
+  runtime.
 
-Until that transcript exists, do not rewrite the spec descriptions.
+Until Canary exists, do not change `modelContext.ts` preference order.
 
 ### UI verification done in this VM
 
