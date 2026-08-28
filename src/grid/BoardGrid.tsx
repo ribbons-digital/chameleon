@@ -66,7 +66,7 @@ export function BoardGrid() {
           }}
           dragConfig={{
             handle: '.widget-drag-handle',
-            cancel: '.react-resizable-handle, textarea, input, button',
+            cancel: '.react-resizable-handle, textarea, input, button, [role="checkbox"]',
           }}
           resizeConfig={{ enabled: true, handles: ['se'] }}
           onDragStop={(_layout, _oldItem, newItem) =>

@@ -8,7 +8,7 @@ import type {
   Widget,
   WidgetType,
 } from '../model/types'
-import { defaultConfig, defaultDataset } from '../model/widgets'
+import { createWidget, defaultConfig, defaultDataset } from '../model/widgets'
 
 const now = () => '2026-08-28T00:00:00.000Z'
 
@@ -40,7 +40,7 @@ export const initialDocument: BoardDocument = {
   mintedTools: [],
   humanEditsSinceLastDescribe: 0,
   widgets: [
-    {
+    createWidget({
       id: 'w_welcome',
       type: 'note',
       title: 'A canvas that listens',
@@ -54,8 +54,8 @@ export const initialDocument: BoardDocument = {
       createdAt: now(),
       updatedAt: now(),
       lastModifiedBy: 'agent',
-    },
-    {
+    }),
+    createWidget({
       id: 'w_first_steps',
       type: 'table',
       title: 'What happens next',
@@ -72,7 +72,7 @@ export const initialDocument: BoardDocument = {
       createdAt: now(),
       updatedAt: now(),
       lastModifiedBy: 'agent',
-    },
+    }),
   ],
 }
 
@@ -147,7 +147,7 @@ function migrateWidget(raw: LegacyWidget, index: number): Widget {
   }
 
   const position = raw.position ?? {}
-  return {
+  return createWidget({
     id: asString(raw.id, `w_migrated_${index + 1}`),
     type,
     title: asString(raw.title, 'Untitled'),
@@ -162,7 +162,7 @@ function migrateWidget(raw: LegacyWidget, index: number): Widget {
     createdAt: asString(raw.createdAt, now()),
     updatedAt: asString(raw.updatedAt, now()),
     lastModifiedBy: asActor(raw.lastModifiedBy),
-  }
+  })
 }
 
 export function migrateDocument(raw: unknown): BoardDocument {

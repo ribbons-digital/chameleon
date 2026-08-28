@@ -1,7 +1,9 @@
 import type { Widget } from '../model/types'
+import { ChecklistWidgetView } from './ChecklistWidget'
+import { KanbanWidgetView } from './KanbanWidget'
 import { NoteWidget } from './NoteWidget'
 import { PlaceholderWidget } from './PlaceholderWidget'
-import { TableWidget } from './TableWidget'
+import { TableWidgetView } from './TableWidget'
 import { WidgetShell } from './WidgetShell'
 
 export function WidgetView({ widget }: { widget: Widget }) {
@@ -10,7 +12,11 @@ export function WidgetView({ widget }: { widget: Widget }) {
       {widget.type === 'note' ? (
         <NoteWidget widget={widget} />
       ) : widget.type === 'table' ? (
-        <TableWidget widget={widget} />
+        <TableWidgetView widget={widget} />
+      ) : widget.type === 'checklist' ? (
+        <ChecklistWidgetView widget={widget} />
+      ) : widget.type === 'kanban' ? (
+        <KanbanWidgetView widget={widget} />
       ) : (
         <PlaceholderWidget widget={widget} />
       )}

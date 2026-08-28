@@ -9,6 +9,8 @@ import { VStack } from '@astryxdesign/core/VStack'
 import { Theme } from '@astryxdesign/core/theme'
 import { neutralTheme } from '@astryxdesign/theme-neutral/built'
 import { styles } from './app/styles'
+import { ActivityDrawer } from './components/ActivityDrawer'
+import { AgentPulse } from './components/AgentPulse'
 import { BoardGrid } from './grid/BoardGrid'
 import { useBoardStore } from './store/boardStore'
 import { getBootResult } from './webmcp/boot'
@@ -27,7 +29,6 @@ function App() {
   const canUndo = commands.some(
     (command) => !command.undone && command.action !== 'undo',
   )
-  const lastCommand = commands.at(-1)
   const webmcpSource = getModelContextSource()
   const hosted = Boolean(webmcpSource)
   const toolCount = getBootResult()?.registry.size ?? STATIC_TOOL_NAMES.length
@@ -100,17 +101,14 @@ function App() {
             gap={2}
             xstyle={styles.activity}
           >
-            <Text type="supporting">
-              {lastCommand
-                ? `Latest: ${lastCommand.summary}`
-                : 'Drag or resize a widget to create the first activity entry.'}
-            </Text>
+            <ActivityDrawer />
             <Text type="code" color="secondary">
               state v{stateVersion} · {commands.length} commands
             </Text>
           </HStack>
         </VStack>
       </AppShell>
+      <AgentPulse />
     </Theme>
   )
 }

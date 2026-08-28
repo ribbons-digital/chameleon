@@ -3,14 +3,12 @@ import { LIMITS } from '../model/limits'
 import type {
   ActivityEntry,
   BoardDocument,
-  ChartConfig,
   Command,
   DataSet,
   Field,
   Row,
   Widget,
 } from '../model/types'
-import { isChartConfig } from '../model/widgets'
 import { useBoardStore } from './boardStore'
 
 export function effectiveDataset(
@@ -18,7 +16,7 @@ export function effectiveDataset(
   widgets: Widget[],
 ): DataSet | null {
   if (widget.type === 'note') return null
-  if (widget.type === 'chart' && isChartConfig(widget.config)) {
+  if (widget.type === 'chart') {
     const sourceId = widget.config.sourceWidgetId
     if (sourceId) {
       const source = widgets.find((candidate) => candidate.id === sourceId)
@@ -40,8 +38,7 @@ export function widgetFields(widget: Widget, widgets: Widget[]): Field[] | null 
   if (widget.type === 'note') return null
   if (
     widget.type === 'chart' &&
-    isChartConfig(widget.config) &&
-    (widget.config as ChartConfig).sourceWidgetId
+    widget.config.sourceWidgetId
   ) {
     return null
   }
