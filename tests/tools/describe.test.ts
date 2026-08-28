@@ -6,7 +6,7 @@ import {
   getActivityLog,
 } from '../../src/webmcp/tools/describe'
 import { addWidget } from '../../src/webmcp/tools/widgets'
-import { executeTool, resetBoard } from '../helpers'
+import { executeTool, emptyBoard, resetBoard } from '../helpers'
 
 describe('describe_current_state', () => {
   beforeEach(() => {
@@ -46,6 +46,7 @@ describe('describe_current_state', () => {
       { key: 'step', label: 'Step', type: 'text', required: true },
     ])
     expect((table.sampleRows as unknown[]).length).toBe(3)
+    expect(result.unfinished).toEqual([])
     expect(result.mintedTools).toEqual([])
     expect(result.recentActivity).toEqual([])
     expect(result.humanEditsSinceLastDescribe).toBe(0)
@@ -84,6 +85,30 @@ describe('describe_current_state', () => {
     })
     expect(result.ok).toBe(false)
     expect((result.error as { code: string }).code).toBe('INVALID_INPUT')
+  })
+
+  it('lists empty tables and checklists as unfinished', async () => {
+    resetBoard(emptyBoard())
+    await executeTool(addWidget, {
+      type: 'table',
+      title: 'People and conversations',
+      fields: [{ key: 'name', label: 'Name', type: 'text' }],
+    })
+    await executeTool(addWidget, { type: 'checklist', title: 'This week' })
+    const result = await executeTool(describeCurrentState, {})
+    expect(result.ok).toBe(true)
+    expect(result.unfinished).toEqual([
+      expect.objectContaining({
+        title: 'People and conversations',
+        type: 'table',
+        action: 'add_rows',
+      }),
+      expect.objectContaining({
+        title: 'This week',
+        type: 'checklist',
+        action: 'add_rows',
+      }),
+    ])
   })
 
   it('matches a stable snapshot of the default board', async () => {

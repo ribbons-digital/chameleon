@@ -20,6 +20,7 @@ exports[`describe_current_state > matches a stable snapshot of the default board
   "ok": true,
   "recentActivity": [],
   "stateVersion": 0,
+  "unfinished": [],
   "widgets": [
     {
       "config": {

@@ -25,14 +25,14 @@ export const AddWidgetInput = z
       .record(z.string(), z.unknown())
       .optional()
       .describe(
-        "Type-specific config. If omitted, sensible defaults are used. See each type's schema.",
+        'Type-specific config. Kanban defaults: groupByField "status", cardTitleField "title" — pass those field keys, or override config to match. Notes: config.markdown for prose only.',
       ),
     fields: z
       .array(fieldSchema)
       .max(LIMITS.fieldsPerDataset)
       .optional()
       .describe(
-        'Optional column schema at creation. Same as bind_data. Prefer this when you already know the columns.',
+        'Column schema at creation (same as bind_data). Prefer this when you already know the columns. Fields alone leave "No rows yet" — call add_rows next. For kanban include a select field matching config.groupByField (default key "status") plus a title field (default key "title").',
       ),
     position: Position.optional(),
     rationale: Rationale,
@@ -43,10 +43,47 @@ function summaryForAdd(type: string, title: string): string {
   return `Added ${type} “${title}”`
 }
 
+export function nextAfterAdd(args: {
+  type: string
+  title: string
+  widgetId: string
+  fieldCount: number
+}): { needsRows: boolean; next: string } {
+  const { type, title, widgetId, fieldCount } = args
+  if (type === 'note') {
+    return {
+      needsRows: false,
+      next: 'Note created. Put prose in config.markdown only. Table, kanban, and checklist data belong in add_rows, not in this note.',
+    }
+  }
+  if (type === 'checklist') {
+    return {
+      needsRows: true,
+      next: `REQUIRED next call: add_rows on ${widgetId} with items keyed text/done/due/note. Skip bind_data. "No items yet" means you are not done.`,
+    }
+  }
+  if (type === 'table' && /pipeline|funnel|status board/i.test(title)) {
+    return {
+      needsRows: true,
+      next: `This is a pipeline. remove_widget ${widgetId} and add_widget type=kanban with a select field (key status, stage options) plus a title field, then add_rows. Do not leave a table showing "No rows yet".`,
+    }
+  }
+  if (type !== 'checklist' && fieldCount === 0) {
+    return {
+      needsRows: true,
+      next: `REQUIRED: bind_data on ${widgetId} to define fields, then add_rows. "No rows yet" means you are not done.`,
+    }
+  }
+  return {
+    needsRows: type !== 'chart',
+    next: `REQUIRED next call: add_rows on ${widgetId} with real rows. "No rows yet" means you are not done.`,
+  }
+}
+
 export const addWidget = makeTool({
   name: 'add_widget',
   description:
-    'Creates one widget on the board and returns its id. type is table, kanban, checklist, chart, note, or form. Notes store markdown in config.markdown. For table, kanban, chart, and form, pass fields now or call bind_data next. Then use add_rows to fill data. Checklist has a fixed schema (text, done, due, note); skip bind_data and call add_rows. Kanban needs a select field named in config.groupByField. Omit position to auto-place. Prefer several small focused widgets over one giant one.',
+    'Creates one widget and returns widgetId plus next — a required follow-up. Pipeline or status board → type kanban (select groupByField, default key status), never a table. After table/kanban/form/checklist, next is add_rows (or bind_data then add_rows if you omitted fields). Checklist: skip bind_data; add_rows with text / done / due / note. Notes: config.markdown prose only, never rows. Stopping at "No rows yet" / "No items yet" is a failed run. Omit position to auto-place.',
   input: AddWidgetInput,
   handler: (input) => {
     const state = useBoardStore.getState()
@@ -99,7 +136,18 @@ export const addWidget = makeTool({
       },
     )
 
-    return ok({ widgetId, position })
+    const created = defaultDataset(input.type, fields)
+    const fieldCount = created?.fields.length ?? 0
+    return ok({
+      widgetId,
+      position,
+      ...nextAfterAdd({
+        type: input.type,
+        title: input.title,
+        widgetId,
+        fieldCount,
+      }),
+    })
   },
 })
 
@@ -121,7 +169,7 @@ export const UpdateWidgetInput = z
 export const updateWidget = makeTool({
   name: 'update_widget',
   description:
-    "Updates a widget's title, config, and/or position. Only the keys you pass change. Config is deep-merged per key; pass a key with null to clear it. Change a note's text by patching config.markdown. Does not add or edit data rows (use add_rows / update_rows) or field schemas (use bind_data).",
+    "Updates a widget's title, config, and/or position. Only the keys you pass change. Config is deep-merged per key; pass a key with null to clear it. Patch config.markdown for note prose only — notes are not a place to store table, kanban, or checklist data (use add_rows). Does not add or edit rows (add_rows / update_rows) or field schemas (bind_data).",
   input: UpdateWidgetInput,
   handler: (input) => {
     if (

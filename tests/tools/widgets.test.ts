@@ -52,6 +52,39 @@ describe('add_widget', () => {
       'rsvp',
     ])
     expect(table.dataset?.rows).toEqual([])
+    expect(result.needsRows).toBe(true)
+    expect(result.next).toMatch(/add_rows/)
+  })
+
+  it('tells the agent a pipeline table is the wrong type', async () => {
+    const result = await executeTool(addWidget, {
+      type: 'table',
+      title: 'Application pipeline',
+      fields: [
+        { key: 'company', label: 'Company', type: 'text' },
+        {
+          key: 'status',
+          label: 'Status',
+          type: 'select',
+          options: ['applied', 'screen', 'onsite', 'offer'],
+        },
+      ],
+    })
+    expect(result.ok).toBe(true)
+    expect(result.needsRows).toBe(true)
+    expect(result.next).toMatch(/kanban/)
+    expect(result.next).toMatch(/add_rows/)
+  })
+
+  it('requires add_rows immediately after a checklist', async () => {
+    const result = await executeTool(addWidget, {
+      type: 'checklist',
+      title: 'This week',
+    })
+    expect(result.ok).toBe(true)
+    expect(result.needsRows).toBe(true)
+    expect(result.next).toMatch(/add_rows/)
+    expect(result.next).toMatch(/Skip bind_data/)
   })
 
   it('honors an explicit position', async () => {

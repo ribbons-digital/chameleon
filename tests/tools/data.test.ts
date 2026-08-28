@@ -47,6 +47,7 @@ describe('bind_data', () => {
     })
     expect(result.ok).toBe(true)
     expect(result.migratedRowCount).toBe(1)
+    expect(result.next).toMatch(/add_rows/)
     const table = useBoardStore.getState().document.widgets[0]
     expect(table.type).toBe('table')
     if (table.type !== 'table') return
@@ -114,6 +115,7 @@ describe('add_rows / update_rows / delete_rows', () => {
     })
     expect(added.ok).toBe(true)
     expect(added.rowCount).toBe(1)
+    expect(added.unfinished).toEqual([])
     const read = await executeTool(readWidgetData, { widgetId })
     expect(read.ok).toBe(true)
     expect(read.total).toBe(1)

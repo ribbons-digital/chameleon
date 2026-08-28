@@ -19,6 +19,7 @@ import {
   UpdateWidgetInput,
 } from '../../src/webmcp/tools/widgets'
 import { STATIC_TOOLS } from '../../src/webmcp/tools'
+import { ERROR_HINTS } from '../../src/webmcp/result'
 
 const ajv = new Ajv({
   allErrors: true,
@@ -161,6 +162,33 @@ describe('schema round-trip', () => {
       }
       expect(registered.has(tool.name)).toBe(true)
     }
+    const hints = Object.values(ERROR_HINTS).join('\n')
+    for (const name of UNREGISTERED_TOOL_NAMES) {
+      expect(hints, `ERROR_HINTS mentions ${name}`).not.toContain(name)
+    }
+  })
+
+  it('steers pipelines to kanban and empty widgets to add_rows', () => {
+    const byName = Object.fromEntries(
+      STATIC_TOOLS.map((tool) => [tool.name, tool.description]),
+    )
+    expect(byName.add_widget).toMatch(/pipeline/i)
+    expect(byName.add_widget).toMatch(/kanban/)
+    expect(byName.add_widget).toMatch(/add_rows/)
+    expect(byName.add_widget).toMatch(/No rows yet/)
+    expect(byName.add_widget).toMatch(/No items yet/)
+    expect(byName.add_widget).toMatch(/groupByField/)
+    expect(byName.add_widget).toMatch(/config\.markdown/)
+    expect(byName.add_widget).toMatch(/\bnext\b/)
+    expect(byName.describe_current_state).toMatch(/unfinished/)
+    expect(byName.bind_data).toMatch(/add_rows/)
+    expect(byName.bind_data).toMatch(/No rows yet/)
+    expect(byName.bind_data).toMatch(/checklist/)
+    expect(byName.add_rows).toMatch(/No rows yet/)
+    expect(byName.add_rows).toMatch(/No items yet/)
+    expect(byName.add_rows).toMatch(/note/)
+    expect(byName.update_widget).toMatch(/add_rows/)
+    expect(byName.describe_current_state).toMatch(/add_rows/)
   })
 
   for (const testCase of cases) {
