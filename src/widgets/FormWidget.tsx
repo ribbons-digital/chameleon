@@ -11,7 +11,7 @@ import { Selector } from '@astryxdesign/core/Selector'
 import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { VStack } from '@astryxdesign/core/VStack'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import type { Field, FormWidget as FormWidgetModel } from '../model/types'
 import { formatCell } from '../store/human'
 import { submitFormValues } from '../store/submit'
@@ -175,11 +175,6 @@ export function FormWidgetView({
     initialValues(fields),
   )
   const [error, setError] = useState<string>()
-
-  useEffect(() => {
-    setValues(initialValues(fields))
-    setError(undefined)
-  }, [fields])
 
   if (fields.length === 0) {
     return (

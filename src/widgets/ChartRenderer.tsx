@@ -17,7 +17,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { ChartConfig } from '../model/types'
-import type { ChartDatum } from './ChartWidget'
+import type { ChartDatum } from './chartData'
 
 type ChartRendererProps = {
   chartType: ChartConfig['chartType']

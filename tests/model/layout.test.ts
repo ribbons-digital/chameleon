@@ -37,9 +37,9 @@ describe('layout collision resolution', () => {
     const result = applyLayout(widgets, [
       { widgetId: 'w_second', x: 0, y: 0, w: 6, h: 4 },
     ])
-    expect(result.map((widget) => widget.position)).toEqual([
-      { x: 0, y: 4, w: 6, h: 4 },
-      { x: 0, y: 0, w: 6, h: 4 },
+    expect(result).toEqual([
+      { widgetId: 'w_first1', x: 0, y: 4, w: 6, h: 4 },
+      { widgetId: 'w_second', x: 0, y: 0, w: 6, h: 4 },
     ])
   })
 
@@ -53,8 +53,8 @@ describe('layout collision resolution', () => {
       { widgetId: 'w_first1', x: 0, y: 0, w: 12, h: 3 },
       { widgetId: 'w_second', x: 0, y: 1, w: 6, h: 3 },
     ])
-    expect(result[0].position).toEqual({ x: 0, y: 0, w: 12, h: 3 })
-    expect(result[1].position).toEqual({ x: 0, y: 3, w: 6, h: 3 })
-    expect(result[2].position).toEqual({ x: 8, y: 3, w: 4, h: 3 })
+    expect(result[0]).toEqual({ widgetId: 'w_first1', x: 0, y: 0, w: 12, h: 3 })
+    expect(result[1]).toEqual({ widgetId: 'w_second', x: 0, y: 3, w: 6, h: 3 })
+    expect(result[2]).toEqual({ widgetId: 'w_third3', x: 8, y: 3, w: 4, h: 3 })
   })
 })

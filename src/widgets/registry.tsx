@@ -26,7 +26,10 @@ export function WidgetView({ widget }: { widget: Widget }) {
       ) : widget.type === 'kanban' ? (
         <KanbanWidgetView widget={widget} />
       ) : widget.type === 'form' ? (
-        <FormWidgetView widget={widget} />
+        <FormWidgetView
+          key={JSON.stringify(widget.dataset.fields)}
+          widget={widget}
+        />
       ) : (
         <Suspense fallback={<Text color="secondary">Loading chart</Text>}>
           <ChartWidgetView widget={widget} />

@@ -111,7 +111,7 @@ function assignBoundConfig(
 export const bindData = makeTool({
   name: 'bind_data',
   description:
-    'Defines or replaces fields for a table, kanban, chart, or form; it never inserts rows. Existing rows migrate: kept keys survive, removed keys drop, and invalid select values clear. Form minted tools re-register with the new schema; call create_form_tool if none exists. Otherwise call add_rows next because "No rows yet" is unfinished. Checklist and note reject this tool. Fields use snake_case keys and text|number|date|select|boolean|url types; select needs options.',
+    'Defines or replaces fields for a table, kanban, chart, or form; it never inserts rows. Existing rows migrate: kept keys survive, removed keys drop, and invalid select values clear. Form minted tools re-register with the new schema; call create_form_tool if none exists. Otherwise call add_rows next because "No rows yet" is unfinished. The checklist and note widgets reject this tool. Fields use snake_case keys and text|number|date|select|boolean|url types; select needs options.',
   input: BindDataInput,
   handler: (input) => {
     const widget = findWidget(input.widgetId)

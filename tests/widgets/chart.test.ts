@@ -3,7 +3,7 @@ import type {
   ChartWidget,
   DataSet,
 } from '../../src/model/types'
-import { prepareChartData } from '../../src/widgets/ChartWidget'
+import { prepareChartData } from '../../src/widgets/chartData'
 
 function chart(
   aggregate: ChartWidget['config']['aggregate'],
