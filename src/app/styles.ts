@@ -36,4 +36,11 @@ export const styles = stylex.create({
     marginLeft: 'auto',
     paddingTop: 'var(--spacing-4)',
   },
+  banner: {
+    width: '100%',
+    maxWidth: 1440,
+    marginRight: 'auto',
+    marginLeft: 'auto',
+    marginTop: 'var(--spacing-4)',
+  },
 })

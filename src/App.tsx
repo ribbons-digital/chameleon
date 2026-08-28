@@ -1,14 +1,22 @@
 import { AppShell } from '@astryxdesign/core/AppShell'
+import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
 import { Heading } from '@astryxdesign/core/Heading'
 import { HStack } from '@astryxdesign/core/HStack'
 import { Text } from '@astryxdesign/core/Text'
+import { Token } from '@astryxdesign/core/Token'
 import { VStack } from '@astryxdesign/core/VStack'
 import { Theme } from '@astryxdesign/core/theme'
 import { neutralTheme } from '@astryxdesign/theme-neutral/built'
 import { styles } from './app/styles'
 import { BoardGrid } from './grid/BoardGrid'
 import { useBoardStore } from './store/boardStore'
+import { getBootResult } from './webmcp/boot'
+import {
+  getModelContextSource,
+  WEBMCP_ENABLE_HINT,
+} from './webmcp/modelContext'
+import { STATIC_TOOL_NAMES } from './webmcp/tools'
 
 function App() {
   const title = useBoardStore((state) => state.document.title)
@@ -20,6 +28,9 @@ function App() {
     (command) => !command.undone && command.action !== 'undo',
   )
   const lastCommand = commands.at(-1)
+  const webmcpSource = getModelContextSource()
+  const hosted = Boolean(webmcpSource)
+  const toolCount = getBootResult()?.registry.size ?? STATIC_TOOL_NAMES.length
 
   return (
     <Theme theme={neutralTheme}>
@@ -48,7 +59,16 @@ function App() {
                 A workspace composed in conversation.
               </Text>
             </VStack>
-            <HStack gap={2}>
+            <HStack gap={2} vAlign="center" wrap="wrap">
+              <Token
+                size="sm"
+                color={hosted ? 'green' : 'gray'}
+                label={
+                  hosted
+                    ? `${toolCount} tools via ${webmcpSource}`
+                    : `${toolCount} tools ready`
+                }
+              />
               <Button
                 label="Undo last change"
                 variant="secondary"
@@ -58,6 +78,17 @@ function App() {
               <Button label="Reset canvas" variant="ghost" onClick={reset} />
             </HStack>
           </HStack>
+
+          {!hosted && (
+            <Banner
+              status="info"
+              container="card"
+              title="WebMCP not detected in this browser"
+              description={WEBMCP_ENABLE_HINT}
+              isDismissable
+              xstyle={styles.banner}
+            />
+          )}
 
           <VStack gap={0} xstyle={styles.gridWrap}>
             <BoardGrid />
