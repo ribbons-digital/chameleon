@@ -19,6 +19,7 @@ import {
   UpdateWidgetInput,
 } from '../../src/webmcp/tools/widgets'
 import { STATIC_TOOLS } from '../../src/webmcp/tools'
+import { ERROR_HINTS } from '../../src/webmcp/result'
 
 const ajv = new Ajv({
   allErrors: true,
@@ -160,6 +161,10 @@ describe('schema round-trip', () => {
         expect(published, `${tool.name} mentions ${name}`).not.toContain(name)
       }
       expect(registered.has(tool.name)).toBe(true)
+    }
+    const hints = Object.values(ERROR_HINTS).join('\n')
+    for (const name of UNREGISTERED_TOOL_NAMES) {
+      expect(hints, `ERROR_HINTS mentions ${name}`).not.toContain(name)
     }
   })
 

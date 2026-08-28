@@ -192,6 +192,7 @@ Day 3 EOD bar was: kanban + table with rows, then a human edit visible in
 - `update_widget` / `describe_current_state` / `read_widget_data`: do not dump
   rows into notes; `rowCount` 0 is unfinished.
 - Still do not name `create_form_tool`, `set_layout`, `set_theme`, or
+  `remove_minted_tool`. The `NAME_TAKEN` error hint no longer names
   `remove_minted_tool`.
 
 **Next check:** hard-refresh the live URL, Reset canvas, re-run `track my job
