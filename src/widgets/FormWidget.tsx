@@ -47,9 +47,12 @@ function booleanValue(value: FormValue): boolean {
   return typeof value === 'boolean' ? value : false
 }
 
+function isISODate(value: string): value is ISODate {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+}
+
 function dateValue(value: FormValue): ISODate | undefined {
-  return typeof value === 'string' &&
-    /^\d{4}-\d{2}-\d{2}$/.test(value)
+  return typeof value === 'string' && isISODate(value)
     ? value
     : undefined
 }
@@ -108,15 +111,31 @@ function SubmissionField({
         />
       )
     case 'select':
+      if (field.required) {
+        return (
+          <Selector
+            label={field.label}
+            description={field.description}
+            options={field.options ?? []}
+            value={textValue(value) || undefined}
+            onChange={onChange}
+            htmlName={field.key}
+            width="100%"
+            {...optionality}
+          />
+        )
+      }
       return (
         <Selector
           label={field.label}
           description={field.description}
           options={field.options ?? []}
-          value={textValue(value) || undefined}
-          onChange={(next) => onChange(next ?? undefined)}
+          value={textValue(value) || null}
+          onChange={(next: string | null) =>
+            onChange(next ?? undefined)
+          }
           htmlName={field.key}
-          hasClear={!field.required}
+          hasClear
           width="100%"
           {...optionality}
         />
