@@ -7,6 +7,7 @@ import type { Actor, ChartConfig, DataSet, Field, FormConfig, KanbanConfig, Row,
 import { validateConfig } from '../../model/widgets'
 import { useBoardStore } from '../../store/boardStore'
 import { mutate } from '../../store/mutate'
+import { unfinishedWidgets } from '../../store/selectors'
 import { makeTool } from '../makeTool'
 import { err, ok } from '../result'
 import { Rationale, WidgetId } from '../schemas'
@@ -110,7 +111,7 @@ function assignBoundConfig(
 export const bindData = makeTool({
   name: 'bind_data',
   description:
-    'Defines or replaces columns on a table, kanban, chart, or form. Fields: snake_case key, label, type text|number|date (yyyy-mm-dd)|select|boolean|url (select needs options). This does not insert data — call add_rows next. Leaving "No rows yet" is unfinished. Skip this for checklist (fixed keys text, done, due, note — use add_rows) and note. Kanban config.groupByField must stay a select field in the new schema. Existing rows migrate: kept keys survive, removed keys drop, new keys start empty, select values outside new options clear.',
+    'Sets columns only — it does not insert data. After this you MUST call add_rows. Leaving "No rows yet" is unfinished. Skip for checklist (fixed keys text, done, due, note — use add_rows) and note. Fields: snake_case key, label, type text|number|date (yyyy-mm-dd)|select|boolean|url (select needs options). Kanban config.groupByField must stay a select field in the new schema. Existing rows migrate: kept keys survive, removed keys drop, new keys start empty, select values outside new options clear.',
   input: BindDataInput,
   handler: (input) => {
     const widget = findWidget(input.widgetId)
@@ -161,6 +162,7 @@ export const bindData = makeTool({
       widgetId: input.widgetId,
       fields,
       migratedRowCount,
+      next: `REQUIRED next call: add_rows on ${input.widgetId}. bind_data only set columns. "No rows yet" means you are not done.`,
     })
   },
 })
@@ -168,7 +170,7 @@ export const bindData = makeTool({
 export const addRows = makeTool({
   name: 'add_rows',
   description:
-    'Fills a table, kanban, checklist, chart, or form with data. Call this immediately after add_widget (or after bind_data if fields were missing). Do not put that data in a note. A widget showing "No rows yet" or "No items yet" is unfinished — you still need this call. Each row is keyed by field keys (checklist: text, done, due, note). Up to 50 rows. Unknown keys rejected; values coerced where safe; required-field violations fail that row. Returns new row ids.',
+    'REQUIRED after you add a table, kanban, checklist, or form. Fills that widget. Do not put the data in a note. "No rows yet" / "No items yet" means you skipped this call. Checklist keys: text, done, due, note (skip bind_data). Up to 50 rows; unknown keys rejected; values coerced where safe. Returns new row ids. Then check unfinished on the result — fill every remaining empty widget before you stop.',
   input: AddRowsInput,
   handler: (input) => {
     const widget = findWidget(input.widgetId)
@@ -234,12 +236,16 @@ export const addRows = makeTool({
       },
     )
 
+    const state = useBoardStore.getState()
     const rowCount =
-      useBoardStore
-        .getState()
-        .document.widgets.find((candidate) => candidate.id === input.widgetId)?.dataset
-        ?.rows.length ?? 0
-    return ok({ widgetId: input.widgetId, rowIds, rowCount })
+      state.document.widgets.find((candidate) => candidate.id === input.widgetId)
+        ?.dataset?.rows.length ?? 0
+    return ok({
+      widgetId: input.widgetId,
+      rowIds,
+      rowCount,
+      unfinished: unfinishedWidgets(state.document),
+    })
   },
 })
 

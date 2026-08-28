@@ -195,9 +195,42 @@ Day 3 EOD bar was: kanban + table with rows, then a human edit visible in
   `remove_minted_tool`. The `NAME_TAKEN` error hint no longer names
   `remove_minted_tool`.
 
-**Next check:** hard-refresh the live URL, Reset canvas, re-run `track my job
-search`. Expect a kanban pipeline with a select status, `add_rows` on
-table/kanban/checklist, and no “No rows yet” / “No items yet” leftovers.
+**Next check (done):** hard-refresh, Reset canvas, re-run `track my job
+search`. Screenshot: `docs/day-3-chatgpt-job-search.png`.
+
+**Retry result (ChatGPT desktop / Sol):** same prompt, header still
+`11 tools via document`. Footer: state v22 · 6 commands (reset kept v16;
+six more mutations). Latest: Updated “What happens next”. Sol recap claimed
+the board was done.
+
+| Widget | Type | What landed |
+|---|---|---|
+| Job search command center | note | Weekly targets in markdown |
+| Application pipeline | table | Fields exist; **No rows yet** |
+| This week | checklist | **No items yet** |
+| People and conversations | table | **No rows yet** |
+| Interview preparation | note | Before/after conversation bullets in markdown |
+| Workspace tips | table | Seed rows; renamed from What happens next |
+
+No kanban. No `add_rows`. Description-only rewrite did not change behavior.
+Sol treats empty widgets as a finished workspace.
+
+**Second pass (tool results, not the human prompt):** descriptions were
+ignored, so the follow-up now lives in the payload the model reads after
+each call.
+
+- `add_widget` returns `needsRows` + `next`. A table titled like a pipeline
+  is told to `remove_widget` and add a kanban, then `add_rows`. Checklist
+  `next` is `add_rows` with text/done/due/note.
+- `bind_data` returns `next` pointing at `add_rows`.
+- `add_rows` returns remaining `unfinished` widgets so one filled table is
+  not the stop condition.
+- `describe_current_state` returns `unfinished` (empty tables/checklists)
+  at the top of the snapshot.
+
+**Next check:** hard-refresh, Reset canvas, re-run `track my job search`.
+Expect a kanban pipeline with rows, `add_rows` on table/checklist, and an
+empty `unfinished` list.
 
 ### UI verification done in this VM
 

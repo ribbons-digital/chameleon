@@ -179,6 +179,8 @@ describe('schema round-trip', () => {
     expect(byName.add_widget).toMatch(/No items yet/)
     expect(byName.add_widget).toMatch(/groupByField/)
     expect(byName.add_widget).toMatch(/config\.markdown/)
+    expect(byName.add_widget).toMatch(/\bnext\b/)
+    expect(byName.describe_current_state).toMatch(/unfinished/)
     expect(byName.bind_data).toMatch(/add_rows/)
     expect(byName.bind_data).toMatch(/No rows yet/)
     expect(byName.bind_data).toMatch(/checklist/)

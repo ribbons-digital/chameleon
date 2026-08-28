@@ -43,10 +43,47 @@ function summaryForAdd(type: string, title: string): string {
   return `Added ${type} “${title}”`
 }
 
+export function nextAfterAdd(args: {
+  type: string
+  title: string
+  widgetId: string
+  fieldCount: number
+}): { needsRows: boolean; next: string } {
+  const { type, title, widgetId, fieldCount } = args
+  if (type === 'note') {
+    return {
+      needsRows: false,
+      next: 'Note created. Put prose in config.markdown only. Table, kanban, and checklist data belong in add_rows, not in this note.',
+    }
+  }
+  if (type === 'checklist') {
+    return {
+      needsRows: true,
+      next: `REQUIRED next call: add_rows on ${widgetId} with items keyed text/done/due/note. Skip bind_data. "No items yet" means you are not done.`,
+    }
+  }
+  if (type === 'table' && /pipeline|funnel|status board/i.test(title)) {
+    return {
+      needsRows: true,
+      next: `This is a pipeline. remove_widget ${widgetId} and add_widget type=kanban with a select field (key status, stage options) plus a title field, then add_rows. Do not leave a table showing "No rows yet".`,
+    }
+  }
+  if (type !== 'checklist' && fieldCount === 0) {
+    return {
+      needsRows: true,
+      next: `REQUIRED: bind_data on ${widgetId} to define fields, then add_rows. "No rows yet" means you are not done.`,
+    }
+  }
+  return {
+    needsRows: type !== 'chart',
+    next: `REQUIRED next call: add_rows on ${widgetId} with real rows. "No rows yet" means you are not done.`,
+  }
+}
+
 export const addWidget = makeTool({
   name: 'add_widget',
   description:
-    'Creates one widget and returns its id. Types: table, kanban, checklist, chart, note, form. A pipeline or status board MUST be kanban, not a table: pass a select field (default key status, with stage options) plus a title field, or set config.groupByField to your select key. After add_widget of table, kanban, or form, the next call is add_rows (or bind_data then add_rows if you omitted fields). Checklist: skip bind_data; add_rows with text / done / due / note. Notes hold prose in config.markdown only — never dump rows or checklist items there. "No rows yet" / "No items yet" means add_rows is still required. Omit position to auto-place.',
+    'Creates one widget and returns widgetId plus next — a required follow-up. Pipeline or status board → type kanban (select groupByField, default key status), never a table. After table/kanban/form/checklist, next is add_rows (or bind_data then add_rows if you omitted fields). Checklist: skip bind_data; add_rows with text / done / due / note. Notes: config.markdown prose only, never rows. Stopping at "No rows yet" / "No items yet" is a failed run. Omit position to auto-place.',
   input: AddWidgetInput,
   handler: (input) => {
     const state = useBoardStore.getState()
@@ -99,7 +136,18 @@ export const addWidget = makeTool({
       },
     )
 
-    return ok({ widgetId, position })
+    const created = defaultDataset(input.type, fields)
+    const fieldCount = created?.fields.length ?? 0
+    return ok({
+      widgetId,
+      position,
+      ...nextAfterAdd({
+        type: input.type,
+        title: input.title,
+        widgetId,
+        fieldCount,
+      }),
+    })
   },
 })
 

@@ -17,7 +17,7 @@ export const DescribeInput = z
 export const describeCurrentState = makeTool({
   name: 'describe_current_state',
   description:
-    'Returns the full ground-truth snapshot of the board: title, theme, every widget (id, type, title, grid position, config, data field schema, row count, up to 3 sample rows), minted tools if any, the last 10 activity-log entries including human hand-edits, and stateVersion. Call this before your first mutation and again whenever a tool reports a stale or missing id. This is the only tool that shows you what the human has changed. rowCount 0 on a table, kanban, or checklist (empty states "No rows yet" / "No items yet") means add_rows was skipped — finish those widgets before stopping.',
+    'Returns the board snapshot plus unfinished: every table/kanban/checklist/form with 0 rows. If unfinished is not empty, call add_rows (or bind_data then add_rows) before you stop — "No rows yet" / "No items yet" is a failed run. Also: title, theme, every widget (id, type, title, grid position, config, fields, row count, up to 3 sample rows), minted tools if any, last 10 activity-log entries including human hand-edits, and stateVersion. Call this before your first mutation and again whenever a tool reports a stale or missing id.',
   input: DescribeInput,
   handler: (input) => {
     const snapshot = currentSnapshot(input.include_sample_rows)

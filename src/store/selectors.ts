@@ -96,6 +96,46 @@ export type WidgetSnapshot = {
   lastModified: { at: string; by: Widget['lastModifiedBy'] }
 }
 
+export type UnfinishedWidget = {
+  widgetId: string
+  title: string
+  type: Widget['type']
+  reason: string
+  action: 'add_rows' | 'bind_data'
+}
+
+export function unfinishedWidgets(document: BoardDocument): UnfinishedWidget[] {
+  return document.widgets.flatMap((widget) => {
+    if (widget.type === 'note' || widget.type === 'chart') return []
+    const dataset = effectiveDataset(widget, document.widgets)
+    const rowCount = dataset?.rows.length ?? 0
+    const fieldCount = dataset?.fields.length ?? 0
+    if (rowCount > 0) return []
+    if (widget.type !== 'checklist' && fieldCount === 0) {
+      return [
+        {
+          widgetId: widget.id,
+          title: widget.title,
+          type: widget.type,
+          reason: 'No fields yet. Call bind_data, then add_rows.',
+          action: 'bind_data' as const,
+        },
+      ]
+    }
+    const empty =
+      widget.type === 'checklist' ? 'No items yet' : 'No rows yet'
+    return [
+      {
+        widgetId: widget.id,
+        title: widget.title,
+        type: widget.type,
+        reason: `${empty}. Call add_rows before you stop.`,
+        action: 'add_rows' as const,
+      },
+    ]
+  })
+}
+
 export type BoardSnapshot = {
   board: {
     title: string
@@ -103,6 +143,7 @@ export type BoardSnapshot = {
     grid: { cols: number; rowHeightPx: number }
     widgetCount: number
   }
+  unfinished: UnfinishedWidget[]
   widgets: WidgetSnapshot[]
   mintedTools: BoardDocument['mintedTools']
   recentActivity: Array<Omit<ActivityEntry, 'undone'>>
@@ -123,6 +164,7 @@ export function snapshot(
       grid: { cols: LIMITS.gridCols, rowHeightPx: LIMITS.rowHeightPx },
       widgetCount: document.widgets.length,
     },
+    unfinished: unfinishedWidgets(document),
     widgets: document.widgets.map((widget) => {
       const dataset = effectiveDataset(widget, document.widgets)
       const rowCount = dataset?.rows.length ?? 0
