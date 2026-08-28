@@ -12,7 +12,7 @@ export const UndoInput = z
 export const undoBoard = makeTool({
   name: 'undo',
   description:
-    'Reverts the most recent board mutations (human or agent), newest first, up to 10 steps per call. Returns what was undone so you can confirm to the user. Data-destructive operations (remove_widget, delete_rows) are fully restored including rows. There is no redo — re-apply changes with the normal tools if the user changes their mind.',
+    'Reverts the most recent board mutations, human or agent, newest first, up to 10 steps. Returns what was undone. Removed widgets, rows, and minted tools are fully restored and re-registered when applicable. There is no redo; reapply changes with the normal tools if needed.',
   input: UndoInput,
   handler: (input) => {
     const undone: Array<{

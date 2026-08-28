@@ -1,13 +1,13 @@
 import { z } from 'zod'
 import { fieldSchema, parseRowValues, type RowIssue } from '../../model/fields'
-import { createRowId } from '../../model/ids'
 import { LIMITS } from '../../model/limits'
 import { migrateRows, uniqueFieldKeys } from '../../model/migrate'
-import type { Actor, ChartConfig, DataSet, Field, FormConfig, KanbanConfig, Row, TableConfig, Widget } from '../../model/types'
+import type { Actor, ChartConfig, DataSet, Field, FormConfig, KanbanConfig, TableConfig, Widget } from '../../model/types'
 import { validateConfig } from '../../model/widgets'
 import { useBoardStore } from '../../store/boardStore'
 import { mutate } from '../../store/mutate'
 import { unfinishedWidgets } from '../../store/selectors'
+import { appendRows } from '../../store/submit'
 import { makeTool } from '../makeTool'
 import { err, ok } from '../result'
 import { Rationale, WidgetId } from '../schemas'
@@ -139,7 +139,12 @@ export const bindData = makeTool({
     }
 
     const previous = widget.dataset?.fields ?? []
+    const remintedTools = useBoardStore
+      .getState()
+      .document.mintedTools.filter((tool) => tool.widgetId === input.widgetId)
+      .map((tool) => tool.toolName)
     let migratedRowCount = 0
+    const timestamp = new Date().toISOString()
     mutate(
       {
         actor: 'agent',
@@ -154,15 +159,28 @@ export const bindData = makeTool({
         migratedRowCount = rows.length
         target.dataset = { fields: structuredClone(fields), rows }
         assignBoundConfig(target, validated.config)
-        stamp(target, 'agent', new Date().toISOString())
+        stamp(target, 'agent', timestamp)
+        for (const record of draft.mintedTools) {
+          if (record.widgetId !== input.widgetId) continue
+          const prefix = record.description.replace(
+            /(?: \(Schema updated \d{4}-\d{2}-\d{2}T[^)]+\.\))+$/,
+            '',
+          )
+          record.description = `${prefix} (Schema updated ${timestamp}.)`
+        }
       },
     )
 
+    const next =
+      widget.type === 'form'
+        ? `RECOMMENDED next call: create_form_tool on ${input.widgetId}. This form now has a reusable submission signature.`
+        : `REQUIRED next call: add_rows on ${input.widgetId}. bind_data only set columns. "No rows yet" means you are not done.`
     return ok({
       widgetId: input.widgetId,
       fields,
       migratedRowCount,
-      next: `REQUIRED next call: add_rows on ${input.widgetId}. bind_data only set columns. "No rows yet" means you are not done.`,
+      remintedTool: remintedTools[0],
+      next,
     })
   },
 })
@@ -174,76 +192,21 @@ export const addRows = makeTool({
   input: AddRowsInput,
   handler: (input) => {
     const widget = findWidget(input.widgetId)
-    if (!widget) {
-      return err('WIDGET_NOT_FOUND', `No widget has id "${input.widgetId}".`)
-    }
-    const dataset = writableDataset(widget)
-    if (!dataset.ok) {
-      return err(dataset.code, dataset.message)
-    }
-    if (dataset.dataset.fields.length === 0) {
-      return err(
-        'NO_FIELDS_BOUND',
-        `Widget "${widget.title}" has no field schema yet. Call bind_data first to define its fields, then call add_rows.`,
-      )
-    }
-    if (dataset.dataset.rows.length + input.rows.length > LIMITS.rowsPerWidget) {
-      return err('LIMIT_EXCEEDED', 'A widget can hold at most 5000 rows.', {
-        limit: 'rowsPerWidget',
-        maximum: LIMITS.rowsPerWidget,
-      })
-    }
-
-    const parsedRows: Record<string, unknown>[] = []
-    const issues: RowIssue[] = []
-    for (const [index, values] of input.rows.entries()) {
-      const parsed = parseRowValues(dataset.dataset.fields, values, {
-        index,
-        partial: false,
-      })
-      if (!parsed.ok) issues.push(...parsed.issues)
-      else parsedRows.push(parsed.values)
-    }
-    if (issues.length > 0) {
-      return err('INVALID_ROWS', 'One or more rows failed field validation.', issues)
-    }
-
-    const rowIds: string[] = []
-    const timestamp = new Date().toISOString()
-    mutate(
-      {
-        actor: 'agent',
-        action: 'add_rows',
-        summary: `Added ${parsedRows.length} row${parsedRows.length === 1 ? '' : 's'} to “${widget.title}”`,
-        rationale: input.rationale,
-      },
-      (draft) => {
-        const target = draft.widgets.find((candidate) => candidate.id === input.widgetId)
-        if (!target || target.type === 'note' || !target.dataset) return
-        for (const values of parsedRows) {
-          const id = createRowId()
-          rowIds.push(id)
-          const row: Row = {
-            _id: id,
-            _createdAt: timestamp,
-            _updatedAt: timestamp,
-            _createdBy: 'agent',
-            ...values,
-          }
-          target.dataset.rows.push(row)
-        }
-        stamp(target, 'agent', timestamp)
-      },
+    const added = appendRows(
+      input.widgetId,
+      input.rows,
+      'agent',
+      `Added ${input.rows.length} row${input.rows.length === 1 ? '' : 's'} to “${widget?.title ?? 'widget'}”`,
+      input.rationale,
     )
-
+    if (!added.ok) {
+      return err(added.code, added.message, added.details)
+    }
     const state = useBoardStore.getState()
-    const rowCount =
-      state.document.widgets.find((candidate) => candidate.id === input.widgetId)
-        ?.dataset?.rows.length ?? 0
     return ok({
       widgetId: input.widgetId,
-      rowIds,
-      rowCount,
+      rowIds: added.rowIds,
+      rowCount: added.rowCount,
       unfinished: unfinishedWidgets(state.document),
     })
   },

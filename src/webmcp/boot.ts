@@ -1,9 +1,11 @@
+import { useBoardStore } from '../store/boardStore'
 import { ToolRegistry } from './registry'
 import {
   detectModelContext,
   WEBMCP_ENABLE_HINT,
   type ModelContextSource,
 } from './modelContext'
+import { syncMintedRegistry, watchMintedTools } from './minted'
 import { STATIC_TOOLS } from './tools'
 
 export type BootResult = {
@@ -14,6 +16,7 @@ export type BootResult = {
 }
 
 let booted: BootResult | undefined
+let stopWatchingMintedTools: (() => void) | undefined
 
 export function getBootResult(): BootResult | undefined {
   return booted
@@ -25,15 +28,16 @@ export async function bootWebmcp(
   if (booted && booted.registry === registry) {
     return booted
   }
+  stopWatchingMintedTools?.()
 
   const { source } = detectModelContext()
-  const registered: string[] = []
 
   for (const tool of STATIC_TOOLS) {
     if (registry.has(tool.name)) continue
     await registry.register(tool)
-    registered.push(tool.name)
   }
+  await syncMintedRegistry(registry, useBoardStore.getState().document)
+  stopWatchingMintedTools = watchMintedTools(registry)
 
   const hosted = Boolean(source)
   if (!hosted) {
@@ -54,5 +58,7 @@ export async function bootWebmcp(
 }
 
 export function resetBootForTests(): void {
+  stopWatchingMintedTools?.()
+  stopWatchingMintedTools = undefined
   booted = undefined
 }

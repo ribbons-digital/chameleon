@@ -74,6 +74,12 @@ export function nextAfterAdd(args: {
       next: `REQUIRED: bind_data on ${widgetId} to define fields, then add_rows. "No rows yet" means you are not done.`,
     }
   }
+  if (type === 'form') {
+    return {
+      needsRows: true,
+      next: `RECOMMENDED next call: create_form_tool on ${widgetId}. The form has fields, so mint its reusable submission signature; use add_rows only to seed data.`,
+    }
+  }
   return {
     needsRows: type !== 'chart',
     next: `REQUIRED next call: add_rows on ${widgetId} with real rows. "No rows yet" means you are not done.`,
@@ -83,7 +89,7 @@ export function nextAfterAdd(args: {
 export const addWidget = makeTool({
   name: 'add_widget',
   description:
-    'Creates one widget and returns widgetId plus next — a required follow-up. Pipeline or status board → type kanban (select groupByField, default key status), never a table. After table/kanban/form/checklist, next is add_rows (or bind_data then add_rows if you omitted fields). Checklist: skip bind_data; add_rows with text / done / due / note. Notes: config.markdown prose only, never rows. Stopping at "No rows yet" / "No items yet" is a failed run. Omit position to auto-place.',
+    'Creates one widget and returns widgetId plus required next. Pipeline/status board: use kanban with a select groupByField, never table. Bind omitted fields for table, kanban, chart, or form. A form with fields should call create_form_tool; use add_rows to seed data. Checklist: skip bind_data, then add_rows with text/done/due/note. Notes use config.markdown only. "No rows yet" or "No items yet" means unfinished. Omit position to auto-place.',
   input: AddWidgetInput,
   handler: (input) => {
     const state = useBoardStore.getState()
@@ -169,7 +175,7 @@ export const UpdateWidgetInput = z
 export const updateWidget = makeTool({
   name: 'update_widget',
   description:
-    "Updates a widget's title, config, and/or position. Only the keys you pass change. Config is deep-merged per key; pass a key with null to clear it. Patch config.markdown for note prose only — notes are not a place to store table, kanban, or checklist data (use add_rows). Does not add or edit rows (add_rows / update_rows) or field schemas (bind_data).",
+    "Updates a widget's title, config, and/or position. Only passed keys change. Config is merged per key; pass null to clear one. Use set_layout for coordinated moves, add_rows or update_rows for data, and bind_data for fields. Patch config.markdown for note prose only. Changing form config does not remint its tool because the field signature is unchanged.",
   input: UpdateWidgetInput,
   handler: (input) => {
     if (
@@ -246,7 +252,7 @@ export const RemoveWidgetInput = z
 export const removeWidget = makeTool({
   name: 'remove_widget',
   description:
-    'Deletes a widget and its data. The human can undo this from the UI, and you can undo it with undo. Other widgets on the board are unchanged.',
+    'Deletes a widget and its data. Any minted tool owned by a form is removed from the registry and persistence. Charts that source the widget remain and show an empty state. Use this only when the whole widget should go; use delete_rows to keep its schema. Undo restores the widget, rows, and minted tools.',
   input: RemoveWidgetInput,
   handler: (input) => {
     const state = useBoardStore.getState()
