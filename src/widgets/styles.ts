@@ -24,4 +24,19 @@ export const widgetStyles = stylex.create({
   placeholder: {
     height: '100%',
   },
+  kanbanBoard: {
+    width: '100%',
+    minHeight: '0',
+    alignItems: 'flex-start',
+  },
+  kanbanColumn: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 'var(--spacing-12)',
+    minWidth: 'var(--spacing-12)',
+    minHeight: '0',
+    padding: 'var(--spacing-2)',
+    backgroundColor: 'var(--color-background-secondary)',
+    borderRadius: 'var(--radius-md)',
+  },
 })

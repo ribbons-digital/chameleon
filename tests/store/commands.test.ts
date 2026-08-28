@@ -78,4 +78,42 @@ describe('board command log', () => {
     expect(version).toBe(0)
     expect(useBoardStore.getState().commands).toHaveLength(0)
   })
+
+  it('does not rewind stateVersion to 0 on reset', () => {
+    useBoardStore.getState().mutate(
+      {
+        actor: 'human',
+        action: 'move_widget',
+        summary: 'Moved a widget',
+      },
+      (draft) => {
+        draft.widgets[0].position.x = 4
+      },
+    )
+    expect(useBoardStore.getState().document.stateVersion).toBe(1)
+    useBoardStore.getState().reset()
+    expect(useBoardStore.getState().document.stateVersion).toBe(1)
+    expect(useBoardStore.getState().document.widgets[0].title).toBe(
+      'A canvas that listens',
+    )
+    expect(useBoardStore.getState().commands).toHaveLength(0)
+  })
+
+  it('records undo as the given actor', () => {
+    useBoardStore.getState().mutate(
+      {
+        actor: 'agent',
+        action: 'update_widget',
+        summary: 'Renamed',
+      },
+      (draft) => {
+        draft.widgets[0].title = 'Renamed'
+      },
+    )
+    useBoardStore.getState().undo('agent')
+    expect(useBoardStore.getState().commands.at(-1)).toMatchObject({
+      action: 'undo',
+      actor: 'agent',
+    })
+  })
 })

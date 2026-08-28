@@ -1,10 +1,13 @@
 import { Card } from '@astryxdesign/core/Card'
 import { Heading } from '@astryxdesign/core/Heading'
 import { HStack } from '@astryxdesign/core/HStack'
+import { IconButton } from '@astryxdesign/core/IconButton'
+import { Text } from '@astryxdesign/core/Text'
 import { Token } from '@astryxdesign/core/Token'
 import { VStack } from '@astryxdesign/core/VStack'
 import type { ReactNode } from 'react'
 import type { Widget } from '../model/types'
+import { humanDeleteWidget } from '../store/human'
 import { widgetStyles } from './styles'
 
 const typeColor: Record<
@@ -34,11 +37,24 @@ export function WidgetShell({
             <Heading level={2} maxLines={1}>
               {widget.title}
             </Heading>
-            <Token
-              size="sm"
-              color={typeColor[widget.type]}
-              label={widget.type}
-            />
+            <HStack gap={1} vAlign="center">
+              <Token
+                size="sm"
+                color={typeColor[widget.type]}
+                label={widget.type}
+              />
+              <IconButton
+                label={`Delete ${widget.title}`}
+                tooltip="Delete widget"
+                size="sm"
+                variant="ghost"
+                icon={<Text>×</Text>}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  humanDeleteWidget(widget.id)
+                }}
+              />
+            </HStack>
           </HStack>
         </header>
         <VStack gap={2} height="100%" xstyle={widgetStyles.body}>

@@ -1,13 +1,24 @@
 import Ajv from 'ajv'
 import { describe, expect, it } from 'vitest'
 import { toDraft7Schema } from '../../src/webmcp/makeTool'
-import { DescribeInput, GetActivityLogInput } from '../../src/webmcp/tools/describe'
+import {
+  DescribeInput,
+  GetActivityLogInput,
+  ReadWidgetDataInput,
+} from '../../src/webmcp/tools/describe'
+import {
+  AddRowsInput,
+  BindDataInput,
+  DeleteRowsInput,
+  UpdateRowsInput,
+} from '../../src/webmcp/tools/data'
+import { UndoInput } from '../../src/webmcp/tools/undo'
 import {
   AddWidgetInput,
   RemoveWidgetInput,
   UpdateWidgetInput,
 } from '../../src/webmcp/tools/widgets'
-import { DAY2_STATIC_TOOLS } from '../../src/webmcp/tools'
+import { STATIC_TOOLS } from '../../src/webmcp/tools'
 
 const ajv = new Ajv({
   allErrors: true,
@@ -32,6 +43,12 @@ const cases = [
       { actor: 'agent', limit: 100 },
     ],
     reject: [{ limit: 0 }, { actor: 'robot' }, { since_seq: -1 }],
+  },
+  {
+    name: 'read_widget_data',
+    schema: ReadWidgetDataInput,
+    accept: [{ widgetId: 'w_abcdef' }, { widgetId: 'w_x8Kd2q', limit: 10, offset: 2 }],
+    reject: [{ widgetId: 'welcome' }, { widgetId: 'w_abcdef', limit: 0 }],
   },
   {
     name: 'add_widget',
@@ -72,6 +89,46 @@ const cases = [
     accept: [{ widgetId: 'w_welcome' }, { widgetId: 'w_first_steps', rationale: 'Cleanup' }],
     reject: [{ widgetId: 'welcome' }, {}],
   },
+  {
+    name: 'bind_data',
+    schema: BindDataInput,
+    accept: [
+      {
+        widgetId: 'w_abcdef',
+        fields: [{ key: 'name', label: 'Name', type: 'text' }],
+      },
+    ],
+    reject: [{ widgetId: 'w_abcdef', fields: [] }, { widgetId: 'bad' }],
+  },
+  {
+    name: 'add_rows',
+    schema: AddRowsInput,
+    accept: [{ widgetId: 'w_abcdef', rows: [{ name: 'Ada' }] }],
+    reject: [{ widgetId: 'w_abcdef', rows: [] }, { widgetId: 'w_abcdef' }],
+  },
+  {
+    name: 'update_rows',
+    schema: UpdateRowsInput,
+    accept: [
+      {
+        widgetId: 'w_abcdef',
+        patches: [{ rowId: 'r_one', set: { name: 'Ada' } }],
+      },
+    ],
+    reject: [{ widgetId: 'w_abcdef', patches: [] }],
+  },
+  {
+    name: 'delete_rows',
+    schema: DeleteRowsInput,
+    accept: [{ widgetId: 'w_abcdef', rowIds: ['r_one'] }],
+    reject: [{ widgetId: 'w_abcdef', rowIds: [] }],
+  },
+  {
+    name: 'undo',
+    schema: UndoInput,
+    accept: [{}, { steps: 3 }],
+    reject: [{ steps: 0 }, { steps: 11 }],
+  },
 ] as const
 
 function hasRef(value: unknown): boolean {
@@ -81,37 +138,28 @@ function hasRef(value: unknown): boolean {
 }
 
 const UNREGISTERED_TOOL_NAMES = [
-  'bind_data',
   'create_form_tool',
   'remove_minted_tool',
-  'add_rows',
-  'update_rows',
-  'delete_rows',
-  'read_widget_data',
   'set_layout',
   'set_theme',
 ]
 
 describe('schema round-trip', () => {
-  it('publishes inline Draft-7 schemas for every Day 2 tool', () => {
-    for (const tool of DAY2_STATIC_TOOLS) {
+  it('publishes inline Draft-7 schemas for every static tool', () => {
+    for (const tool of STATIC_TOOLS) {
       expect(tool.inputSchema).toMatchObject({ type: 'object' })
       expect(hasRef(tool.inputSchema)).toBe(false)
     }
   })
 
   it('does not advertise tools that are not registered', () => {
-    for (const tool of DAY2_STATIC_TOOLS) {
+    const registered = new Set(STATIC_TOOLS.map((tool) => tool.name))
+    for (const tool of STATIC_TOOLS) {
       const published = `${tool.description}\n${JSON.stringify(tool.inputSchema)}`
       for (const name of UNREGISTERED_TOOL_NAMES) {
         expect(published, `${tool.name} mentions ${name}`).not.toContain(name)
       }
-      expect(published.toLowerCase(), `${tool.name} mentions row tools`).not.toContain(
-        'row tools',
-      )
-      expect(published.toLowerCase(), `${tool.name} mentions undo tool`).not.toContain(
-        'undo tool',
-      )
+      expect(registered.has(tool.name)).toBe(true)
     }
   })
 

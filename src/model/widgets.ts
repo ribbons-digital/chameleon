@@ -2,13 +2,23 @@ import { z } from 'zod'
 import { CHECKLIST_FIELDS, fieldsByKey } from './fields'
 import { LIMITS } from './limits'
 import type {
+  Actor,
   ChartConfig,
+  ChartWidget,
   ChecklistConfig,
+  ChecklistWidget,
+  DataSet,
   Field,
   FormConfig,
+  FormWidget,
+  GridPosition,
   KanbanConfig,
+  KanbanWidget,
   NoteConfig,
+  NoteWidget,
   TableConfig,
+  TableWidget,
+  Widget,
   WidgetConfig,
   WidgetType,
 } from './types'
@@ -118,27 +128,35 @@ export function defaultDataset(type: WidgetType, fields?: Field[]) {
 }
 
 function referencedKeys(type: WidgetType, config: WidgetConfig): string[] {
-  if (type === 'table') {
-    const table = config as TableConfig
-    return [
-      ...(table.columnOrder ?? []),
-      ...(table.sort ? [table.sort.field] : []),
-    ]
+  switch (type) {
+    case 'table': {
+      const table = config as TableConfig
+      return [
+        ...(table.columnOrder ?? []),
+        ...(table.sort ? [table.sort.field] : []),
+      ]
+    }
+    case 'kanban': {
+      const kanban = config as KanbanConfig
+      return [
+        kanban.groupByField,
+        kanban.cardTitleField,
+        ...kanban.cardDetailFields,
+      ]
+    }
+    case 'chart': {
+      const chart = config as ChartConfig
+      return [chart.xField, ...chart.yFields].filter((key) => !key.startsWith('_'))
+    }
+    case 'checklist':
+    case 'note':
+    case 'form':
+      return []
+    default: {
+      const _exhaustive: never = type
+      return _exhaustive
+    }
   }
-  if (type === 'kanban') {
-    const kanban = config as KanbanConfig
-    return [
-      kanban.groupByField,
-      kanban.cardTitleField,
-      ...kanban.cardDetailFields,
-    ]
-  }
-  if (type === 'chart') {
-    const chart = config as ChartConfig
-    const keys = [chart.xField, ...chart.yFields]
-    return keys.filter((key) => !key.startsWith('_'))
-  }
-  return []
 }
 
 export function validateConfig(
@@ -161,7 +179,7 @@ export function validateConfig(
     }
   }
 
-  const next = parsed.data as WidgetConfig
+  const next = parsed.data
   const knownFields = fields ?? []
 
   if (type === 'kanban' && knownFields.length > 0) {
@@ -246,24 +264,72 @@ export function mergeConfig(
   return next
 }
 
-export function isNoteConfig(config: WidgetConfig): config is NoteConfig {
-  return 'markdown' in config || 'variant' in config
+export function createWidget(input: {
+  id: string
+  type: WidgetType
+  title: string
+  position: GridPosition
+  config: WidgetConfig
+  dataset: DataSet | null
+  createdAt: string
+  updatedAt: string
+  lastModifiedBy: Actor
+}): Widget {
+  switch (input.type) {
+    case 'note':
+      return {
+        ...input,
+        type: 'note',
+        config: input.config as NoteConfig,
+        dataset: null,
+      } satisfies NoteWidget
+    case 'table':
+      return {
+        ...input,
+        type: 'table',
+        config: input.config as TableConfig,
+        dataset: input.dataset ?? { fields: [], rows: [] },
+      } satisfies TableWidget
+    case 'kanban':
+      return {
+        ...input,
+        type: 'kanban',
+        config: input.config as KanbanConfig,
+        dataset: input.dataset ?? { fields: [], rows: [] },
+      } satisfies KanbanWidget
+    case 'checklist':
+      return {
+        ...input,
+        type: 'checklist',
+        config: input.config as ChecklistConfig,
+        dataset: input.dataset ?? {
+          fields: structuredClone(CHECKLIST_FIELDS),
+          rows: [],
+        },
+      } satisfies ChecklistWidget
+    case 'chart':
+      return {
+        ...input,
+        type: 'chart',
+        config: input.config as ChartConfig,
+        dataset: input.dataset ?? { fields: [], rows: [] },
+      } satisfies ChartWidget
+    case 'form':
+      return {
+        ...input,
+        type: 'form',
+        config: input.config as FormConfig,
+        dataset: input.dataset ?? { fields: [], rows: [] },
+      } satisfies FormWidget
+    default: {
+      const _exhaustive: never = input.type
+      return _exhaustive
+    }
+  }
 }
 
-export function isTableConfig(config: WidgetConfig): config is TableConfig {
-  return 'rowNumbers' in config || 'columnOrder' in config || 'sort' in config
-}
-
-export function isChartConfig(config: WidgetConfig): config is ChartConfig {
-  return 'chartType' in config
-}
-
-export function isFormConfig(config: WidgetConfig): config is FormConfig {
-  return 'submitLabel' in config || 'showRecentSubmissions' in config
-}
-
-export function isChecklistConfig(
-  config: WidgetConfig,
-): config is ChecklistConfig {
-  return 'showCompleted' in config || 'sortBy' in config || 'showProgress' in config
+export function datasetWidget(
+  widget: Widget,
+): Exclude<Widget, NoteWidget> | undefined {
+  return widget.type === 'note' ? undefined : widget
 }

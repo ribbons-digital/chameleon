@@ -3,8 +3,9 @@ import { fieldSchema } from '../../model/fields'
 import { createWidgetId } from '../../model/ids'
 import { autoPlace } from '../../model/layout'
 import { LIMITS } from '../../model/limits'
-import type { Field, Widget } from '../../model/types'
+import type { Field } from '../../model/types'
 import {
+  createWidget,
   defaultConfig,
   defaultDataset,
   mergeConfig,
@@ -31,7 +32,7 @@ export const AddWidgetInput = z
       .max(LIMITS.fieldsPerDataset)
       .optional()
       .describe(
-        'Optional column schema at creation. Pass this when you know the fields for a table, kanban, chart, or form. Rows cannot be added yet.',
+        'Optional column schema at creation. Same as bind_data. Prefer this when you already know the columns.',
       ),
     position: Position.optional(),
     rationale: Rationale,
@@ -45,7 +46,7 @@ function summaryForAdd(type: string, title: string): string {
 export const addWidget = makeTool({
   name: 'add_widget',
   description:
-    'Creates one widget on the board and returns its id. type is table, kanban, checklist, chart, note, or form. Notes store markdown in config.markdown. That is the only type you can fill with written content today. For table, kanban, chart, and form, pass fields now if you know the columns. Rows cannot be added yet, so those widgets stay empty. Checklist, kanban, chart, and form render as shells until later passes. Omit position to auto-place. Prefer several small focused widgets over one giant one.',
+    'Creates one widget on the board and returns its id. type is table, kanban, checklist, chart, note, or form. Notes store markdown in config.markdown. For table, kanban, chart, and form, pass fields now or call bind_data next. Then use add_rows to fill data. Checklist has a fixed schema (text, done, due, note); skip bind_data and call add_rows. Kanban needs a select field named in config.groupByField. Omit position to auto-place. Prefer several small focused widgets over one giant one.',
   input: AddWidgetInput,
   handler: (input) => {
     const state = useBoardStore.getState()
@@ -83,7 +84,7 @@ export const addWidget = makeTool({
       },
       (draft) => {
         position = autoPlace(draft.widgets, input.type, input.position)
-        const widget: Widget = {
+        const widget = createWidget({
           id: widgetId,
           type: input.type,
           title: input.title,
@@ -93,7 +94,7 @@ export const addWidget = makeTool({
           createdAt: timestamp,
           updatedAt: timestamp,
           lastModifiedBy: 'agent',
-        }
+        })
         draft.widgets.push(widget)
       },
     )
@@ -120,7 +121,7 @@ export const UpdateWidgetInput = z
 export const updateWidget = makeTool({
   name: 'update_widget',
   description:
-    "Updates a widget's title, config, and/or position. Only the keys you pass change. Config is deep-merged per key; pass a key with null to clear it. Change a note's text by patching config.markdown. This does not add rows or change field schemas.",
+    "Updates a widget's title, config, and/or position. Only the keys you pass change. Config is deep-merged per key; pass a key with null to clear it. Change a note's text by patching config.markdown. Does not add or edit data rows (use add_rows / update_rows) or field schemas (use bind_data).",
   input: UpdateWidgetInput,
   handler: (input) => {
     if (
@@ -197,7 +198,7 @@ export const RemoveWidgetInput = z
 export const removeWidget = makeTool({
   name: 'remove_widget',
   description:
-    'Deletes a widget and its data. The human can undo this from the UI. Other widgets on the board are unchanged.',
+    'Deletes a widget and its data. The human can undo this from the UI, and you can undo it with undo. Other widgets on the board are unchanged.',
   input: RemoveWidgetInput,
   handler: (input) => {
     const state = useBoardStore.getState()

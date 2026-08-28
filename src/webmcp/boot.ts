@@ -4,7 +4,7 @@ import {
   WEBMCP_ENABLE_HINT,
   type ModelContextSource,
 } from './modelContext'
-import { DAY2_STATIC_TOOLS } from './tools'
+import { STATIC_TOOLS } from './tools'
 
 export type BootResult = {
   registry: ToolRegistry
@@ -29,7 +29,7 @@ export async function bootWebmcp(
   const { source } = detectModelContext()
   const registered: string[] = []
 
-  for (const tool of DAY2_STATIC_TOOLS) {
+  for (const tool of STATIC_TOOLS) {
     if (registry.has(tool.name)) continue
     await registry.register(tool)
     registered.push(tool.name)
