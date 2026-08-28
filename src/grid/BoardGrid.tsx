@@ -91,7 +91,11 @@ export function BoardGrid() {
           width={width}
           layout={layout}
           gridConfig={{ cols: 12, rowHeight: 44, margin: [16, 16] }}
-          dragConfig={{ handle: '.widget-drag-handle' }}
+          dragConfig={{
+            handle: '.widget-drag-handle',
+            cancel: '.react-resizable-handle',
+          }}
+          resizeConfig={{ enabled: true, handles: ['se'] }}
           onDragStop={(_layout, _oldItem, newItem) =>
             savePosition(newItem, 'move')
           }

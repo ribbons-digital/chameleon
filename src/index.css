@@ -37,3 +37,13 @@ body {
 .widget-drag-handle:active {
   cursor: grabbing;
 }
+
+.react-grid-item > .react-resizable-handle {
+  opacity: 1;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  width: var(--spacing-2);
+  height: var(--spacing-2);
+  border-color: var(--color-text-secondary);
+}
