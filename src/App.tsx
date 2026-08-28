@@ -6,8 +6,15 @@ import { HStack } from '@astryxdesign/core/HStack'
 import { Text } from '@astryxdesign/core/Text'
 import { Token } from '@astryxdesign/core/Token'
 import { VStack } from '@astryxdesign/core/VStack'
-import { Theme } from '@astryxdesign/core/theme'
+import { Theme, type DefinedTheme } from '@astryxdesign/core/theme'
+import { butterTheme } from '@astryxdesign/theme-butter/built'
+import { chocolateTheme } from '@astryxdesign/theme-chocolate/built'
+import { gothicTheme } from '@astryxdesign/theme-gothic/built'
+import { matchaTheme } from '@astryxdesign/theme-matcha/built'
 import { neutralTheme } from '@astryxdesign/theme-neutral/built'
+import { stoneTheme } from '@astryxdesign/theme-stone/built'
+import { y2kTheme } from '@astryxdesign/theme-y2k/built'
+import type { ThemeName } from './model/types'
 import { styles } from './app/styles'
 import { ActivityDrawer } from './components/ActivityDrawer'
 import { AgentPulse } from './components/AgentPulse'
@@ -20,8 +27,21 @@ import {
 } from './webmcp/modelContext'
 import { STATIC_TOOL_NAMES } from './webmcp/tools'
 
+const THEMES: Record<ThemeName, DefinedTheme> = {
+  neutral: neutralTheme,
+  butter: butterTheme,
+  chocolate: chocolateTheme,
+  matcha: matchaTheme,
+  stone: stoneTheme,
+  gothic: gothicTheme,
+  y2k: y2kTheme,
+}
+
 function App() {
   const title = useBoardStore((state) => state.document.title)
+  const boardTheme = useBoardStore(
+    (state) => state.document.theme,
+  )
   const stateVersion = useBoardStore((state) => state.document.stateVersion)
   const commands = useBoardStore((state) => state.commands)
   const undo = useBoardStore((state) => state.undo)
@@ -34,8 +54,9 @@ function App() {
   const toolCount = getBootResult()?.registry.size ?? STATIC_TOOL_NAMES.length
 
   return (
-    <Theme theme={neutralTheme}>
+    <Theme theme={THEMES[boardTheme.name]} mode={boardTheme.mode}>
       <AppShell
+        data-density={boardTheme.density}
         height="auto"
         variant="wash"
         contentPadding={0}

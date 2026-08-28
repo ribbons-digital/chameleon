@@ -24,6 +24,10 @@ export const widgetStyles = stylex.create({
   placeholder: {
     height: '100%',
   },
+  chartHost: {
+    width: '100%',
+    minHeight: 'calc(var(--spacing-10) * 4)',
+  },
   kanbanBoard: {
     width: '100%',
     minHeight: '0',
