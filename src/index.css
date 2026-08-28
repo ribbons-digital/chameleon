@@ -41,7 +41,7 @@ body {
 }
 
 .react-grid-item > .react-resizable-handle {
-  opacity: 1;
+  opacity: 1 !important;
   z-index: 20;
   width: var(--spacing-6);
   height: var(--spacing-6);
