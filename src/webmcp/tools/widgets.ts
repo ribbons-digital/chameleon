@@ -25,14 +25,14 @@ export const AddWidgetInput = z
       .record(z.string(), z.unknown())
       .optional()
       .describe(
-        "Type-specific config. If omitted, sensible defaults are used. See each type's schema.",
+        'Type-specific config. Kanban defaults: groupByField "status", cardTitleField "title" — pass those field keys, or override config to match. Notes: config.markdown for prose only.',
       ),
     fields: z
       .array(fieldSchema)
       .max(LIMITS.fieldsPerDataset)
       .optional()
       .describe(
-        'Optional column schema at creation. Same as bind_data. Prefer this when you already know the columns.',
+        'Column schema at creation (same as bind_data). Prefer this when you already know the columns. Fields alone leave "No rows yet" — call add_rows next. For kanban include a select field matching config.groupByField (default key "status") plus a title field (default key "title").',
       ),
     position: Position.optional(),
     rationale: Rationale,
@@ -46,7 +46,7 @@ function summaryForAdd(type: string, title: string): string {
 export const addWidget = makeTool({
   name: 'add_widget',
   description:
-    'Creates one widget on the board and returns its id. type is table, kanban, checklist, chart, note, or form. Notes store markdown in config.markdown. For table, kanban, chart, and form, pass fields now or call bind_data next. Then use add_rows to fill data. Checklist has a fixed schema (text, done, due, note); skip bind_data and call add_rows. Kanban needs a select field named in config.groupByField. Omit position to auto-place. Prefer several small focused widgets over one giant one.',
+    'Creates one widget and returns its id. Types: table, kanban, checklist, chart, note, form. A pipeline or status board MUST be kanban, not a table: pass a select field (default key status, with stage options) plus a title field, or set config.groupByField to your select key. After add_widget of table, kanban, or form, the next call is add_rows (or bind_data then add_rows if you omitted fields). Checklist: skip bind_data; add_rows with text / done / due / note. Notes hold prose in config.markdown only — never dump rows or checklist items there. "No rows yet" / "No items yet" means add_rows is still required. Omit position to auto-place.',
   input: AddWidgetInput,
   handler: (input) => {
     const state = useBoardStore.getState()
@@ -121,7 +121,7 @@ export const UpdateWidgetInput = z
 export const updateWidget = makeTool({
   name: 'update_widget',
   description:
-    "Updates a widget's title, config, and/or position. Only the keys you pass change. Config is deep-merged per key; pass a key with null to clear it. Change a note's text by patching config.markdown. Does not add or edit data rows (use add_rows / update_rows) or field schemas (use bind_data).",
+    "Updates a widget's title, config, and/or position. Only the keys you pass change. Config is deep-merged per key; pass a key with null to clear it. Patch config.markdown for note prose only — notes are not a place to store table, kanban, or checklist data (use add_rows). Does not add or edit rows (add_rows / update_rows) or field schemas (bind_data).",
   input: UpdateWidgetInput,
   handler: (input) => {
     if (

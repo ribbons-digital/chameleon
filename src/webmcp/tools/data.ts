@@ -22,7 +22,13 @@ export const BindDataInput = z
 export const AddRowsInput = z
   .object({
     widgetId: WidgetId,
-    rows: z.array(z.record(z.string(), z.unknown())).min(1).max(LIMITS.rowsPerMutation),
+    rows: z
+      .array(z.record(z.string(), z.unknown()))
+      .min(1)
+      .max(LIMITS.rowsPerMutation)
+      .describe(
+        'Objects keyed by this widget\'s field keys. Checklist keys: text, done, due, note. This is how you fill table/kanban/checklist data — do not put it in a note.',
+      ),
     rationale: Rationale,
   })
   .strict()
@@ -104,7 +110,7 @@ function assignBoundConfig(
 export const bindData = makeTool({
   name: 'bind_data',
   description:
-    'Defines or replaces the field schema of a table, kanban, chart, or form widget. Fields have a key (snake_case), label, and type: text, number, date (yyyy-mm-dd), select (with options), boolean, or url. Existing rows are migrated: kept keys survive, removed keys drop, new keys start empty, select values outside new options clear, and type changes re-coerce or clear. Checklist and note widgets reject this tool. Kanban config.groupByField must remain a select field in the new schema.',
+    'Defines or replaces columns on a table, kanban, chart, or form. Fields: snake_case key, label, type text|number|date (yyyy-mm-dd)|select|boolean|url (select needs options). This does not insert data — call add_rows next. Leaving "No rows yet" is unfinished. Skip this for checklist (fixed keys text, done, due, note — use add_rows) and note. Kanban config.groupByField must stay a select field in the new schema. Existing rows migrate: kept keys survive, removed keys drop, new keys start empty, select values outside new options clear.',
   input: BindDataInput,
   handler: (input) => {
     const widget = findWidget(input.widgetId)
@@ -115,8 +121,8 @@ export const bindData = makeTool({
       return err(
         'WRONG_WIDGET_TYPE',
         widget.type === 'note'
-          ? 'Note widgets have no field schema.'
-          : 'Checklist widgets have a fixed schema (text, done, due, note). Use add_rows instead.',
+          ? 'Note widgets have no field schema. Put prose in config.markdown with update_widget; they have no rows.'
+          : 'Checklist widgets have a fixed schema (text, done, due, note). Skip bind_data and call add_rows.',
       )
     }
     const duplicate = uniqueFieldKeys(input.fields)
@@ -162,7 +168,7 @@ export const bindData = makeTool({
 export const addRows = makeTool({
   name: 'add_rows',
   description:
-    'Appends up to 50 data rows to a table, kanban, chart, checklist, or form widget. Each row is keyed by the widget field keys (checklist: text, done, due, note). Unknown keys are rejected. Values are coerced where safe. Required-field violations fail that row. Returns new row ids in order. Call bind_data first unless this is a checklist or you passed fields at add_widget time.',
+    'Fills a table, kanban, checklist, chart, or form with data. Call this immediately after add_widget (or after bind_data if fields were missing). Do not put that data in a note. A widget showing "No rows yet" or "No items yet" is unfinished — you still need this call. Each row is keyed by field keys (checklist: text, done, due, note). Up to 50 rows. Unknown keys rejected; values coerced where safe; required-field violations fail that row. Returns new row ids.',
   input: AddRowsInput,
   handler: (input) => {
     const widget = findWidget(input.widgetId)
@@ -176,7 +182,7 @@ export const addRows = makeTool({
     if (dataset.dataset.fields.length === 0) {
       return err(
         'NO_FIELDS_BOUND',
-        `Widget "${widget.title}" has no field schema yet. Call bind_data first to define its fields.`,
+        `Widget "${widget.title}" has no field schema yet. Call bind_data first to define its fields, then call add_rows.`,
       )
     }
     if (dataset.dataset.rows.length + input.rows.length > LIMITS.rowsPerWidget) {
@@ -240,7 +246,7 @@ export const addRows = makeTool({
 export const updateRows = makeTool({
   name: 'update_rows',
   description:
-    'Applies partial patches to existing rows by row id (get ids from read_widget_data). Only the keys you pass change. Use this to move kanban cards (patch the group-by field), check off checklist items (patch done), or correct values. Up to 50 patches per call. The call is atomic: if any patch is invalid, none apply.',
+    'Applies partial patches to existing rows by row id (get ids from read_widget_data). Only the keys you pass change. Use this to move kanban cards (patch the group-by field), check off checklist items (patch done), or correct values. To add new data, use add_rows — not a note. Up to 50 patches per call. The call is atomic: if any patch is invalid, none apply.',
   input: UpdateRowsInput,
   handler: (input) => {
     const widget = findWidget(input.widgetId)

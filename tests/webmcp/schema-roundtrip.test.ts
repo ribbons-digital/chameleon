@@ -163,6 +163,27 @@ describe('schema round-trip', () => {
     }
   })
 
+  it('steers pipelines to kanban and empty widgets to add_rows', () => {
+    const byName = Object.fromEntries(
+      STATIC_TOOLS.map((tool) => [tool.name, tool.description]),
+    )
+    expect(byName.add_widget).toMatch(/pipeline/i)
+    expect(byName.add_widget).toMatch(/kanban/)
+    expect(byName.add_widget).toMatch(/add_rows/)
+    expect(byName.add_widget).toMatch(/No rows yet/)
+    expect(byName.add_widget).toMatch(/No items yet/)
+    expect(byName.add_widget).toMatch(/groupByField/)
+    expect(byName.add_widget).toMatch(/config\.markdown/)
+    expect(byName.bind_data).toMatch(/add_rows/)
+    expect(byName.bind_data).toMatch(/No rows yet/)
+    expect(byName.bind_data).toMatch(/checklist/)
+    expect(byName.add_rows).toMatch(/No rows yet/)
+    expect(byName.add_rows).toMatch(/No items yet/)
+    expect(byName.add_rows).toMatch(/note/)
+    expect(byName.update_widget).toMatch(/add_rows/)
+    expect(byName.describe_current_state).toMatch(/add_rows/)
+  })
+
   for (const testCase of cases) {
     it(`accepts and rejects the same inputs as Zod for ${testCase.name}`, () => {
       const json = toDraft7Schema(testCase.schema)

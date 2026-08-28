@@ -17,7 +17,7 @@ export const DescribeInput = z
 export const describeCurrentState = makeTool({
   name: 'describe_current_state',
   description:
-    'Returns the full ground-truth snapshot of the board: title, theme, every widget (id, type, title, grid position, config, data field schema, row count, up to 3 sample rows), minted tools if any, the last 10 activity-log entries including human hand-edits, and stateVersion. Call this before your first mutation and again whenever a tool reports a stale or missing id. This is the only tool that shows you what the human has changed.',
+    'Returns the full ground-truth snapshot of the board: title, theme, every widget (id, type, title, grid position, config, data field schema, row count, up to 3 sample rows), minted tools if any, the last 10 activity-log entries including human hand-edits, and stateVersion. Call this before your first mutation and again whenever a tool reports a stale or missing id. This is the only tool that shows you what the human has changed. rowCount 0 on a table, kanban, or checklist (empty states "No rows yet" / "No items yet") means add_rows was skipped — finish those widgets before stopping.',
   input: DescribeInput,
   handler: (input) => {
     const snapshot = currentSnapshot(input.include_sample_rows)
@@ -40,7 +40,7 @@ export const ReadWidgetDataInput = z
 export const readWidgetData = makeTool({
   name: 'read_widget_data',
   description:
-    "Returns rows of one widget's dataset with pagination. Use when you need more than the 3 sample rows from describe_current_state — for example to compute a summary, find a row id to update, or check what the human typed. Rows include _id, _createdAt, and _updatedAt. Note widgets have no dataset.",
+    "Returns rows of one widget's dataset with pagination. Use when you need more than the 3 sample rows from describe_current_state — for example to compute a summary, find a row id to update, or check what the human typed. Rows include _id, _createdAt, and _updatedAt. Note widgets have no dataset. An empty row list on a table, kanban, or checklist is unfinished work; call add_rows.",
   input: ReadWidgetDataInput,
   handler: (input) => {
     const state = useBoardStore.getState()

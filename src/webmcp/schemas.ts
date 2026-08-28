@@ -28,11 +28,8 @@ export const Position = z
     'Grid placement on a 12-column grid. One row unit is ~40px. Omit to auto-place below existing widgets.',
   )
 
-export const WidgetTypeEnum = z.enum([
-  'table',
-  'kanban',
-  'checklist',
-  'chart',
-  'note',
-  'form',
-])
+export const WidgetTypeEnum = z
+  .enum(['table', 'kanban', 'checklist', 'chart', 'note', 'form'])
+  .describe(
+    'table = flat records; kanban = pipeline/status board (needs a select groupByField); checklist = todos via add_rows; note = markdown prose only, not data; chart and form also exist.',
+  )

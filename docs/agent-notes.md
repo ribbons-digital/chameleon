@@ -140,22 +140,63 @@ Until Canary exists, do not change `modelContext.ts` preference order.
 
 ## 2026-08-28 — Day 3 data layer
 
-Shipped on `cursor/day-3-data-layer-952d` after the ChatGPT dinner-party run.
+Shipped on `main` (PR #3, merge `ed39860`; main tip `3f498ec` also includes the
+Day 3 merge commit). The feature branch `cursor/day-3-data-layer-952d` is gone;
+do not recreate it. Day 2 is on `main` as well (PR #2).
 
-**Tools now registered:** the Day 2 five, plus `bind_data`, `add_rows`, `update_rows`, `delete_rows`, `read_widget_data`, `undo`. Live descriptions name those tools. They still do not name `create_form_tool`, `set_layout`, or `set_theme`.
+**Tools now registered:** the Day 2 five, plus `bind_data`, `add_rows`, `update_rows`, `delete_rows`, `read_widget_data`, `undo`. Live descriptions name those tools. They still do not name `create_form_tool`, `set_layout`, `set_theme`, or `remove_minted_tool`.
 
 **Landmines closed while the files were small**
 
 - `Widget` is a `type` discriminant union. Renderers switch on `widget.type`, not duck-typed config.
 - `mutate` runs `produceWithPatches` *before* `set`. A throwing recipe leaves the store unchanged.
-- Persist version 3 drops command-log entries whose inverse patches still mention Day 1 `content`.
+- Persist version 3 drops command-log entries whose inverse patches still mention Day 1 `content`. Persist key remains `chameleon-board-v1`.
 - Reset keeps the current `stateVersion` (does not rewind to 0) and clears the log.
 - Store `undo(actor)` records the caller. The undo tool passes `'agent'`. The header button still defaults to `'human'`.
 
 **UI:** table cells edit through `mutate(actor: 'human')`; checklist and kanban render for real; widget delete, activity list, and an agent toast are wired. Chart and form stay shells.
 
-**Mini-checkpoint (ChatGPT, after deploy):** prompt `track my job search`. Expect a kanban + table with rows, then a hand-edit that shows up in `get_activity_log` / Show activity.
+**Mini-checkpoint (ChatGPT desktop / Sol, after deploy):** Reset canvas, prompt
+`track my job search`. Runtime: ChatGPT desktop built-in browser + GPT-5.6 Sol.
+Header: `11 tools via document` (`document.modelContext`). 1m 44s, state v16,
+6 commands. Luna has WebMCP off; do not test on chatgpt.com Sites or regular
+Chrome.
 
+| Widget | Type | What landed |
+|---|---|---|
+| Job search command center | note | Real content |
+| Interview preparation | note | Real content |
+| Application pipeline | table | Fields exist; empty-state **No rows yet** |
+| People and contacts | table | Empty |
+| Checklist | checklist | **No items yet** |
+| Workspace tips | table | Seed **What happens next** renamed (last command: Updated “What happens next”) |
+
+No kanban. No `add_rows`. Same bias as the Day 2 dinner-party run
+(`docs/day-2-chatgpt-dinner-party.png`): structure without data. Notes held the
+real content; tables and the checklist stayed hollow.
+
+Day 3 EOD bar was: kanban + table with rows, then a human edit visible in
+`get_activity_log`. Structure landed; data did not.
+
+**Description changes made from this run** (live tool strings only, not
+`docs/01-tool-spec.md`, not the human prompt):
+
+- `add_widget`: a pipeline / status board must be kanban (select `groupByField`,
+  default key `status`), not an empty table. After table / kanban / form, the
+  next call is `add_rows` (or `bind_data` then `add_rows` if fields were
+  omitted). Checklist: skip `bind_data`; `add_rows` with text / done / due /
+  note. Notes are prose in `config.markdown` only. “No rows yet” / “No items
+  yet” means `add_rows` is still required.
+- `bind_data`: schema only — then `add_rows`. Skip on checklist and note.
+- `add_rows`: the fill tool; empty states are unfinished work.
+- `update_widget` / `describe_current_state` / `read_widget_data`: do not dump
+  rows into notes; `rowCount` 0 is unfinished.
+- Still do not name `create_form_tool`, `set_layout`, `set_theme`, or
+  `remove_minted_tool`.
+
+**Next check:** hard-refresh the live URL, Reset canvas, re-run `track my job
+search`. Expect a kanban pipeline with a select status, `add_rows` on
+table/kanban/checklist, and no “No rows yet” / “No items yet” leftovers.
 
 ### UI verification done in this VM
 
