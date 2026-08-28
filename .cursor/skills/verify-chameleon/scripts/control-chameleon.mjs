@@ -442,15 +442,21 @@ async function doctor(flags) {
   )
 }
 
+function noteEditor(page) {
+  const named = page.getByRole('textbox', { name: 'Note markdown' })
+  const textarea = page.locator('textarea')
+  return named.or(textarea).first()
+}
+
 async function editNote(page, flags) {
   if (!flags.name || flags.name === true) fail('Missing --name')
   if (!flags.markdown || flags.markdown === true) fail('Missing --markdown')
   const card = widgetCard(page, flags.name)
   await card.waitFor({ state: 'visible' })
-  const editor = page.getByRole('textbox', { name: 'Note markdown', exact: true })
+  const editor = noteEditor(page)
   if (!(await editor.isVisible().catch(() => false))) {
-    const body = card.locator('header.widget-drag-handle ~ *').first()
-    await body.click()
+    const markdown = card.getByRole('document').or(card.locator('p')).first()
+    await markdown.click()
   }
   await editor.waitFor({ state: 'visible' })
   await editor.fill(String(flags.markdown))

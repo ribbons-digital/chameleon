@@ -87,6 +87,7 @@ Stable handles:
 | Version line | `state vN · M commands` |
 | Unhosted token | `11 tools ready` |
 | Unhosted banner | `WebMCP not detected in this browser` |
+| Banner dismiss | button `Dismiss` |
 | Delete widget | button `Delete A canvas that listens` |
 | Add table row | button `Add row` |
 | Note editor | textbox `Note markdown` |
