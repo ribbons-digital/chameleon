@@ -9,6 +9,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { LIMITS } from '../model/limits'
 import type {
+  Actor,
   BoardDocument,
   Command,
   MutationMeta,
@@ -19,6 +20,12 @@ enablePatches()
 
 const now = () => new Date().toISOString()
 
+function commandPatchesAreSafe(command: Command): boolean {
+  return !command.inversePatches.some((patch) =>
+    patch.path.includes('content'),
+  )
+}
+
 type BoardStore = {
   document: BoardDocument
   commands: Command[]
@@ -27,7 +34,7 @@ type BoardStore = {
     meta: MutationMeta,
     recipe: (draft: Draft<BoardDocument>) => void,
   ) => number
-  undo: () => Command | undefined
+  undo: (actor?: Actor) => Command | undefined
   reset: () => void
   setHydrated: (hydrated: boolean) => void
   resetHumanEditCount: () => number
@@ -41,11 +48,14 @@ export const useBoardStore = create<BoardStore>()(
       hydrated: false,
 
       mutate: (meta, recipe) => {
-        let nextVersion = get().document.stateVersion
-        set((state) => {
-          const [document, patches, inversePatches] = produceWithPatches(
-            state.document,
-            (draft) => {
+        const current = get()
+        let nextVersion = current.document.stateVersion
+        let document: BoardDocument
+        let inversePatches: Command['inversePatches']
+        try {
+          const produced = produceWithPatches(
+            current.document,
+            (draft: Draft<BoardDocument>) => {
               recipe(draft)
               if (meta.actor === 'human') {
                 draft.humanEditsSinceLastDescribe += 1
@@ -53,33 +63,37 @@ export const useBoardStore = create<BoardStore>()(
               draft.stateVersion += 1
             },
           )
-          const meaningful = patches.filter(
+          document = produced[0]
+          inversePatches = produced[2]
+          const meaningful = produced[1].filter(
             (patch) =>
               patch.path[0] !== 'stateVersion' &&
               patch.path[0] !== 'humanEditsSinceLastDescribe',
           )
           if (meaningful.length === 0) {
-            return state
+            return nextVersion
           }
-          nextVersion = document.stateVersion
-          const command: Command = {
-            ...meta,
-            seq: nextVersion,
-            at: now(),
-            inversePatches,
-            undone: false,
-          }
-          return {
-            document,
-            commands: [...state.commands, command].slice(
-              -LIMITS.commandLogEntries,
-            ),
-          }
+        } catch {
+          return nextVersion
+        }
+        nextVersion = document.stateVersion
+        const command: Command = {
+          ...meta,
+          seq: nextVersion,
+          at: now(),
+          inversePatches,
+          undone: false,
+        }
+        set({
+          document,
+          commands: [...current.commands, command].slice(
+            -LIMITS.commandLogEntries,
+          ),
         })
         return nextVersion
       },
 
-      undo: () => {
+      undo: (actor: Actor = 'human') => {
         const state = get()
         const index = state.commands.findLastIndex(
           (command) => !command.undone && command.action !== 'undo',
@@ -100,7 +114,7 @@ export const useBoardStore = create<BoardStore>()(
           commands.push({
             seq: version,
             at: now(),
-            actor: 'human',
+            actor,
             action: 'undo',
             summary: `Undid: ${target.summary}`,
             inversePatches: [],
@@ -114,11 +128,15 @@ export const useBoardStore = create<BoardStore>()(
         return target
       },
 
-      reset: () =>
+      reset: () => {
+        const version = get().document.stateVersion
+        const document = structuredClone(initialDocument)
+        document.stateVersion = version
         set({
-          document: structuredClone(initialDocument),
+          document,
           commands: [],
-        }),
+        })
+      },
       setHydrated: (hydrated) => set({ hydrated }),
       resetHumanEditCount: () => {
         const current = get().document.humanEditsSinceLastDescribe
@@ -133,7 +151,7 @@ export const useBoardStore = create<BoardStore>()(
     }),
     {
       name: 'chameleon-board-v1',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
       partialize: ({ document, commands }) => ({ document, commands }),
       migrate: (persisted) => {
@@ -141,9 +159,10 @@ export const useBoardStore = create<BoardStore>()(
           document?: unknown
           commands?: Command[]
         }
+        const commands = Array.isArray(raw.commands) ? raw.commands : []
         return {
           document: migrateDocument(raw.document),
-          commands: Array.isArray(raw.commands) ? raw.commands : [],
+          commands: commands.filter(commandPatchesAreSafe),
         }
       },
       onRehydrateStorage: () => (state) => state?.setHydrated(true),

@@ -6,19 +6,18 @@ import { TextArea } from '@astryxdesign/core/TextArea'
 import { VStack } from '@astryxdesign/core/VStack'
 import { useState } from 'react'
 import { LIMITS } from '../model/limits'
-import type { NoteConfig, Widget } from '../model/types'
+import type { NoteConfig, NoteWidget as NoteWidgetModel } from '../model/types'
 import { mutate } from '../store/mutate'
 import { widgetStyles } from './styles'
 
-function noteConfig(widget: Widget): NoteConfig {
-  const config = widget.config as NoteConfig
+function noteConfig(widget: NoteWidgetModel): NoteConfig {
   return {
-    markdown: config.markdown ?? '',
-    variant: config.variant ?? 'plain',
+    markdown: widget.config.markdown ?? '',
+    variant: widget.config.variant ?? 'plain',
   }
 }
 
-export function NoteWidget({ widget }: { widget: Widget }) {
+export function NoteWidget({ widget }: { widget: NoteWidgetModel }) {
   const config = noteConfig(widget)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(config.markdown)
@@ -41,7 +40,7 @@ export function NoteWidget({ widget }: { widget: Widget }) {
         const target = board.widgets.find(
           (candidate) => candidate.id === widget.id,
         )
-        if (!target) return
+        if (!target || target.type !== 'note') return
         target.config = { ...noteConfig(target), markdown: value }
         target.updatedAt = new Date().toISOString()
         target.lastModifiedBy = 'human'

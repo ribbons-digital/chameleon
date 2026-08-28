@@ -1,34 +1,117 @@
+import { Button } from '@astryxdesign/core/Button'
+import { CheckboxInput } from '@astryxdesign/core/CheckboxInput'
 import { EmptyState } from '@astryxdesign/core/EmptyState'
+import { IconButton } from '@astryxdesign/core/IconButton'
 import { Table, proportional, useTableRowIndex } from '@astryxdesign/core/Table'
 import { Text } from '@astryxdesign/core/Text'
+import { TextInput } from '@astryxdesign/core/TextInput'
+import { VStack } from '@astryxdesign/core/VStack'
 import type { TableColumn } from '@astryxdesign/core/Table'
-import type { Field, Row, TableConfig, Widget } from '../model/types'
+import { useState } from 'react'
+import type { Field, Row, TableWidget } from '../model/types'
+import {
+  formatCell,
+  humanAddBlankRow,
+  humanDeleteRow,
+  humanUpdateCell,
+} from '../store/human'
 import { widgetStyles } from './styles'
 
 type TableRow = Row & Record<string, unknown>
 
-function formatValue(field: Field, value: unknown): string {
-  if (value === undefined || value === null || value === '') return ''
-  if (field.type === 'boolean') return value ? 'Yes' : 'No'
-  return String(value)
+function CellEditor({
+  widgetId,
+  row,
+  field,
+}: {
+  widgetId: string
+  row: TableRow
+  field: Field
+}) {
+  const [editing, setEditing] = useState(false)
+  const current = row[field.key]
+  const [draft, setDraft] = useState(current === undefined || current === null ? '' : String(current))
+
+  if (field.type === 'boolean') {
+    return (
+      <CheckboxInput
+        label={field.label}
+        isLabelHidden
+        value={Boolean(current)}
+        onChange={(isChecked) => {
+          humanUpdateCell(widgetId, row._id, field, isChecked)
+        }}
+      />
+    )
+  }
+
+  if (!editing) {
+    const display = formatCell(field, row)
+    return (
+      <Button
+        label={display || 'Edit'}
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          setDraft(display)
+          setEditing(true)
+        }}
+      />
+    )
+  }
+
+  return (
+    <TextInput
+      label={field.label}
+      isLabelHidden
+      size="sm"
+      value={draft}
+      hasAutoFocus
+      width="100%"
+      onChange={setDraft}
+      onEnter={() => {
+        humanUpdateCell(widgetId, row._id, field, draft === '' ? undefined : draft)
+        setEditing(false)
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') setEditing(false)
+      }}
+    />
+  )
 }
 
-export function TableWidget({ widget }: { widget: Widget }) {
-  const config = widget.config as TableConfig
-  const fields = widget.dataset?.fields ?? []
-  const rows = (widget.dataset?.rows ?? []) as TableRow[]
-
+export function TableWidgetView({ widget }: { widget: TableWidget }) {
+  const config = widget.config
+  const fields = widget.dataset.fields
+  const rows = widget.dataset.rows as TableRow[]
   const orderedFields = orderFields(fields, config.columnOrder)
   const sortedRows = sortRows(rows, orderedFields, config.sort)
 
-  const columns: TableColumn<TableRow>[] = orderedFields.map((field) => ({
-    key: field.key,
-    header: field.label,
-    width: proportional(1),
-    renderCell: (item) => (
-      <Text maxLines={2}>{formatValue(field, item[field.key])}</Text>
-    ),
-  }))
+  const columns: TableColumn<TableRow>[] = [
+    ...orderedFields.map((field) => ({
+      key: field.key,
+      header: field.label,
+      width: proportional(1),
+      renderCell: (item: TableRow) => (
+        <CellEditor widgetId={widget.id} row={item} field={field} />
+      ),
+    })),
+    {
+      key: '_actions',
+      header: '',
+      width: proportional(0.4),
+      renderCell: (item: TableRow) => (
+        <IconButton
+          label={`Delete row in ${widget.title}`}
+          tooltip="Delete row"
+          size="sm"
+          variant="ghost"
+          icon={<Text>×</Text>}
+          onClick={() => humanDeleteRow(widget.id, item._id)}
+        />
+      ),
+    },
+  ]
 
   const rowIndex = useTableRowIndex({
     data: sortedRows,
@@ -46,29 +129,35 @@ export function TableWidget({ widget }: { widget: Widget }) {
     )
   }
 
-  if (sortedRows.length === 0) {
-    return (
-      <EmptyState
-        isCompact
-        headingLevel={3}
-        title="No rows yet"
-        description="This table is ready. An agent can add rows, or you can wait for data to land."
-      />
-    )
-  }
-
   return (
-    <Table
-      data={sortedRows}
-      columns={columns}
-      idKey="_id"
-      density="compact"
-      dividers="grid"
-      hasHover
-      textOverflow="truncate"
-      plugins={config.rowNumbers ? { rowIndex } : undefined}
-      xstyle={widgetStyles.tableHost}
-    />
+    <VStack gap={2}>
+      {sortedRows.length === 0 ? (
+        <EmptyState
+          isCompact
+          headingLevel={3}
+          title="No rows yet"
+          description="Add a row, or ask the agent to fill this table."
+        />
+      ) : (
+        <Table
+          data={sortedRows}
+          columns={columns}
+          idKey="_id"
+          density="compact"
+          dividers="grid"
+          hasHover
+          textOverflow="truncate"
+          plugins={config.rowNumbers ? { rowIndex } : undefined}
+          xstyle={widgetStyles.tableHost}
+        />
+      )}
+      <Button
+        label="Add row"
+        variant="secondary"
+        size="sm"
+        onClick={() => humanAddBlankRow(widget.id)}
+      />
+    </VStack>
   )
 }
 
@@ -87,7 +176,7 @@ function orderFields(fields: Field[], columnOrder?: string[]): Field[] {
 function sortRows(
   rows: TableRow[],
   fields: Field[],
-  sort?: TableConfig['sort'],
+  sort?: TableWidget['config']['sort'],
 ): TableRow[] {
   if (!sort) return rows
   const field = fields.find((candidate) => candidate.key === sort.field)

@@ -138,6 +138,25 @@ by hand`) are unchanged. There is still no row tool, so that is expected.
 
 Until Canary exists, do not change `modelContext.ts` preference order.
 
+## 2026-08-28 — Day 3 data layer
+
+Shipped on `cursor/day-3-data-layer-952d` after the ChatGPT dinner-party run.
+
+**Tools now registered:** the Day 2 five, plus `bind_data`, `add_rows`, `update_rows`, `delete_rows`, `read_widget_data`, `undo`. Live descriptions name those tools. They still do not name `create_form_tool`, `set_layout`, or `set_theme`.
+
+**Landmines closed while the files were small**
+
+- `Widget` is a `type` discriminant union. Renderers switch on `widget.type`, not duck-typed config.
+- `mutate` runs `produceWithPatches` *before* `set`. A throwing recipe leaves the store unchanged.
+- Persist version 3 drops command-log entries whose inverse patches still mention Day 1 `content`.
+- Reset keeps the current `stateVersion` (does not rewind to 0) and clears the log.
+- Store `undo(actor)` records the caller. The undo tool passes `'agent'`. The header button still defaults to `'human'`.
+
+**UI:** table cells edit through `mutate(actor: 'human')`; checklist and kanban render for real; widget delete, activity list, and an agent toast are wired. Chart and form stay shells.
+
+**Mini-checkpoint (ChatGPT, after deploy):** prompt `track my job search`. Expect a kanban + table with rows, then a hand-edit that shows up in `get_activity_log` / Show activity.
+
+
 ### UI verification done in this VM
 
 - Default board: note + table both render (markdown / Astryx Table).

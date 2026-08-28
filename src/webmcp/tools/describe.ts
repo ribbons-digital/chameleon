@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import { useBoardStore } from '../../store/boardStore'
-import { activityEntries, currentSnapshot } from '../../store/selectors'
+import { activityEntries, currentSnapshot, effectiveDataset } from '../../store/selectors'
 import { makeTool } from '../makeTool'
-import { ok } from '../result'
+import { err, ok } from '../result'
+import { WidgetId } from '../schemas'
 
 export const DescribeInput = z
   .object({
@@ -24,6 +25,44 @@ export const describeCurrentState = makeTool({
     return ok({
       ...snapshot,
       humanEditsSinceLastDescribe: humanEdits,
+    })
+  },
+})
+
+export const ReadWidgetDataInput = z
+  .object({
+    widgetId: WidgetId,
+    limit: z.number().int().min(1).max(200).default(50),
+    offset: z.number().int().min(0).default(0),
+  })
+  .strict()
+
+export const readWidgetData = makeTool({
+  name: 'read_widget_data',
+  description:
+    "Returns rows of one widget's dataset with pagination. Use when you need more than the 3 sample rows from describe_current_state — for example to compute a summary, find a row id to update, or check what the human typed. Rows include _id, _createdAt, and _updatedAt. Note widgets have no dataset.",
+  input: ReadWidgetDataInput,
+  handler: (input) => {
+    const state = useBoardStore.getState()
+    const widget = state.document.widgets.find(
+      (candidate) => candidate.id === input.widgetId,
+    )
+    if (!widget) {
+      return err('WIDGET_NOT_FOUND', `No widget has id "${input.widgetId}".`)
+    }
+    if (widget.type === 'note') {
+      return err(
+        'WRONG_WIDGET_TYPE',
+        'Note widgets have no dataset. Read config.markdown from describe_current_state instead.',
+      )
+    }
+    const dataset = effectiveDataset(widget, state.document.widgets)
+    const rows = dataset?.rows ?? []
+    return ok({
+      widgetId: widget.id,
+      fields: dataset?.fields ?? [],
+      total: rows.length,
+      rows: rows.slice(input.offset, input.offset + input.limit),
     })
   },
 })
