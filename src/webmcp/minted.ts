@@ -42,7 +42,7 @@ function schemaForField(field: Field): z.ZodType {
       schema = z.boolean()
       break
     case 'url':
-      schema = z.url()
+      schema = z.string().url()
       break
     default: {
       const _exhaustive: never = field.type
@@ -57,7 +57,7 @@ function schemaForField(field: Field): z.ZodType {
 }
 
 export function deriveSubmissionSchema(fields: Field[]): z.ZodObject {
-  const shape: z.ZodRawShape = {}
+  const shape: Record<string, z.ZodType> = {}
   for (const field of fields) {
     shape[field.key] = schemaForField(field)
   }
