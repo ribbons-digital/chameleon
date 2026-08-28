@@ -18,11 +18,13 @@ Built for the [OpenAI WebMCP Challenge](https://webmcp.devpost.com/) (deadline S
 
 ## Status
 
-**Day 1 foundation is live.** The Vite/React/Astryx application now has a persisted
+**Day 2 tool surface is live.** The Vite/React/Astryx application now has a persisted
 Zustand + Immer board, a complete human/agent command-log mutation gate, inverse-patch undo,
-and a draggable/resizable react-grid-layout canvas. Custom StyleX styles compile through the
-official `@stylexjs/unplugin` Vite integration and are passed to Astryx via `xstyle`.
-Implementation continues following `docs/04-build-plan.md` day by day.
+a draggable/resizable react-grid-layout canvas, WebMCP tool registration
+(`document.modelContext` with `navigator.modelContext` fallback), and the first five tools
+(`describe_current_state`, `get_activity_log`, `add_widget`, `update_widget`,
+`remove_widget`). Note and table widgets render for real. Implementation continues
+following `docs/04-build-plan.md` day by day.
 
 | Doc | Contents |
 |---|---|

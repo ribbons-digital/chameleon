@@ -1,0 +1,100 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`describe_current_state > matches a stable snapshot of the default board 1`] = `
+{
+  "board": {
+    "grid": {
+      "cols": 12,
+      "rowHeightPx": 40,
+    },
+    "theme": {
+      "density": "comfortable",
+      "mode": "light",
+      "name": "neutral",
+    },
+    "title": "Untitled workspace",
+    "widgetCount": 2,
+  },
+  "humanEditsSinceLastDescribe": 0,
+  "mintedTools": [],
+  "ok": true,
+  "recentActivity": [],
+  "stateVersion": 0,
+  "widgets": [
+    {
+      "config": {
+        "markdown": "Tell your agent what you are working on. Chameleon will turn this quiet space into the software you need.",
+        "variant": "plain",
+      },
+      "fields": null,
+      "id": "w_welcome",
+      "lastModified": {
+        "at": "2026-08-28T00:00:00.000Z",
+        "by": "agent",
+      },
+      "mintedTools": [],
+      "position": {
+        "h": 5,
+        "w": 5,
+        "x": 0,
+        "y": 0,
+      },
+      "rowCount": 0,
+      "sampleRows": [],
+      "title": "A canvas that listens",
+      "type": "note",
+    },
+    {
+      "config": {
+        "rowNumbers": true,
+      },
+      "fields": [
+        {
+          "key": "step",
+          "label": "Step",
+          "required": true,
+          "type": "text",
+        },
+      ],
+      "id": "w_first_steps",
+      "lastModified": {
+        "at": "2026-08-28T00:00:00.000Z",
+        "by": "agent",
+      },
+      "mintedTools": [],
+      "position": {
+        "h": 5,
+        "w": 7,
+        "x": 5,
+        "y": 0,
+      },
+      "rowCount": 3,
+      "sampleRows": [
+        {
+          "_createdAt": "2026-08-28T00:00:00.000Z",
+          "_createdBy": "agent",
+          "_id": "r_step_one",
+          "_updatedAt": "2026-08-28T00:00:00.000Z",
+          "step": "Your agent reads the board",
+        },
+        {
+          "_createdAt": "2026-08-28T00:00:00.000Z",
+          "_createdBy": "agent",
+          "_id": "r_step_two",
+          "_updatedAt": "2026-08-28T00:00:00.000Z",
+          "step": "Widgets appear live",
+        },
+        {
+          "_createdAt": "2026-08-28T00:00:00.000Z",
+          "_createdBy": "agent",
+          "_id": "r_step_three",
+          "_updatedAt": "2026-08-28T00:00:00.000Z",
+          "step": "You keep editing by hand",
+        },
+      ],
+      "title": "What happens next",
+      "type": "table",
+    },
+  ],
+}
+`;
