@@ -228,9 +228,33 @@ each call.
 - `describe_current_state` returns `unfinished` (empty tables/checklists)
   at the top of the snapshot.
 
-**Next check:** hard-refresh, Reset canvas, re-run `track my job search`.
-Expect a kanban pipeline with rows, `add_rows` on table/checklist, and an
-empty `unfinished` list.
+**Next check (done):** hard-refresh, Reset canvas, re-run `track my job
+search`. Screenshot: `docs/day-3-chatgpt-job-search-rows.png`.
+
+**Pass (ChatGPT desktop / Sol, after `next` / `unfinished` payloads):**
+header still `11 tools via document`. Footer: state v31 · 9 commands
+(reset kept v22; nine more mutations). Latest: Added 3 rows to “People
+and conversations”. Sol recap mentioned starter data, not just shells.
+
+| Widget | Type | What landed |
+|---|---|---|
+| Job search command center | note | Weekly targets in markdown |
+| Application pipeline | table | Company / Role; 3 starter rows (not empty) |
+| This week | checklist | 4 items with due dates; 0 of 4 done |
+| People and conversations | table | Contact / Company; 3 starter rows |
+| Interview preparation | note | Before/after conversation bullets |
+| Workspace tips | table | Seed rows; still present |
+
+`add_rows` fired. “No rows yet” / “No items yet” are gone. Checklist used
+the fixed schema (`text` / due dates). Tables have human-editable starter
+rows instead of hollow shells.
+
+Still no kanban: Application pipeline is a two-column table, not cards
+grouped by a select status. Day 3 EOD bar wanted kanban + table with
+rows. Data landed; the pipeline type did not. Leave it — do not paper
+over by changing the human prompt, and do not keep tightening copy now
+that Sol fills rows. Revisit kanban on a later checkpoint if a pipeline
+prompt still comes back as a table.
 
 ### UI verification done in this VM
 
