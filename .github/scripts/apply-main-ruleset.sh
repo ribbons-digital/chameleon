@@ -19,7 +19,6 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
-REPO_ID="$(gh api "repos/${REPO}" --jq '.id')"
 DEFAULT_BRANCH="$(gh api "repos/${REPO}" --jq '.default_branch')"
 CI_PATH=".github/workflows/ci.yml"
 
@@ -28,19 +27,6 @@ if ! gh api "repos/${REPO}/contents/${CI_PATH}?ref=${DEFAULT_BRANCH}" --jq '.pat
   exit 1
 fi
 
-PAYLOAD="$(
-  jq --argjson repo_id "${REPO_ID}" '
-    .rules |= map(
-      if .type == "workflows" then
-        .parameters.workflows |= map(.repository_id = $repo_id)
-      else
-        .
-      end
-    )
-  ' "${PAYLOAD_FILE}"
-)"
-
-# gh api --jq takes a single expression. Pipe to jq for --arg.
 EXISTING_ID="$(
   gh api "repos/${REPO}/rulesets" \
     | jq -r --arg name "${RULESET_NAME}" '.[] | select(.name == $name) | .id' \
@@ -49,10 +35,10 @@ EXISTING_ID="$(
 
 if [[ -n "${EXISTING_ID}" ]]; then
   echo "Updating ruleset ${EXISTING_ID} (${RULESET_NAME}) on ${REPO}"
-  echo "${PAYLOAD}" | gh api --method PUT "repos/${REPO}/rulesets/${EXISTING_ID}" --input -
+  gh api --method PUT "repos/${REPO}/rulesets/${EXISTING_ID}" --input "${PAYLOAD_FILE}"
 else
   echo "Creating ruleset ${RULESET_NAME} on ${REPO}"
-  echo "${PAYLOAD}" | gh api --method POST "repos/${REPO}/rulesets" --input -
+  gh api --method POST "repos/${REPO}/rulesets" --input "${PAYLOAD_FILE}"
 fi
 
 echo

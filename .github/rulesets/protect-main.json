@@ -39,19 +39,6 @@
           }
         ]
       }
-    },
-    {
-      "type": "workflows",
-      "parameters": {
-        "do_not_enforce_on_create": false,
-        "workflows": [
-          {
-            "path": ".github/workflows/ci.yml",
-            "ref": "refs/heads/main",
-            "repository_id": 1349225079
-          }
-        ]
-      }
     }
   ]
 }
