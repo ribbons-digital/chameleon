@@ -296,3 +296,18 @@ in the same command, so undo reverts both. Companions are same-title
 widgets, or a form/table pair whose field keys match (Ryan's Canary
 board: table "Blood Sugar Log" + form "Log New Reading"). Hard refresh
 after deploy, then submit from Log New Reading and confirm the table.
+
+### ChatGPT Sol still does not mint
+
+Ryan confirmed Canary form submit now copies onto the table. The same
+diabetes prompt in ChatGPT's browser still stays at 15 tools with no ⚡.
+
+Cause: Sol builds a Blood Sugar Log **table** (plus a chart) and never a
+form. Our earlier steering only fired after a form existed. `unfinished`
+treated a filled table as done, so add_rows was a stop.
+
+Log-titled tables now stay unfinished with action `create_form_tool` until
+something is minted. `add_widget` / `bind_data` `next` for those tables
+says add a form then mint. An empty form nexts bind_data then
+create_form_tool, not add_rows. Hard-refresh the ChatGPT Chameleon tab
+(not only Canary), Reset canvas, re-run the diabetes prompt.

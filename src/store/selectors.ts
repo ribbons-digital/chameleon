@@ -11,6 +11,10 @@ import type {
 } from '../model/types'
 import { useBoardStore } from './boardStore'
 
+export function isRepeatedLogTitle(title: string): boolean {
+  return /blood[\s-]?sugar|glucose|diabetes|readings?|\blog\b/i.test(title)
+}
+
 export function effectiveDataset(
   widget: Widget,
   widgets: Widget[],
@@ -137,6 +141,21 @@ export function unfinishedWidgets(document: BoardDocument): UnfinishedWidget[] {
         })
         continue
       }
+      continue
+    }
+    if (
+      widget.type === 'table' &&
+      isRepeatedLogTitle(widget.title) &&
+      document.mintedTools.length === 0
+    ) {
+      unfinished.push({
+        widgetId: widget.id,
+        title: widget.title,
+        type: widget.type,
+        reason:
+          'Repeated log has no minted tool. add_widget type=form with these fields, then create_form_tool. Filling this table is not a substitute.',
+        action: 'create_form_tool',
+      })
       continue
     }
     if (rowCount > 0) continue

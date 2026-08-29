@@ -146,6 +146,40 @@ describe('add_widget', () => {
     expect(result.next).toMatch(/add_rows does not mint/)
   })
 
+  it('steers a blood sugar table toward a form and create_form_tool', async () => {
+    const result = await executeTool(addWidget, {
+      type: 'table',
+      title: 'Blood Sugar Log',
+      fields: [
+        { key: 'date', label: 'Date', type: 'date', required: true },
+        { key: 'glucose', label: 'Glucose', type: 'number', required: true },
+      ],
+    })
+    expect(result.ok).toBe(true)
+    expect(result.next).toMatch(/type=form/)
+    expect(result.next).toMatch(/create_form_tool/)
+    expect(result.unfinished).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: 'Blood Sugar Log',
+          type: 'table',
+          action: 'create_form_tool',
+        }),
+      ]),
+    )
+  })
+
+  it('requires bind_data then create_form_tool after an empty form', async () => {
+    const result = await executeTool(addWidget, {
+      type: 'form',
+      title: 'Log New Reading',
+    })
+    expect(result.ok).toBe(true)
+    expect(result.next).toMatch(/bind_data/)
+    expect(result.next).toMatch(/create_form_tool/)
+    expect(result.next).not.toMatch(/then add_rows/)
+  })
+
   it('rejects invalid input', async () => {
     const result = await executeTool(addWidget, { type: 'note' })
     expect(result.ok).toBe(false)

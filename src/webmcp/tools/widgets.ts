@@ -13,6 +13,10 @@ import {
 } from '../../model/widgets'
 import { mutate } from '../../store/mutate'
 import { useBoardStore } from '../../store/boardStore'
+import {
+  isRepeatedLogTitle,
+  unfinishedWidgets,
+} from '../../store/selectors'
 import { makeTool } from '../makeTool'
 import { err, ok } from '../result'
 import { Position, Rationale, WidgetId, WidgetTypeEnum } from '../schemas'
@@ -66,6 +70,18 @@ export function nextAfterAdd(args: {
     return {
       needsRows: true,
       next: `This is a pipeline. remove_widget ${widgetId} and add_widget type=kanban with a select field (key status, stage options) plus a title field, then add_rows. Do not leave a table showing "No rows yet".`,
+    }
+  }
+  if (type === 'table' && isRepeatedLogTitle(title)) {
+    return {
+      needsRows: true,
+      next: `This is a repeated log. REQUIRED next: add_widget type=form with the reading fields${fieldCount > 0 ? ` matching ${widgetId}` : ''}, then create_form_tool. add_rows on this table does not mint a tool.`,
+    }
+  }
+  if (type === 'form' && fieldCount === 0) {
+    return {
+      needsRows: true,
+      next: `REQUIRED: bind_data on ${widgetId} to define fields, then create_form_tool. add_rows does not mint a tool.`,
     }
   }
   if (type !== 'checklist' && fieldCount === 0) {
@@ -144,6 +160,7 @@ export const addWidget = makeTool({
 
     const created = defaultDataset(input.type, fields)
     const fieldCount = created?.fields.length ?? 0
+    const stateAfter = useBoardStore.getState()
     return ok({
       widgetId,
       position,
@@ -153,6 +170,7 @@ export const addWidget = makeTool({
         widgetId,
         fieldCount,
       }),
+      unfinished: unfinishedWidgets(stateAfter.document),
     })
   },
 })

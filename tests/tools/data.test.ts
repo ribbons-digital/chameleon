@@ -115,6 +115,28 @@ describe('bind_data', () => {
     expect(result.next).toMatch(/create_form_tool/)
     expect(result.next).not.toMatch(/add_rows on /)
   })
+
+  it('steers binding a blood sugar table toward a form and mint', async () => {
+    await executeTool(addWidget, { type: 'table', title: 'Blood Sugar Log' })
+    const widgetId = useBoardStore.getState().document.widgets[0].id
+    const result = await executeTool(bindData, {
+      widgetId,
+      fields: [
+        { key: 'glucose', label: 'Glucose', type: 'number', required: true },
+      ],
+    })
+    expect(result.ok).toBe(true)
+    expect(result.next).toMatch(/type=form/)
+    expect(result.next).toMatch(/create_form_tool/)
+    expect(result.unfinished).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: 'Blood Sugar Log',
+          action: 'create_form_tool',
+        }),
+      ]),
+    )
+  })
 })
 
 describe('add_rows / update_rows / delete_rows', () => {

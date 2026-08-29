@@ -5,6 +5,7 @@ import {
   describeCurrentState,
   getActivityLog,
 } from '../../src/webmcp/tools/describe'
+import { addRows } from '../../src/webmcp/tools/data'
 import { addWidget } from '../../src/webmcp/tools/widgets'
 import { executeTool, emptyBoard, resetBoard } from '../helpers'
 
@@ -126,6 +127,30 @@ describe('describe_current_state', () => {
       expect.objectContaining({
         title: 'Blood sugar log',
         type: 'form',
+        action: 'create_form_tool',
+      }),
+    ])
+  })
+
+  it('keeps a filled blood sugar table unfinished until a form is minted', async () => {
+    resetBoard(emptyBoard())
+    await executeTool(addWidget, {
+      type: 'table',
+      title: 'Blood Sugar Log',
+      fields: [
+        { key: 'glucose', label: 'Glucose', type: 'number', required: true },
+      ],
+    })
+    const widgetId = useBoardStore.getState().document.widgets[0].id
+    await executeTool(addRows, {
+      widgetId,
+      rows: [{ glucose: 102 }],
+    })
+    const result = await executeTool(describeCurrentState, {})
+    expect(result.unfinished).toEqual([
+      expect.objectContaining({
+        title: 'Blood Sugar Log',
+        type: 'table',
         action: 'create_form_tool',
       }),
     ])

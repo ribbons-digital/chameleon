@@ -6,7 +6,7 @@ import type { Actor, ChartConfig, DataSet, Field, FormConfig, KanbanConfig, Tabl
 import { validateConfig } from '../../model/widgets'
 import { useBoardStore } from '../../store/boardStore'
 import { mutate } from '../../store/mutate'
-import { unfinishedWidgets } from '../../store/selectors'
+import { unfinishedWidgets, isRepeatedLogTitle } from '../../store/selectors'
 import { appendRows } from '../../store/submit'
 import { makeTool } from '../makeTool'
 import { err, ok } from '../result'
@@ -174,13 +174,16 @@ export const bindData = makeTool({
     const next =
       widget.type === 'form'
         ? `REQUIRED next call: create_form_tool on ${input.widgetId}. add_rows does not mint a tool.`
-        : `REQUIRED next call: add_rows on ${input.widgetId}. bind_data only set columns. "No rows yet" means you are not done.`
+        : widget.type === 'table' && isRepeatedLogTitle(widget.title)
+          ? `This is a repeated log. REQUIRED next: add_widget type=form with these fields, then create_form_tool. add_rows on this table does not mint a tool.`
+          : `REQUIRED next call: add_rows on ${input.widgetId}. bind_data only set columns. "No rows yet" means you are not done.`
     return ok({
       widgetId: input.widgetId,
       fields,
       migratedRowCount,
       remintedTool: remintedTools[0],
       next,
+      unfinished: unfinishedWidgets(useBoardStore.getState().document),
     })
   },
 })
