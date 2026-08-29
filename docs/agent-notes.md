@@ -328,3 +328,72 @@ invalid and Card's 16px still inherits. Reset is now `0px` (same as
 Astryx Section). The table stack also has `paddingBlockStart={4}` so
 any leftover bleed is absorbed inside the table, not under the title.
 Hard-refresh after deploy.
+
+## 2026-08-29 — Canary 154 + inspector (this VM)
+
+Ryan asked to install Chrome Canary, load the Model Context Tool Inspector, and
+run the Day 5 dress rehearsal plus a live ErrorCode audit.
+
+**What this VM can do now.** `google-chrome-unstable` 154.0.8025.0 is installed.
+`--enable-features=WebMCP,WebMCPTesting,DevToolsWebMCPSupport` turns on
+`document.modelContext` without clicking `chrome://flags`. Header on the live
+URL is `15 tools via document`. Banner is absent. Chrome 154 `executeTool`
+takes a `RegisteredTool` from `getTools()` plus a **JSON string** of arguments
+(an object throws `Failed to parse input arguments`). The result is a
+stringified MCP `{ content: [{ type: "text", text: "<envelope>" }] }`.
+
+Branded Chrome 137+ ignores `--load-extension`. The inspector loaded with CDP
+`Extensions.loadUnpacked` after `--enable-unsafe-extension-debugging`.
+Extension id `peflhdkmkjckmcmejpfmnpmikgdhhdel`, source
+`/tmp/model-context-tool-inspector` (Google's repo, v1.9.14). Side panel
+`open()` needs a user gesture. Pinning the W icon and clicking it works.
+
+**Item 1 (demo script).** Walked `docs/05-demo-script.md` twice through
+`document.modelContext.executeTool` on the live URL. Both walks: empty start,
+wedding widgets + layout, activity log, reset, job-search + dark compact,
+reset, health form + chart, `create_form_tool` → `log_blood_sugar`, minted call,
+reload (tool still listed), second minted call, undo. Wall clock ~2.9s each.
+That is the Canary fallback in the script, not a timed ChatGPT Sol take.
+ChatGPT desktop is still Ryan-only. 2:50 with the agent sidebar visible is
+not something this VM can record.
+
+**Item 2 (error codes).** Triggered every `ErrorCode` except `INTERNAL` (it did
+not happen). Each hint recovered when followed:
+
+| Code | Recovery that worked |
+|---|---|
+| INVALID_INPUT | Retry `add_widget` with the missing `title` |
+| INVALID_CONFIG | `describe_current_state`, then note config `variant: plain` |
+| INVALID_ROWS | Fix the typed field and retry `add_rows` |
+| WIDGET_NOT_FOUND | `describe_current_state`, then a live id |
+| WRONG_WIDGET_TYPE | `describe_current_state`, `bind_data` on a table not a note |
+| ROW_NOT_FOUND | `read_widget_data`, copy `_id` into `update_rows` |
+| NO_FIELDS_BOUND | `bind_data`, then `add_rows` |
+| FIELD_NOT_FOUND | `describe_current_state`, sort on a listed key |
+| RESERVED_NAME | Mint `log_blood_sugar` instead of `add_widget` |
+| NAME_TAKEN | `remove_minted_tool`, then mint again |
+| TOOL_NOT_FOUND | `describe_current_state` lists minted names |
+| NO_CHANGES | Pass a title on `update_widget` |
+| NOTHING_TO_UNDO | Hint is correct after Reset. Empty log. Stop. |
+| DUPLICATE_ID | `set_layout` with each widget once |
+| LIMIT_EXCEEDED | `remove_widget` after 24 notes, then `add_widget` |
+
+No hint rewrite. Raw log: `.audit/canary-error-audit.tsv` and
+`.audit/canary-dress-rehearsal.json`. Re-run:
+`.cursor/skills/verify-chameleon/scripts/webmcp-canary-audit.mjs`.
+
+Inspector UI also executed `describe_current_state` with `{}` on the empty
+board and got `ok: true`, `widgetCount: 0`.
+
+## 2026-08-29 — ChatGPT browser: Part 1 and Part 2 passed
+
+Ryan ran the same two parts in ChatGPT's desktop-app browser on the live URL
+and both passed.
+
+Part 1 is the demo rehearsal: wedding planner, job search, health log with
+`create_form_tool` / `log_blood_sugar`, reload, undo. Part 2 is the live
+ErrorCode audit with hint recovery.
+
+This VM still cannot drive ChatGPT. The Canary mechanical walk is backup.
+The ChatGPT path that judges will use is now verified by Ryan, not inferred.
+No hint rewrite from that session. Feature freeze is still his call.
