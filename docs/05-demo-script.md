@@ -41,3 +41,11 @@ job-search time-lapse (1:10–1:30) first — it's the generality beat, not the 
 If ChatGPT's browser misbehaves on recording day, record the same script in Chrome Canary with
 the Model Context Tool Inspector docked right (tools visibly appearing/disappearing at mint time
 is arguably an even better visual for beat 1:42). Decision made at the day-5 dress rehearsal.
+
+## Day 6 recording
+
+Shot in this VM with Chrome 154 (`document.modelContext.executeTool`) plus a HUD that lists
+tool names as they fire. Voiceover is a neural read of the table above. Output:
+`public/demo.mp4` (1080p, 2:24). Re-record with
+`.cursor/skills/verify-chameleon/scripts/record-day6-demo.mjs` if the live URL changes how
+widgets look. This is the Canary fallback, not ChatGPT's agent sidebar.

@@ -2,13 +2,25 @@
 
 ## 1. Hard requirements (verify each, twice: Day 6 and Day 7 morning)
 
-- [ ] **Live HTTPS URL** (Cloudflare Workers) — loads in a clean profile; testable in ChatGPT's
+- [x] **Live HTTPS URL** (Cloudflare Workers) — loads in a clean profile; testable in ChatGPT's
       desktop browser; shows the WebMCP-not-detected banner gracefully in stable Chrome.
+      https://chameleon-webmcp.ryan-970.workers.dev
 - [ ] **YouTube video**: public (not unlisted), <3:00, audible voiceover, playable logged-out.
-- [ ] **Public GitHub repo** with the license visible (GitHub shows "MIT license" in the header —
+      File is ready: `public/demo.mp4` (1080p, 2:24, voiceover). Hosted at
+      https://chameleon-webmcp.ryan-970.workers.dev/demo.mp4 until the YouTube watch URL exists.
+      Upload that file as Public on YouTube and paste the watch URL here and on Devpost.
+- [x] **Public GitHub repo** with the license visible (GitHub shows "MIT license" in the header —
       requires the file be named `LICENSE` at root with standard text).
-- [ ] **Devpost text** — four required sections below, pasted and formatted.
+      https://github.com/ribbons-digital/chameleon
+- [x] **Devpost text** — four required sections below, pasted and formatted.
+      Copy from §5. Gallery stills: `docs/gallery/03-mint.png` first, then wedding, job search,
+      health, activity.
 - [ ] Submitted (not draft) by **11:00am PDT Sep 3** — self-imposed 2h buffer.
+
+**Day 6 (2026-08-29).** Tagged `v1.0.0`. Demo recorded on Chrome 154 with `document.modelContext`
+(the Canary fallback in docs/05; this VM cannot drive ChatGPT's sidebar). Neural voiceover is
+on the file. Remaining human steps: YouTube upload + Devpost form. The live URL and repo are
+judge-ready without those two.
 
 ## 2. License decision
 
@@ -116,7 +128,8 @@ before tools could be registered by the page, at runtime, from client state.
   badge, activity-drawer screenshot. First image = minting freeze-frame (it's the differentiator).
 - **Built with**: webmcp, react, typescript, vite, zod, zustand, recharts, cloudflare-workers, astryx, stylex
 - **"Try it out" links**: live URL + GitHub repo.
-- Video URL: the public YouTube link.
+- Video URL: the public YouTube link (upload `public/demo.mp4`; until then the file plays at
+  https://chameleon-webmcp.ryan-970.workers.dev/demo.mp4).
 
 ## 7. Judge-proofing checklist (Day 7 morning, clean machine)
 

@@ -2,11 +2,13 @@
 
 **Software that grows its own API.** Chameleon is a near-blank web page that an AI agent turns into working software. A wedding planner, a job-search tracker, or a health log can appear live in conversation, using [WebMCP](https://github.com/webmachinelearning/webmcp) (`document.modelContext` / `navigator.modelContext`) layout, data, and styling tools built on a six-widget grammar: table, kanban, checklist, chart, note, and form.
 
+![The minting moment: create_form_tool registers log_blood_sugar and the header goes to 16 tools.](docs/demo-mint.gif)
+
 When the agent builds a form and calls `create_form_tool`, Chameleon registers a new WebMCP tool such as `log_blood_sugar`. That tool's input schema comes from the form's fields. The page's tool list grows as the agent builds, and minted tools persist across reloads. You can drag, resize, and edit everything by hand. Every mutation, human or agent, lands in one command log that powers undo and gives the agent ground truth. There is no backend and no auth. All state stays in the browser.
 
 Built for the [OpenAI WebMCP Challenge](https://webmcp.devpost.com/) (deadline Sep 3, 2026).
 
-[MIT](LICENSE) · live app: [chameleon-webmcp.ryan-970.workers.dev](https://chameleon-webmcp.ryan-970.workers.dev)
+[MIT](LICENSE) · live app: [chameleon-webmcp.ryan-970.workers.dev](https://chameleon-webmcp.ryan-970.workers.dev) · demo: [2:24 video](https://chameleon-webmcp.ryan-970.workers.dev/demo.mp4)
 
 ## Try it with an agent
 
@@ -87,6 +89,12 @@ flowchart LR
 ```
 
 Human drags and agent tool calls share one Immer `produceWithPatches` gate. That gate writes the command log, inverse-patch undo, and `stateVersion`. Persist version is 3. Do not bump it unless the document shape changes.
+
+## Demo video
+
+[1080p, 2:24, with voiceover](https://chameleon-webmcp.ryan-970.workers.dev/demo.mp4). Chrome 154 walks the Day 5 script: wedding planner, human edits on the same command log, a dark job-search board, then `create_form_tool` minting `log_blood_sugar`. Devpost needs that file as a public YouTube link. Upload `public/demo.mp4` as Public (not Unlisted) and paste the watch URL into the submission form.
+
+Gallery stills for Devpost live in [docs/gallery](docs/gallery). First image is the mint freeze-frame.
 
 ## Docs
 
