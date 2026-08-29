@@ -384,3 +384,16 @@ No hint rewrite. Raw log: `.audit/canary-error-audit.tsv` and
 
 Inspector UI also executed `describe_current_state` with `{}` on the empty
 board and got `ok: true`, `widgetCount: 0`.
+
+## 2026-08-29 — ChatGPT browser: Part 1 and Part 2 passed
+
+Ryan ran the same two parts in ChatGPT's desktop-app browser on the live URL
+and both passed.
+
+Part 1 is the demo rehearsal: wedding planner, job search, health log with
+`create_form_tool` / `log_blood_sugar`, reload, undo. Part 2 is the live
+ErrorCode audit with hint recovery.
+
+This VM still cannot drive ChatGPT. The Canary mechanical walk is backup.
+The ChatGPT path that judges will use is now verified by Ryan, not inferred.
+No hint rewrite from that session. Feature freeze is still his call.
