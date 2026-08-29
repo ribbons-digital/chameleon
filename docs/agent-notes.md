@@ -291,6 +291,8 @@ sets the HTML `required` attribute) with no React error banner. The form
 now uses `noValidate` and reads `FormData` so a number still in the input
 is not lost if React state is one event behind.
 
-`appendRows` now copies a validated row onto every other form or table
-with the same title, in the same command, so undo reverts both. Hard
-refresh after deploy, then submit from the form and confirm the table.
+`appendRows` copies a validated row onto companion form/table widgets
+in the same command, so undo reverts both. Companions are same-title
+widgets, or a form/table pair whose field keys match (Ryan's Canary
+board: table "Blood Sugar Log" + form "Log New Reading"). Hard refresh
+after deploy, then submit from Log New Reading and confirm the table.

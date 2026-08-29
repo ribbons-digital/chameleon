@@ -20,7 +20,7 @@ const logFields = [
   },
 ] as const
 
-describe('form submissions onto a same-title table', () => {
+describe('form submissions onto a companion table', () => {
   beforeEach(() => {
     resetBoard(emptyBoard())
   })
@@ -54,15 +54,56 @@ describe('form submissions onto a same-title table', () => {
     expect(table?.dataset?.rows[0].context).toBe('after meal')
   })
 
-  it('copies add_rows on the table back onto the same-title form', async () => {
+  it('copies Log New Reading onto Blood Sugar Log when fields match', async () => {
+    const readingFields = [
+      { key: 'date', label: 'Date', type: 'date', required: true },
+      {
+        key: 'timing',
+        label: 'Timing',
+        type: 'select',
+        required: true,
+        options: ['Fasting', 'Post-Lunch', 'Bedtime'],
+      },
+      { key: 'glucose', label: 'Glucose (mg/dL)', type: 'number', required: true },
+    ]
+    await executeTool(addWidget, {
+      type: 'table',
+      title: 'Blood Sugar Log',
+      fields: readingFields,
+    })
     await executeTool(addWidget, {
       type: 'form',
-      title: 'Blood sugar log',
+      title: 'Log New Reading',
+      fields: readingFields,
+    })
+    const tableId = useBoardStore.getState().document.widgets[0].id
+    const formId = useBoardStore.getState().document.widgets[1].id
+    const result = submitFormValues(formId, {
+      date: '2026-08-29',
+      timing: 'Fasting',
+      glucose: 104,
+    })
+    expect(result.ok).toBe(true)
+    const table = useBoardStore
+      .getState()
+      .document.widgets.find((widget) => widget.id === tableId)
+    expect(table?.dataset?.rows).toHaveLength(1)
+    expect(table?.dataset?.rows[0]).toMatchObject({
+      date: '2026-08-29',
+      timing: 'Fasting',
+      glucose: 104,
+    })
+  })
+
+  it('copies add_rows on the table back onto the companion form', async () => {
+    await executeTool(addWidget, {
+      type: 'form',
+      title: 'Log New Reading',
       fields: [...logFields],
     })
     await executeTool(addWidget, {
       type: 'table',
-      title: 'Blood sugar log',
+      title: 'Blood Sugar Log',
       fields: [...logFields],
     })
     const tableId = useBoardStore.getState().document.widgets[1].id
@@ -78,16 +119,19 @@ describe('form submissions onto a same-title table', () => {
     expect(form.dataset?.rows[0].reading).toBe(96)
   })
 
-  it('does not copy onto a differently titled table', async () => {
+  it('does not copy onto a table with unrelated fields', async () => {
     await executeTool(addWidget, {
       type: 'form',
-      title: 'Blood sugar log',
+      title: 'Log New Reading',
       fields: [...logFields],
     })
     await executeTool(addWidget, {
       type: 'table',
       title: 'Medications',
-      fields: [...logFields],
+      fields: [
+        { key: 'drug', label: 'Drug', type: 'text', required: true },
+        { key: 'dose', label: 'Dose', type: 'text' },
+      ],
     })
     const formId = useBoardStore.getState().document.widgets[0].id
     submitFormValues(formId, { reading: 110, context: 'fasting' })

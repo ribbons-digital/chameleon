@@ -108,16 +108,19 @@ function SubmissionField({
       )
     case 'date':
       return (
-        <DateInput
-          label={field.label}
-          description={field.description}
-          value={dateValue(value)}
-          onChange={onChange}
-          format="system_date"
-          hasClear
-          width="100%"
-          {...optionality}
-        />
+        <>
+          <DateInput
+            label={field.label}
+            description={field.description}
+            value={dateValue(value)}
+            onChange={onChange}
+            format="system_date"
+            hasClear
+            width="100%"
+            {...optionality}
+          />
+          <input type="hidden" name={field.key} value={textValue(value)} />
+        </>
       )
     case 'select':
       if (field.required) {
