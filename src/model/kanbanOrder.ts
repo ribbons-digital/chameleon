@@ -12,6 +12,35 @@ export function columnValueOf(
   return String(value)
 }
 
+export type DropCardRect = {
+  id: string
+  top: number
+  height: number
+}
+
+/** Insert index among the other cards in a column (excluding the dragged card). */
+export function dropInsertIndex(args: {
+  others: DropCardRect[]
+  clientY: number
+  /** Index of the dragged card in this column, or -1 if it is not in this column. */
+  currentIndex: number
+}): number {
+  const { others, clientY, currentIndex } = args
+  const hoveredIdx = others.findIndex(
+    (card) => clientY >= card.top && clientY <= card.top + card.height,
+  )
+  if (hoveredIdx >= 0 && currentIndex >= 0) {
+    const hoveredFullIndex = hoveredIdx < currentIndex ? hoveredIdx : hoveredIdx + 1
+    if (currentIndex > hoveredFullIndex) return hoveredIdx
+    return hoveredIdx + 1
+  }
+  for (let index = 0; index < others.length; index += 1) {
+    const mid = others[index].top + others[index].height / 2
+    if (clientY < mid) return index
+  }
+  return others.length
+}
+
 export function placeRowInColumn(
   rows: Row[],
   rowId: string,

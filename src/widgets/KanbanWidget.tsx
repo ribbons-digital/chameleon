@@ -9,6 +9,7 @@ import { VStack } from '@astryxdesign/core/VStack'
 import { useState } from 'react'
 import {
   columnValueOf,
+  dropInsertIndex,
   KANBAN_UNGROUPED,
 } from '../model/kanbanOrder'
 import type { Field, KanbanWidget as KanbanWidgetModel, Row } from '../model/types'
@@ -53,15 +54,19 @@ function dropIndexFromPoint(
   columnEl: HTMLElement,
   draggingId: string | null,
   clientY: number,
+  currentIndex: number,
 ): number {
-  const cards = [...columnEl.querySelectorAll<HTMLElement>('.kanban-card')].filter(
-    (element) => element.dataset.rowId !== draggingId,
-  )
-  for (let index = 0; index < cards.length; index += 1) {
-    const rect = cards[index].getBoundingClientRect()
-    if (clientY < rect.top + rect.height / 2) return index
-  }
-  return cards.length
+  const others = [...columnEl.querySelectorAll<HTMLElement>('.kanban-card')]
+    .filter((element) => element.dataset.rowId !== draggingId)
+    .map((element) => {
+      const rect = element.getBoundingClientRect()
+      return {
+        id: element.dataset.rowId ?? '',
+        top: rect.top,
+        height: rect.height,
+      }
+    })
+  return dropInsertIndex({ others, clientY, currentIndex })
 }
 
 export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
@@ -130,10 +135,14 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
             onDragOver={(event) => {
               event.preventDefault()
               event.dataTransfer.dropEffect = 'move'
+              const currentIndex = draggingId
+                ? cards.findIndex((candidate) => candidate._id === draggingId)
+                : -1
               const index = dropIndexFromPoint(
                 event.currentTarget,
                 draggingId,
                 event.clientY,
+                currentIndex,
               )
               setDropHint({ column, index })
             }}
@@ -148,10 +157,12 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
               event.preventDefault()
               const rowId = readRowId(event.dataTransfer)
               const row = widget.dataset.rows.find((candidate) => candidate._id === rowId)
+              const currentIndex = cards.findIndex((candidate) => candidate._id === rowId)
               const index = dropIndexFromPoint(
                 event.currentTarget,
                 rowId,
                 event.clientY,
+                currentIndex,
               )
               setDraggingId(null)
               setDropHint(null)

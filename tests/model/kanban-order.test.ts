@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { placeRowInColumn } from '../../src/model/kanbanOrder'
+import { dropInsertIndex, placeRowInColumn } from '../../src/model/kanbanOrder'
 import type { Row } from '../../src/model/types'
 
 function row(id: string, title: string, status?: string): Row {
@@ -56,5 +56,47 @@ describe('placeRowInColumn', () => {
       'a',
       'c',
     ])
+  })
+})
+
+describe('dropInsertIndex', () => {
+  const florist = { id: 'florist', top: 100, height: 40 }
+  const dj = { id: 'dj', top: 148, height: 40 }
+
+  it('moves a lower card up when dropped on the card above, including the center', () => {
+    expect(
+      dropInsertIndex({
+        others: [florist],
+        clientY: florist.top + florist.height / 2,
+        currentIndex: 1,
+      }),
+    ).toBe(0)
+  })
+
+  it('moves an upper card down when dropped on the card below, including the center', () => {
+    expect(
+      dropInsertIndex({
+        others: [dj],
+        clientY: dj.top + dj.height / 2,
+        currentIndex: 0,
+      }),
+    ).toBe(1)
+  })
+
+  it('uses midpoint when the drop is not over a card in this column', () => {
+    expect(
+      dropInsertIndex({
+        others: [florist, dj],
+        clientY: florist.top + florist.height / 2 - 1,
+        currentIndex: -1,
+      }),
+    ).toBe(0)
+    expect(
+      dropInsertIndex({
+        others: [florist, dj],
+        clientY: florist.top + florist.height / 2 + 1,
+        currentIndex: -1,
+      }),
+    ).toBe(1)
   })
 })
