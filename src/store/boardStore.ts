@@ -7,6 +7,7 @@ import {
 } from 'immer'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { boardPersistStorage } from './persistStorage'
 import { LIMITS } from '../model/limits'
 import type {
   Actor,
@@ -152,7 +153,7 @@ export const useBoardStore = create<BoardStore>()(
     {
       name: 'chameleon-board-v1',
       version: 3,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => boardPersistStorage()),
       partialize: ({ document, commands }) => ({ document, commands }),
       migrate: (persisted) => {
         const raw = (persisted ?? {}) as {

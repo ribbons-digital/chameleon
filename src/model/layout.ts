@@ -76,6 +76,28 @@ export function applyLayout(
   }))
 }
 
+export function stackMobileLayout(
+  widgets: Array<{ id: string; position: GridPosition }>,
+): Array<{ i: string; x: number; y: number; w: number; h: number }> {
+  const ordered = [...widgets].sort((left, right) =>
+    left.position.y === right.position.y
+      ? left.position.x - right.position.x
+      : left.position.y - right.position.y,
+  )
+  let y = 0
+  return ordered.map((widget) => {
+    const item = {
+      i: widget.id,
+      x: 0,
+      y,
+      w: 1,
+      h: widget.position.h,
+    }
+    y += widget.position.h
+    return item
+  })
+}
+
 export function autoPlace(
   widgets: Widget[],
   type: WidgetType,
