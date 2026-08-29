@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { initialDocument, useBoardStore } from '../../src/store/boardStore'
+import {
+  createSampleDocument,
+  useBoardStore,
+} from '../../src/store/boardStore'
 
 describe('board command log', () => {
   beforeEach(() => {
     localStorage.clear()
     useBoardStore.setState({
-      document: structuredClone(initialDocument),
+      document: createSampleDocument(),
       commands: [],
       hydrated: true,
     })
@@ -93,9 +96,7 @@ describe('board command log', () => {
     expect(useBoardStore.getState().document.stateVersion).toBe(1)
     useBoardStore.getState().reset()
     expect(useBoardStore.getState().document.stateVersion).toBe(1)
-    expect(useBoardStore.getState().document.widgets[0].title).toBe(
-      'A canvas that listens',
-    )
+    expect(useBoardStore.getState().document.widgets).toHaveLength(0)
     expect(useBoardStore.getState().commands).toHaveLength(0)
   })
 

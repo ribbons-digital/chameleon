@@ -1,15 +1,15 @@
 ---
 name: verify-chameleon
-description: Drive the Chameleon Vite/React canvas the way a user does. Open the seeded workspace, drag and resize widgets, edit a note or table cell, undo, reset, and prove localStorage persistence. Use when proving a Chameleon UI change, before claiming a board mutation works, or when a PR touches src/App.tsx, src/grid, src/store, or src/widgets.
+description: Drive the Chameleon Vite/React canvas the way a user does. Open the empty workspace, load the sample board, drag and resize widgets, edit a note or table cell, undo, reset, and prove localStorage persistence. Use when proving a Chameleon UI change, before claiming a board mutation works, or when a PR touches src/App.tsx, src/grid, src/store, or src/widgets.
 ---
 
 # Verify Chameleon
 
-Chameleon is a single-route web canvas. A user sees a header, two seed widgets on a 12-column grid, Undo last change, Reset canvas, Show activity, and a footer version line. There is no login. State lives in the browser under localStorage key `chameleon-board-v1`.
+Chameleon is a single-route web canvas. A user sees a header, an empty canvas with copy-prompt buttons, Undo last change, Reset canvas, Show activity, and a footer version line. There is no login. State lives in the browser under localStorage key `chameleon-board-v1`. `Load a sample board` places a note and a table so hand-edit recipes have widgets.
 
 This skill is for agents that need to prove a change on the running page. Unit tests in `tests/` do not count as proof. Do not call Zustand setters, do not seed localStorage by hand, and do not drive `http://localhost:4711` unless this run launched it (it did not: launch refuses 4711).
 
-WebMCP tools (`document.modelContext`) are not a user path in this browser. Stable Chrome here shows the dismissable `WebMCP not detected in this browser` banner and a token like `15 tools ready`. Do not treat tool calls as verification of the canvas. Checklist, kanban, chart, and form widgets are not on the seed board; a human cannot add them without an agent host, so they are out of scope for this skill until a user-facing add-widget control exists.
+WebMCP tools (`document.modelContext`) are not a user path in this browser. Stable Chrome here shows the dismissable `WebMCP not detected in this browser` banner and a token like `15 tools ready`. Do not treat tool calls as verification of the canvas. Checklist, kanban, chart, and form widgets are not on the sample board; a human cannot add them without an agent host, so they are out of scope for this skill until a user-facing add-widget control exists.
 
 Each `browser` command opens Chrome against this run's profile, does the work, and closes it. Open editors and the activity list are React state, not persisted. Finish those in one command (`browser note`, `browser cell`, or a click with `--wait-text` / `--aria-snapshot` / `--screenshot`). Layout, cells, and the command log persist, so drag, reload, and undo can be separate commands.
 
@@ -37,7 +37,8 @@ Default port is 14711. Launch exits if `CHAMELEON_VERIFY_PORT=4711` because that
 
 ```bash
 control-chameleon doctor
-control-chameleon doctor --expect-seed
+control-chameleon doctor --expect-empty
+control-chameleon doctor --expect-sample
 ```
 
 Doctor is read-only. Run it first whenever the page looks wrong.
@@ -49,15 +50,18 @@ It checks:
 - The page shows the `CHAMELEON` mark, a region named `Widget canvas`, a button named `Undo last change`, and a button named `Reset canvas`.
 - The URL and profile match this run. If they do not, stop. That is someone else's session.
 
-`--expect-seed` also requires the first-load board:
+`--expect-empty` also requires the first-load board:
 
 - Heading `Untitled workspace`
-- Headings `A canvas that listens` and `What happens next`
+- Heading `What are you working on?`
+- Buttons `Copy wedding planner prompt` and `Load a sample board`
 - Activity copy `Drag, edit, or ask an agent to create the first activity entry.`
 - Footer matching `state vN · 0 commands` (middle dot is `·`). A fresh profile is `v0`. Reset keeps the current `N` and clears the log, so a reset board can be `state v1 · 0 commands`.
 - `Undo last change` disabled
 
-A board that still has commands will fail `--expect-seed`. Use `Reset canvas` or a new run id.
+`--expect-sample` requires headings `A canvas that listens` and `What happens next` after `Load a sample board`.
+
+A board that still has commands will fail `--expect-empty`. Use `Reset canvas` or a new run id.
 
 ## Drive
 
@@ -94,6 +98,7 @@ Stable handles:
 | Seed table cell | button whose name is the cell text, then textbox `Step` |
 | Empty canvas | heading `What are you working on?` |
 | Copy wedding prompt | button `Copy wedding planner prompt`, then `Copied` |
+| Sample board | button `Load a sample board` |
 | Measure widget box | `browser measure --name <heading>` |
 | Viewport | `--width` and `--height` on any `browser` command (default 1400x900) |
 

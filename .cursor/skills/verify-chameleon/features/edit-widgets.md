@@ -21,7 +21,7 @@ Edit widgets by hand lets a user change the welcome note's markdown, change a se
 Preconditions:
 
 - Chameleon is healthy at `http://127.0.0.1:$CHAMELEON_VERIFY_PORT/`.
-- The board is the seed layout (`control-chameleon doctor --expect-seed`).
+- The board is empty, then load the sample board. Run `control-chameleon doctor --expect-empty` then `control-chameleon browser click --role button --name "Load a sample board" --wait-text "Latest: Loaded a sample board"`.
 - Run `edit-delete-widget` last, or reset before the other bullets.
 
 - **Edit note.** Click the note body, replace the markdown, and blur. Run `control-chameleon browser note --name "A canvas that listens" --markdown "Edited from verification." --wait-text "Latest: Edited note “A canvas that listens”"`. The note shows the new sentence and undo is enabled.
@@ -35,6 +35,6 @@ Preconditions:
 - `browser note` and `browser cell` must click, type, and commit in one command. Chrome closes after each CLI call, which would discard an open editor.
 - An unchanged note blur writes nothing. The markdown passed to `--markdown` has to differ from the seed body.
 - Seed cell buttons use the cell text as the accessible name. After the first edit, `--from` must be the new text, not `Your agent reads the board`.
-- Two widgets can show `Add row` once an agent has added another table. On the seed board there is one.
+- Two widgets can show `Add row` once an agent has added another table. On the sample board there is one.
 - Deleting the welcome note is hard to undo in later recipes that drag by that heading. Reset after this feature.
 - Escape in a cell editor discards the draft. Proof uses Enter.

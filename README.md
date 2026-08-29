@@ -14,7 +14,7 @@ This is the judge path.
 
 1. Open [https://chameleon-webmcp.ryan-970.workers.dev](https://chameleon-webmcp.ryan-970.workers.dev) in ChatGPT's desktop-app browser. That host exposes `document.modelContext`.
 2. If you are testing in Chrome Canary, open `chrome://flags`, search `webmcp`, enable the flag (currently `#enable-webmcp-testing`), then reload the live URL. Use the Model Context Tool Inspector to confirm the 15 static tools.
-3. Paste one of the prompts below. First load shows a seed note and table. Delete both widgets to see the empty canvas, which copies the same prompts.
+3. Paste one of the prompts below. First load and Reset canvas show an empty board with those prompts. Choose **Load a sample board** if you want a note and table without an agent.
 
 **Wedding planner**
 

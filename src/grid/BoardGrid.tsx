@@ -17,6 +17,7 @@ import { WidgetView } from '../widgets/registry'
 export function BoardGrid() {
   const widgets = useBoardStore((state) => state.document.widgets)
   const mutate = useBoardStore((state) => state.mutate)
+  const loadSample = useBoardStore((state) => state.loadSample)
   const { width, mounted, containerRef } = useContainerWidth({
     initialWidth: 1200,
   })
@@ -111,6 +112,12 @@ export function BoardGrid() {
                   }}
                 />
               ))}
+              <Button
+                label="Load a sample board"
+                variant="ghost"
+                size="sm"
+                onClick={loadSample}
+              />
             </VStack>
           }
         />

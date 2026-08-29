@@ -35,7 +35,7 @@ function usage() {
 
 Commands:
   launch                 Start an isolated Vite instance and a fresh Chrome profile
-  doctor [--expect-seed] Check that this run's instance is healthy
+  doctor [--expect-empty|--expect-sample] Check that this run's instance is healthy
   status                 Print the run state JSON
   cleanup                Stop processes this run started (keeps artifacts)
   browser click --role <role> --name <name>
@@ -427,26 +427,40 @@ async function doctor(flags) {
         .isVisible()
         .catch(() => false),
     }
-    if (flags['expect-seed']) {
+    if (flags['expect-empty'] || flags['expect-seed']) {
+      info.empty = await page
+        .getByRole('heading', { name: 'What are you working on?', exact: true })
+        .isVisible()
+      info.copyWedding = await page
+        .getByRole('button', { name: 'Copy wedding planner prompt', exact: true })
+        .isVisible()
+      info.loadSample = await page
+        .getByRole('button', { name: 'Load a sample board', exact: true })
+        .isVisible()
+      if (info.title !== 'Untitled workspace') {
+        fail(`Expected title Untitled workspace, got ${JSON.stringify(info.title)}`)
+      }
+      if (!info.empty || !info.copyWedding || !info.loadSample) {
+        fail('Empty canvas is missing. Reset the canvas or launch a fresh run.')
+      }
+      if (info.activity !== EMPTY_ACTIVITY) {
+        fail(`Expected empty activity copy, got ${JSON.stringify(info.activity)}`)
+      }
+      if (!SEED_COMMANDS_RE.test(info.versionLine)) {
+        fail(`Expected version line with 0 commands, got ${JSON.stringify(info.versionLine)}`)
+      }
+      if (!info.undoDisabled) fail('Undo last change should be disabled on an empty canvas.')
+    }
+    if (flags['expect-sample']) {
       info.welcome = await page
         .getByRole('heading', { name: 'A canvas that listens', exact: true })
         .isVisible()
       info.next = await page
         .getByRole('heading', { name: 'What happens next', exact: true })
         .isVisible()
-      if (info.title !== 'Untitled workspace') {
-        fail(`Expected seed title Untitled workspace, got ${JSON.stringify(info.title)}`)
-      }
       if (!info.welcome || !info.next) {
-        fail('Seed widgets are missing. Reset the canvas or launch a fresh run.')
+        fail('Sample widgets are missing. Choose Load a sample board from the empty canvas.')
       }
-      if (info.activity !== EMPTY_ACTIVITY) {
-        fail(`Expected empty activity copy, got ${JSON.stringify(info.activity)}`)
-      }
-      if (!SEED_COMMANDS_RE.test(info.versionLine)) {
-        fail(`Expected seed version line with 0 commands, got ${JSON.stringify(info.versionLine)}`)
-      }
-      if (!info.undoDisabled) fail('Undo last change should be disabled on a seed board.')
     }
     return info
   })

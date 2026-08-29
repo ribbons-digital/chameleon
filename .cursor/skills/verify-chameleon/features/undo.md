@@ -4,7 +4,7 @@ Undo last change restores the board to the layout from before the newest mutatio
 
 ## Sub-features
 
-- `undo-disabled-seed` keeps the control disabled when there is nothing to revert.
+- `undo-disabled-empty` keeps the control disabled when there is nothing to revert.
 - `undo-after-move` restores the welcome note after a drag.
 - `undo-activity` writes `Latest: Undid: Moved “A canvas that listens”` and bumps the version.
 
@@ -17,12 +17,13 @@ Undo last change restores the board to the layout from before the newest mutatio
 Preconditions:
 
 - Chameleon is healthy at `http://127.0.0.1:$CHAMELEON_VERIFY_PORT/`.
-- Start from seed (`control-chameleon doctor --expect-seed`).
+- Start from empty (`control-chameleon doctor --expect-empty`).
 
-- **Disabled on seed.** Confirm undo is inert. Run `control-chameleon browser assert --role button --name "Undo last change" --disabled`. The control does not apply a change.
-- **Create a mutation.** Drag the welcome note. Run `control-chameleon browser drag --name "A canvas that listens" --dx 320 --dy 0` then `control-chameleon browser wait --text "Latest: Moved “A canvas that listens”"`. Undo becomes enabled.
-- **Undo the move.** Choose `Undo last change`. Run `control-chameleon browser click --role button --name "Undo last change"`. The footer shows `Latest: Undid: Moved “A canvas that listens”` and `state v2 · 2 commands`. Confirm with `control-chameleon browser wait --text "Latest: Undid: Moved “A canvas that listens”"`.
-- **Proof.** Capture the restored board. Run `control-chameleon browser snapshot --aria --path artifacts/undo/restored.aria.txt` and `control-chameleon browser screenshot --path artifacts/undo/restored.png`. The artifacts show the undo summary and both seed widget titles.
+- **Disabled on empty.** Confirm undo is inert. Run `control-chameleon browser assert --role button --name "Undo last change" --disabled`. The control does not apply a change.
+- **Load sample.** Choose `Load a sample board`. Run `control-chameleon browser click --role button --name "Load a sample board" --wait-text "Latest: Loaded a sample board"`.
+- **Create a mutation.** Drag the welcome note. Run `control-chameleon browser drag --name "A canvas that listens" --dx 320 --dy 0` then `control-chameleon browser wait --text "Latest: Moved “A canvas that listens”"`. Undo stays enabled.
+- **Undo the move.** Choose `Undo last change`. Run `control-chameleon browser click --role button --name "Undo last change"`. The footer shows `Latest: Undid: Moved “A canvas that listens”` and `state v3 · 3 commands`. Confirm with `control-chameleon browser wait --text "Latest: Undid: Moved “A canvas that listens”"`.
+- **Proof.** Capture the restored board. Run `control-chameleon browser snapshot --aria --path artifacts/undo/restored.aria.txt` and `control-chameleon browser screenshot --path artifacts/undo/restored.png`. The artifacts show the undo summary and both sample widget titles.
 
 ## Gotchas
 

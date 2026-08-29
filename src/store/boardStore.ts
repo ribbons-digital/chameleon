@@ -15,7 +15,12 @@ import type {
   Command,
   MutationMeta,
 } from '../model/types'
-import { initialDocument, migrateDocument } from './migrateDocument'
+import {
+  createSampleDocument,
+  createSampleWidgets,
+  initialDocument,
+  migrateDocument,
+} from './migrateDocument'
 
 enablePatches()
 
@@ -37,6 +42,7 @@ type BoardStore = {
   ) => number
   undo: (actor?: Actor) => Command | undefined
   reset: () => void
+  loadSample: () => void
   setHydrated: (hydrated: boolean) => void
   resetHumanEditCount: () => number
 }
@@ -138,6 +144,18 @@ export const useBoardStore = create<BoardStore>()(
           commands: [],
         })
       },
+      loadSample: () => {
+        get().mutate(
+          {
+            actor: 'human',
+            action: 'load_sample',
+            summary: 'Loaded a sample board',
+          },
+          (draft) => {
+            draft.widgets = createSampleWidgets()
+          },
+        )
+      },
       setHydrated: (hydrated) => set({ hydrated }),
       resetHumanEditCount: () => {
         const current = get().document.humanEditsSinceLastDescribe
@@ -171,4 +189,4 @@ export const useBoardStore = create<BoardStore>()(
   ),
 )
 
-export { initialDocument }
+export { createSampleDocument, createSampleWidgets, initialDocument }
