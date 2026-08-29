@@ -191,6 +191,21 @@ describe('add_rows / update_rows / delete_rows', () => {
     )
   })
 
+  it('returns ROW_NOT_FOUND for unknown row ids', async () => {
+    const widgetId = await addTable()
+    await executeTool(addRows, {
+      widgetId,
+      rows: [{ name: 'Ada', rsvp: 'yes' }],
+    })
+    const missing = await executeTool(updateRows, {
+      widgetId,
+      patches: [{ rowId: 'r_missing', set: { name: 'Grace' } }],
+    })
+    expect(missing.ok).toBe(false)
+    expect((missing.error as { code: string }).code).toBe('ROW_NOT_FOUND')
+    expect((missing.error as { hint: string }).hint).toContain('read_widget_data')
+  })
+
   it('updates and deletes rows', async () => {
     const widgetId = await addTable()
     await executeTool(addRows, {
