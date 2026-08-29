@@ -142,7 +142,7 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
                       key={row._id}
                       className={dragging ? 'kanban-card is-dragging' : 'kanban-card'}
                       padding={3}
-                      elevation="low"
+                      elevation="med"
                       width="100%"
                       draggable
                       aria-label={`${title} card`}
