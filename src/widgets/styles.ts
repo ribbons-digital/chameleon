@@ -41,6 +41,7 @@ export const widgetStyles = stylex.create({
     width: '100%',
     minHeight: '0',
     alignItems: 'flex-start',
+    overflowX: 'auto',
   },
   kanbanColumn: {
     flexGrow: 1,
@@ -51,5 +52,11 @@ export const widgetStyles = stylex.create({
     padding: 'var(--spacing-2)',
     backgroundColor: 'var(--color-background-secondary)',
     borderRadius: 'var(--radius-md)',
+  },
+  kanbanCard: {
+    width: '100%',
+    cursor: 'grab',
+    userSelect: 'none',
+    touchAction: 'none',
   },
 })
