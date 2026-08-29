@@ -92,6 +92,10 @@ Stable handles:
 | Add table row | button `Add row` |
 | Note editor | textbox `Note markdown` |
 | Seed table cell | button whose name is the cell text, then textbox `Step` |
+| Empty canvas | heading `What are you working on?` |
+| Copy wedding prompt | button `Copy wedding planner prompt`, then `Copied` |
+| Measure widget box | `browser measure --name <heading>` |
+| Viewport | `--width` and `--height` on any `browser` command (default 1400x900) |
 
 Drag from `header.widget-drag-handle` (the card header, including the heading). Resize from that card's `.react-resizable-handle` (southeast corner). Clicking markdown or a table cell does not drag; the grid cancels drag on `textarea`, `input`, `button`, and `[role="checkbox"]`.
 
@@ -106,6 +110,7 @@ control-chameleon browser click --role button --name "Show activity" --wait-text
 control-chameleon browser snapshot --aria --path artifacts/open-canvas/home.aria.txt
 control-chameleon browser screenshot --path artifacts/open-canvas/home.png
 control-chameleon browser storage --path artifacts/open-canvas/board.json
+control-chameleon browser measure --name "A canvas that listens" --width 375 --height 812
 ```
 
 Relative `--path`, `--aria-snapshot`, and `--screenshot` values resolve to `.cursor/skills/verify-chameleon/`. One Chrome profile is locked per run. Do not run two `browser` commands in parallel against the same `CHAMELEON_VERIFY_RUN`.

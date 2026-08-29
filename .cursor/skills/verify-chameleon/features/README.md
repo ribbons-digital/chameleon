@@ -46,3 +46,5 @@ Keep implementation details out of the map. Name only user paths, stable handles
 - [Undo last change](./undo.md) covers enabling undo after a mutation and restoring the prior layout.
 - [Reset the canvas](./reset-canvas.md) covers wiping commands and returning to the seed widgets.
 - [Persist across reload](./persist-reload.md) covers localStorage surviving a browser reload.
+- [Clear the canvas to the empty state](./empty-canvas.md) covers deleting both seed widgets, the copy-prompt buttons, and Reset restoring seed.
+- [Stack the grid on a narrow viewport](./mobile-stack.md) covers the 375px one-column stack and the no-persist drag guard.

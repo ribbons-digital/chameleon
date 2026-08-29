@@ -48,6 +48,7 @@ Commands:
   browser cell --from <button-label> --value <text> [--field <textbox-name>]
   browser drag --name <heading> --dx <px> --dy <px>
   browser resize --name <heading> --dx <px> --dy <px>
+  browser measure --name <heading>
   browser reload
   browser wait --text <text>
   browser snapshot --aria --path <file>
@@ -58,6 +59,8 @@ Follow-up flags (same Chrome session as the action):
   --wait-text <text>
   --aria-snapshot <file>
   --screenshot <file>
+  --width <px>             Viewport width (default 1400)
+  --height <px>            Viewport height (default 900)
 
 Env:
   CHAMELEON_VERIFY_RUN     Run id (default: default)
@@ -241,12 +244,22 @@ async function waitDead(pid, timeoutMs) {
   }
 }
 
-async function withPage(state, fn) {
+function viewportFromFlags(flags) {
+  const width = flags.width === undefined ? 1400 : Number(flags.width)
+  const height = flags.height === undefined ? 900 : Number(flags.height)
+  if (!Number.isFinite(width) || width < 1 || !Number.isFinite(height) || height < 1) {
+    fail('Need numeric --width and --height')
+  }
+  return { width, height }
+}
+
+async function withPage(state, fn, flags = {}) {
   const chromium = loadPlaywright()
+  const viewport = viewportFromFlags(flags)
   const context = await chromium.launchPersistentContext(state.userDataDir, {
     executablePath: chromeBin(),
     headless: process.env.CHAMELEON_VERIFY_HEADED !== '1',
-    viewport: { width: 1400, height: 900 },
+    viewport,
     args: [
       '--no-sandbox',
       '--disable-gpu',
@@ -259,6 +272,9 @@ async function withPage(state, fn) {
   try {
     const page = context.pages()[0] ?? (await context.newPage())
     page.setDefaultTimeout(ACTION_TIMEOUT_MS)
+    await context
+      .grantPermissions(['clipboard-read', 'clipboard-write'])
+      .catch(() => {})
     await page.goto(state.url, { waitUntil: 'domcontentloaded' })
     await page.getByText('CHAMELEON', { exact: true }).waitFor({ state: 'visible' })
     return await fn(page)
@@ -479,7 +495,9 @@ async function editCell(page, flags) {
 async function browserCommand(subcommand, flags) {
   const cfg = runConfig()
   const state = readState(cfg)
-  const result = await withPage(state, async (page) => {
+  const result = await withPage(
+    state,
+    async (page) => {
     switch (subcommand) {
       case 'click': {
         if (flags.text) {
@@ -571,6 +589,14 @@ async function browserCommand(subcommand, flags) {
         await page.mouse.up()
         return { resized: flags.name, dx, dy, ...(await maybeFollowup(page, flags)) }
       }
+      case 'measure': {
+        if (!flags.name) fail('Missing --name')
+        const card = widgetCard(page, flags.name)
+        await card.waitFor({ state: 'visible' })
+        const box = await card.boundingBox()
+        if (!box) fail(`No bounding box for ${flags.name}`)
+        return { measured: flags.name, box, ...(await maybeFollowup(page, flags)) }
+      }
       case 'reload': {
         await page.reload({ waitUntil: 'domcontentloaded' })
         await page.getByText('CHAMELEON', { exact: true }).waitFor({ state: 'visible' })
@@ -601,7 +627,9 @@ async function browserCommand(subcommand, flags) {
       default:
         fail(`Unknown browser subcommand: ${subcommand}`)
     }
-  })
+    },
+    flags,
+  )
   process.stdout.write(
     `${JSON.stringify({ ok: true, command: `browser ${subcommand}`, ...result }, null, 2)}\n`,
   )
