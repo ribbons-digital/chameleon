@@ -311,3 +311,14 @@ something is minted. `add_widget` / `bind_data` `next` for those tables
 says add a form then mint. An empty form nexts bind_data then
 create_form_tool, not add_rows. Hard-refresh the ChatGPT Chameleon tab
 (not only Canary), Reset canvas, re-run the diabetes prompt.
+
+### Table header clipped
+
+Ryan: generated table UI always cuts off the header. Astryx Table
+`containerBleed` uses `:first-child` negative `marginTop` of
+`--container-padding-block-start` (Card `padding={4}`). Widget `Card`
+is `overflow: clip`, the shell and `.react-grid-item` are
+`overflow: hidden`, so the header row is painted under the title and
+clipped. Widget body now sets `--container-padding-block-start` to
+`var(--spacing-0)` so the table does not pull up. Inline bleed is
+unchanged. Hard-refresh after deploy.
