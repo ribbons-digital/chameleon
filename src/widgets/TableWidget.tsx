@@ -130,7 +130,7 @@ export function TableWidgetView({ widget }: { widget: TableWidget }) {
   }
 
   return (
-    <VStack gap={2}>
+    <VStack gap={2} paddingBlockStart={4} xstyle={widgetStyles.tableStack}>
       {sortedRows.length === 0 ? (
         <EmptyState
           isCompact

@@ -11,17 +11,21 @@ export const widgetStyles = stylex.create({
     minHeight: '0',
     overflow: 'auto',
     paddingBottom: 'var(--spacing-4)',
-    // Astryx Table first-child bleed pulls up by Card's
-    // --container-padding-block-start. Widget shells clip overflow, so the
-    // header row disappears under the title. Keep inline bleed to the card
-    // edges; zero block-start so the table stays below the heading.
-    '--container-padding-block-start': 'var(--spacing-0)',
+    // Kill vertical Table bleed. Use 0px (Astryx Section's reset) rather
+    // than var(--spacing-0), which is a hashed StyleX token and can leave
+    // this declaration invalid so Card's 16px still inherits.
+    '--container-padding-block-start': '0px',
   },
-  tableHost: {
-    minHeight: '0',
+  tableStack: {
     width: '100%',
     maxWidth: '100%',
-    overflow: 'auto',
+    flexShrink: 0,
+    minHeight: 'min-content',
+    '--container-padding-block-start': '0px',
+  },
+  tableHost: {
+    width: '100%',
+    maxWidth: '100%',
   },
   noteEditor: {
     width: '100%',

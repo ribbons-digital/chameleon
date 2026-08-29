@@ -314,11 +314,17 @@ create_form_tool, not add_rows. Hard-refresh the ChatGPT Chameleon tab
 
 ### Table header clipped
 
-Ryan: generated table UI always cuts off the header. Astryx Table
-`containerBleed` uses `:first-child` negative `marginTop` of
-`--container-padding-block-start` (Card `padding={4}`). Widget `Card`
-is `overflow: clip`, the shell and `.react-grid-item` are
-`overflow: hidden`, so the header row is painted under the title and
-clipped. Widget body now sets `--container-padding-block-start` to
-`var(--spacing-0)` so the table does not pull up. Inline bleed is
-unchanged. Hard-refresh after deploy.
+Ryan: generated table UI always cuts off the header. Screenshot of
+Blood Sugar Log shows only the bottom sliver of Date / Timing /
+Glucose labels. Astryx Table `containerBleed` uses `:first-child`
+negative `marginTop` of `--container-padding-block-start` (Card
+`padding={4}`). Widget `Card` is `overflow: clip`, the shell and
+`.react-grid-item` are `overflow: hidden`, so the header row is
+painted under the title and sliced.
+
+Zeroing that var with `var(--spacing-0)` was not enough:
+`--spacing-0` is a hashed StyleX token, so the declaration can be
+invalid and Card's 16px still inherits. Reset is now `0px` (same as
+Astryx Section). The table stack also has `paddingBlockStart={4}` so
+any leftover bleed is absorbed inside the table, not under the title.
+Hard-refresh after deploy.
