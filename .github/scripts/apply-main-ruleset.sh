@@ -19,11 +19,11 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
-REPO_ID="$(gh api "repos/${REPO}" --jq .id)"
-DEFAULT_BRANCH="$(gh api "repos/${REPO}" --jq .default_branch)"
+REPO_ID="$(gh api "repos/${REPO}" --jq '.id')"
+DEFAULT_BRANCH="$(gh api "repos/${REPO}" --jq '.default_branch')"
 CI_PATH=".github/workflows/ci.yml"
 
-if ! gh api "repos/${REPO}/contents/${CI_PATH}?ref=${DEFAULT_BRANCH}" --jq .path >/dev/null 2>&1; then
+if ! gh api "repos/${REPO}/contents/${CI_PATH}?ref=${DEFAULT_BRANCH}" --jq '.path' >/dev/null 2>&1; then
   echo "${CI_PATH} is not on ${DEFAULT_BRANCH}. Merge the CI workflow first, then re-run." >&2
   exit 1
 fi
@@ -40,9 +40,11 @@ PAYLOAD="$(
   ' "${PAYLOAD_FILE}"
 )"
 
+# gh api --jq takes a single expression. Pipe to jq for --arg.
 EXISTING_ID="$(
-  gh api "repos/${REPO}/rulesets" --jq --arg name "${RULESET_NAME}" \
-    '.[] | select(.name == $name) | .id' | head -n 1
+  gh api "repos/${REPO}/rulesets" \
+    | jq -r --arg name "${RULESET_NAME}" '.[] | select(.name == $name) | .id' \
+    | head -n 1
 )"
 
 if [[ -n "${EXISTING_ID}" ]]; then
