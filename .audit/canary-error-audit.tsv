@@ -1,0 +1,16 @@
+code	gotCode	flag	namedRecoveryTools	recovered	hint
+INVALID_INPUT	INVALID_INPUT	ok		true	Arguments failed schema validation. Read error.details, fix those fields, and retry the same tool.
+INVALID_CONFIG	INVALID_CONFIG	ok	describe_current_state	true	This config does not match this widget type. Call describe_current_state, then pass a config for that type.
+INVALID_ROWS	INVALID_ROWS	ok		true	One or more rows failed field validation. details lists row index, field key, and issue. Fix only those rows and retry.
+WIDGET_NOT_FOUND	WIDGET_NOT_FOUND	ok	describe_current_state	true	No widget has this id. Call describe_current_state and use an id from that snapshot. The human may have deleted it.
+WRONG_WIDGET_TYPE	WRONG_WIDGET_TYPE	ok	describe_current_state	true	This tool does not apply to this widget type. Call describe_current_state and pick a widget of a type this tool accepts.
+ROW_NOT_FOUND	ROW_NOT_FOUND	ok	read_widget_data	true	One or more rowIds do not exist in this widget. Call read_widget_data and copy ids from the current rows.
+NO_FIELDS_BOUND	NO_FIELDS_BOUND	ok	bind_data|add_rows	true	This widget has no field schema yet. Call bind_data first, then add_rows.
+FIELD_NOT_FOUND	FIELD_NOT_FOUND	ok	describe_current_state	true	Config names a field key that is not in this widget schema. Call describe_current_state, then retry with a listed key.
+RESERVED_NAME	RESERVED_NAME	ok		true	This name is reserved by the app. Choose a different verb_noun name that is not a static tool.
+NAME_TAKEN	NAME_TAKEN	ok	remove_minted_tool	true	A tool with this name already exists. Pick a more specific name, or call remove_minted_tool first if you own it.
+TOOL_NOT_FOUND	TOOL_NOT_FOUND	ok	describe_current_state	true	No minted tool has this name. describe_current_state lists minted tools. Static tools cannot be removed.
+NO_CHANGES	NO_CHANGES	ok		true	You passed no fields to change. Include at least one property to update.
+NOTHING_TO_UNDO	NOTHING_TO_UNDO	ok		true	The command log is empty. There is nothing to revert.
+DUPLICATE_ID	DUPLICATE_ID	ok		true	The same widgetId appears more than once in items. Each widget may appear at most once.
+LIMIT_EXCEEDED	LIMIT_EXCEEDED	ok	remove_widget|delete_rows|remove_minted_tool	true	A hard limit was hit. details names which limit and the maximum. Call remove_widget, delete_rows, or remove_minted_tool until you are under it, then retry.

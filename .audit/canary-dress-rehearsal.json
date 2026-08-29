@@ -1,0 +1,539 @@
+{
+  "when": "2026-08-29T03:35:18.175Z",
+  "chrome": "/usr/bin/google-chrome-unstable",
+  "url": "https://chameleon-webmcp.ryan-970.workers.dev/",
+  "extension": null,
+  "host": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+    "headerViaDocument": true,
+    "headerToolsReady": false,
+    "banner": false,
+    "hasDocumentContext": true,
+    "methods": [
+      "ontoolchange",
+      "executeTool",
+      "getTools",
+      "registerTool",
+      "constructor"
+    ]
+  },
+  "staticTools": [
+    "add_rows",
+    "add_widget",
+    "bind_data",
+    "create_form_tool",
+    "delete_rows",
+    "describe_current_state",
+    "get_activity_log",
+    "read_widget_data",
+    "remove_minted_tool",
+    "remove_widget",
+    "set_layout",
+    "set_theme",
+    "undo",
+    "update_rows",
+    "update_widget"
+  ],
+  "demo": [
+    {
+      "label": "walk-1",
+      "ms": 2942,
+      "emptyWidgetCount": 0,
+      "activityOk": true,
+      "mintOk": true,
+      "mintedListed": true,
+      "mintedAfterReload": true,
+      "mintedCallOk": true,
+      "mintedReloadCallOk": true,
+      "undoOk": true,
+      "beats": [
+        {
+          "name": "hook-empty",
+          "ms": 4,
+          "ok": true
+        },
+        {
+          "name": "wedding-checklist",
+          "ms": 18,
+          "ok": true
+        },
+        {
+          "name": "wedding-table",
+          "ms": 14,
+          "ok": true
+        },
+        {
+          "name": "wedding-kanban",
+          "ms": 12,
+          "ok": true
+        },
+        {
+          "name": "wedding-note",
+          "ms": 13,
+          "ok": true
+        },
+        {
+          "name": "wedding-layout",
+          "ms": 13,
+          "ok": true
+        },
+        {
+          "name": "human-rsvp",
+          "ms": 8,
+          "ok": true
+        },
+        {
+          "name": "what-changed",
+          "ms": 4,
+          "ok": true
+        },
+        {
+          "name": "jobs-kanban",
+          "ms": 15,
+          "ok": true
+        },
+        {
+          "name": "jobs-contacts",
+          "ms": 7,
+          "ok": true
+        },
+        {
+          "name": "jobs-checklist",
+          "ms": 7,
+          "ok": true
+        },
+        {
+          "name": "jobs-theme",
+          "ms": 23,
+          "ok": true
+        },
+        {
+          "name": "health-form",
+          "ms": 19,
+          "ok": true
+        },
+        {
+          "name": "health-chart",
+          "ms": 10,
+          "ok": true
+        },
+        {
+          "name": "mint",
+          "ms": 13,
+          "ok": true
+        },
+        {
+          "name": "minted-call",
+          "ms": 16,
+          "ok": true
+        },
+        {
+          "name": "minted-after-reload",
+          "ms": 7,
+          "ok": true
+        },
+        {
+          "name": "undo",
+          "ms": 10,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "label": "walk-2",
+      "ms": 2884,
+      "emptyWidgetCount": 0,
+      "activityOk": true,
+      "mintOk": true,
+      "mintedListed": true,
+      "mintedAfterReload": true,
+      "mintedCallOk": true,
+      "mintedReloadCallOk": true,
+      "undoOk": true,
+      "beats": [
+        {
+          "name": "hook-empty",
+          "ms": 3,
+          "ok": true
+        },
+        {
+          "name": "wedding-checklist",
+          "ms": 8,
+          "ok": true
+        },
+        {
+          "name": "wedding-table",
+          "ms": 7,
+          "ok": true
+        },
+        {
+          "name": "wedding-kanban",
+          "ms": 9,
+          "ok": true
+        },
+        {
+          "name": "wedding-note",
+          "ms": 11,
+          "ok": true
+        },
+        {
+          "name": "wedding-layout",
+          "ms": 10,
+          "ok": true
+        },
+        {
+          "name": "human-rsvp",
+          "ms": 9,
+          "ok": true
+        },
+        {
+          "name": "what-changed",
+          "ms": 14,
+          "ok": true
+        },
+        {
+          "name": "jobs-kanban",
+          "ms": 10,
+          "ok": true
+        },
+        {
+          "name": "jobs-contacts",
+          "ms": 7,
+          "ok": true
+        },
+        {
+          "name": "jobs-checklist",
+          "ms": 6,
+          "ok": true
+        },
+        {
+          "name": "jobs-theme",
+          "ms": 21,
+          "ok": true
+        },
+        {
+          "name": "health-form",
+          "ms": 10,
+          "ok": true
+        },
+        {
+          "name": "health-chart",
+          "ms": 6,
+          "ok": true
+        },
+        {
+          "name": "mint",
+          "ms": 8,
+          "ok": true
+        },
+        {
+          "name": "minted-call",
+          "ms": 6,
+          "ok": true
+        },
+        {
+          "name": "minted-after-reload",
+          "ms": 8,
+          "ok": true
+        },
+        {
+          "name": "undo",
+          "ms": 10,
+          "ok": true
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": "INVALID_INPUT",
+      "triggerTool": "add_widget",
+      "triggerOk": false,
+      "gotCode": "INVALID_INPUT",
+      "hint": "Arguments failed schema validation. Read error.details, fix those fields, and retry the same tool.",
+      "namedRecoveryTools": [],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "retried add_widget with title"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "INVALID_CONFIG",
+      "triggerTool": "add_widget",
+      "triggerOk": false,
+      "gotCode": "INVALID_CONFIG",
+      "hint": "This config does not match this widget type. Call describe_current_state, then pass a config for that type.",
+      "namedRecoveryTools": [
+        "describe_current_state"
+      ],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "describe_current_state",
+          "retry add_widget with note config"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "INVALID_ROWS",
+      "triggerTool": "add_rows",
+      "triggerOk": false,
+      "gotCode": "INVALID_ROWS",
+      "hint": "One or more rows failed field validation. details lists row index, field key, and issue. Fix only those rows and retry.",
+      "namedRecoveryTools": [],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "fixed row types and retried add_rows"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "WIDGET_NOT_FOUND",
+      "triggerTool": "update_widget",
+      "triggerOk": false,
+      "gotCode": "WIDGET_NOT_FOUND",
+      "hint": "No widget has this id. Call describe_current_state and use an id from that snapshot. The human may have deleted it.",
+      "namedRecoveryTools": [
+        "describe_current_state"
+      ],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "describe_current_state",
+          "update_widget on a live id"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "WRONG_WIDGET_TYPE",
+      "triggerTool": "bind_data",
+      "triggerOk": false,
+      "gotCode": "WRONG_WIDGET_TYPE",
+      "hint": "This tool does not apply to this widget type. Call describe_current_state and pick a widget of a type this tool accepts.",
+      "namedRecoveryTools": [
+        "describe_current_state"
+      ],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "describe_current_state",
+          "bind_data on a table instead of the note"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "ROW_NOT_FOUND",
+      "triggerTool": "update_rows",
+      "triggerOk": false,
+      "gotCode": "ROW_NOT_FOUND",
+      "hint": "One or more rowIds do not exist in this widget. Call read_widget_data and copy ids from the current rows.",
+      "namedRecoveryTools": [
+        "read_widget_data"
+      ],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "read_widget_data",
+          "update_rows with copied _id"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "NO_FIELDS_BOUND",
+      "triggerTool": "add_rows",
+      "triggerOk": false,
+      "gotCode": "NO_FIELDS_BOUND",
+      "hint": "This widget has no field schema yet. Call bind_data first, then add_rows.",
+      "namedRecoveryTools": [
+        "bind_data",
+        "add_rows"
+      ],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "bind_data",
+          "add_rows"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "FIELD_NOT_FOUND",
+      "triggerTool": "add_widget",
+      "triggerOk": false,
+      "gotCode": "FIELD_NOT_FOUND",
+      "hint": "Config names a field key that is not in this widget schema. Call describe_current_state, then retry with a listed key.",
+      "namedRecoveryTools": [
+        "describe_current_state"
+      ],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "describe_current_state",
+          "retry with listed key name"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "RESERVED_NAME",
+      "triggerTool": "create_form_tool",
+      "triggerOk": false,
+      "gotCode": "RESERVED_NAME",
+      "hint": "This name is reserved by the app. Choose a different verb_noun name that is not a static tool.",
+      "namedRecoveryTools": [],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "chose log_blood_sugar instead of add_widget"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "NAME_TAKEN",
+      "triggerTool": "create_form_tool",
+      "triggerOk": false,
+      "gotCode": "NAME_TAKEN",
+      "hint": "A tool with this name already exists. Pick a more specific name, or call remove_minted_tool first if you own it.",
+      "namedRecoveryTools": [
+        "remove_minted_tool"
+      ],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "remove_minted_tool",
+          "create_form_tool again"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "TOOL_NOT_FOUND",
+      "triggerTool": "remove_minted_tool",
+      "triggerOk": false,
+      "gotCode": "TOOL_NOT_FOUND",
+      "hint": "No minted tool has this name. describe_current_state lists minted tools. Static tools cannot be removed.",
+      "namedRecoveryTools": [
+        "describe_current_state"
+      ],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "describe_current_state listed minted tools",
+          "remove_minted_tool on the live name"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "NO_CHANGES",
+      "triggerTool": "update_widget",
+      "triggerOk": false,
+      "gotCode": "NO_CHANGES",
+      "hint": "You passed no fields to change. Include at least one property to update.",
+      "namedRecoveryTools": [],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "retried update_widget with title"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "NOTHING_TO_UNDO",
+      "triggerTool": "undo",
+      "triggerOk": false,
+      "gotCode": "NOTHING_TO_UNDO",
+      "hint": "The command log is empty. There is nothing to revert.",
+      "namedRecoveryTools": [],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "hint says the log is empty; describe_current_state confirmed 0 commands"
+        ],
+        "emptyLog": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "DUPLICATE_ID",
+      "triggerTool": "set_layout",
+      "triggerOk": false,
+      "gotCode": "DUPLICATE_ID",
+      "hint": "The same widgetId appears more than once in items. Each widget may appear at most once.",
+      "namedRecoveryTools": [],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "retried set_layout with each widget once"
+        ],
+        "retryOk": true
+      },
+      "recovered": true,
+      "flag": "ok"
+    },
+    {
+      "code": "LIMIT_EXCEEDED",
+      "triggerTool": "add_widget",
+      "triggerOk": false,
+      "gotCode": "LIMIT_EXCEEDED",
+      "hint": "A hard limit was hit. details names which limit and the maximum. Call remove_widget, delete_rows, or remove_minted_tool until you are under it, then retry.",
+      "namedRecoveryTools": [
+        "remove_widget",
+        "delete_rows",
+        "remove_minted_tool"
+      ],
+      "recovery": {
+        "recovered": true,
+        "steps": [
+          "remove_widget",
+          "retry add_widget"
+        ],
+        "retryOk": true,
+        "details": {
+          "limit": "widgetsPerBoard",
+          "maximum": 24
+        }
+      },
+      "recovered": true,
+      "flag": "ok"
+    }
+  ],
+  "failedCodes": []
+}
