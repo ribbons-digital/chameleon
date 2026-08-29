@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { initialDocument } from '../../src/store/boardStore'
+import { initialDocument, createSampleDocument } from '../../src/store/boardStore'
 import { useBoardStore } from '../../src/store/boardStore'
 import {
   describeCurrentState,
@@ -14,7 +14,8 @@ describe('describe_current_state', () => {
     resetBoard()
   })
 
-  it('returns the canonical snapshot for the Day 1 board', async () => {
+  it('returns the canonical snapshot for the sample board', async () => {
+    resetBoard(createSampleDocument())
     const result = await executeTool(describeCurrentState, {})
     expect(result.ok).toBe(true)
     expect(result.stateVersion).toBe(0)
@@ -64,6 +65,7 @@ describe('describe_current_state', () => {
   })
 
   it('reports human edits since the last describe, then resets the counter', async () => {
+    resetBoard(createSampleDocument())
     useBoardStore.getState().mutate(
       {
         actor: 'human',
@@ -156,7 +158,7 @@ describe('describe_current_state', () => {
     ])
   })
 
-  it('matches a stable snapshot of the default board', async () => {
+  it('matches a stable snapshot of the empty board', async () => {
     const result = await executeTool(describeCurrentState, {})
     expect(result).toMatchSnapshot()
   })

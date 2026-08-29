@@ -8,6 +8,7 @@ export const LIMITS = {
   commandLogEntries: 500,
   noteMarkdown: 20_000,
   gridCols: 12,
+  mobileStackBelowPx: 700,
   rowHeightPx: 40,
   minWidgetW: 2,
   maxWidgetW: 12,

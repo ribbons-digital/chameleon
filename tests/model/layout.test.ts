@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyLayout, clampPosition } from '../../src/model/layout'
+import { applyLayout, clampPosition, stackMobileLayout } from '../../src/model/layout'
 import type { NoteWidget } from '../../src/model/types'
 
 function note(
@@ -56,5 +56,21 @@ describe('layout collision resolution', () => {
     expect(result[0]).toEqual({ widgetId: 'w_first1', x: 0, y: 0, w: 12, h: 3 })
     expect(result[1]).toEqual({ widgetId: 'w_second', x: 0, y: 3, w: 6, h: 3 })
     expect(result[2]).toEqual({ widgetId: 'w_third3', x: 8, y: 3, w: 4, h: 3 })
+  })
+})
+
+describe('stackMobileLayout', () => {
+  it('stacks widgets in reading order as a single column', () => {
+    expect(
+      stackMobileLayout([
+        note('w_right', { x: 6, y: 0, w: 6, h: 5 }),
+        note('w_left', { x: 0, y: 0, w: 5, h: 4 }),
+        note('w_below', { x: 0, y: 8, w: 12, h: 3 }),
+      ]),
+    ).toEqual([
+      { i: 'w_left', x: 0, y: 0, w: 1, h: 4 },
+      { i: 'w_right', x: 0, y: 4, w: 1, h: 5 },
+      { i: 'w_below', x: 0, y: 9, w: 1, h: 3 },
+    ])
   })
 })

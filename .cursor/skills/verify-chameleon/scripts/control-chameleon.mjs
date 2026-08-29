@@ -35,7 +35,7 @@ function usage() {
 
 Commands:
   launch                 Start an isolated Vite instance and a fresh Chrome profile
-  doctor [--expect-seed] Check that this run's instance is healthy
+  doctor [--expect-empty|--expect-sample] Check that this run's instance is healthy
   status                 Print the run state JSON
   cleanup                Stop processes this run started (keeps artifacts)
   browser click --role <role> --name <name>
@@ -48,6 +48,7 @@ Commands:
   browser cell --from <button-label> --value <text> [--field <textbox-name>]
   browser drag --name <heading> --dx <px> --dy <px>
   browser resize --name <heading> --dx <px> --dy <px>
+  browser measure --name <heading>
   browser reload
   browser wait --text <text>
   browser snapshot --aria --path <file>
@@ -58,6 +59,8 @@ Follow-up flags (same Chrome session as the action):
   --wait-text <text>
   --aria-snapshot <file>
   --screenshot <file>
+  --width <px>             Viewport width (default 1400)
+  --height <px>            Viewport height (default 900)
 
 Env:
   CHAMELEON_VERIFY_RUN     Run id (default: default)
@@ -241,12 +244,22 @@ async function waitDead(pid, timeoutMs) {
   }
 }
 
-async function withPage(state, fn) {
+function viewportFromFlags(flags) {
+  const width = flags.width === undefined ? 1400 : Number(flags.width)
+  const height = flags.height === undefined ? 900 : Number(flags.height)
+  if (!Number.isFinite(width) || width < 1 || !Number.isFinite(height) || height < 1) {
+    fail('Need numeric --width and --height')
+  }
+  return { width, height }
+}
+
+async function withPage(state, fn, flags = {}) {
   const chromium = loadPlaywright()
+  const viewport = viewportFromFlags(flags)
   const context = await chromium.launchPersistentContext(state.userDataDir, {
     executablePath: chromeBin(),
     headless: process.env.CHAMELEON_VERIFY_HEADED !== '1',
-    viewport: { width: 1400, height: 900 },
+    viewport,
     args: [
       '--no-sandbox',
       '--disable-gpu',
@@ -259,6 +272,9 @@ async function withPage(state, fn) {
   try {
     const page = context.pages()[0] ?? (await context.newPage())
     page.setDefaultTimeout(ACTION_TIMEOUT_MS)
+    await context
+      .grantPermissions(['clipboard-read', 'clipboard-write'])
+      .catch(() => {})
     await page.goto(state.url, { waitUntil: 'domcontentloaded' })
     await page.getByText('CHAMELEON', { exact: true }).waitFor({ state: 'visible' })
     return await fn(page)
@@ -411,26 +427,40 @@ async function doctor(flags) {
         .isVisible()
         .catch(() => false),
     }
-    if (flags['expect-seed']) {
+    if (flags['expect-empty'] || flags['expect-seed']) {
+      info.empty = await page
+        .getByRole('heading', { name: 'What are you working on?', exact: true })
+        .isVisible()
+      info.copyWedding = await page
+        .getByRole('button', { name: 'Copy wedding planner prompt', exact: true })
+        .isVisible()
+      info.loadSample = await page
+        .getByRole('button', { name: 'Load a sample board', exact: true })
+        .isVisible()
+      if (info.title !== 'Untitled workspace') {
+        fail(`Expected title Untitled workspace, got ${JSON.stringify(info.title)}`)
+      }
+      if (!info.empty || !info.copyWedding || !info.loadSample) {
+        fail('Empty canvas is missing. Reset the canvas or launch a fresh run.')
+      }
+      if (info.activity !== EMPTY_ACTIVITY) {
+        fail(`Expected empty activity copy, got ${JSON.stringify(info.activity)}`)
+      }
+      if (!SEED_COMMANDS_RE.test(info.versionLine)) {
+        fail(`Expected version line with 0 commands, got ${JSON.stringify(info.versionLine)}`)
+      }
+      if (!info.undoDisabled) fail('Undo last change should be disabled on an empty canvas.')
+    }
+    if (flags['expect-sample']) {
       info.welcome = await page
         .getByRole('heading', { name: 'A canvas that listens', exact: true })
         .isVisible()
       info.next = await page
         .getByRole('heading', { name: 'What happens next', exact: true })
         .isVisible()
-      if (info.title !== 'Untitled workspace') {
-        fail(`Expected seed title Untitled workspace, got ${JSON.stringify(info.title)}`)
-      }
       if (!info.welcome || !info.next) {
-        fail('Seed widgets are missing. Reset the canvas or launch a fresh run.')
+        fail('Sample widgets are missing. Choose Load a sample board from the empty canvas.')
       }
-      if (info.activity !== EMPTY_ACTIVITY) {
-        fail(`Expected empty activity copy, got ${JSON.stringify(info.activity)}`)
-      }
-      if (!SEED_COMMANDS_RE.test(info.versionLine)) {
-        fail(`Expected seed version line with 0 commands, got ${JSON.stringify(info.versionLine)}`)
-      }
-      if (!info.undoDisabled) fail('Undo last change should be disabled on a seed board.')
     }
     return info
   })
@@ -479,7 +509,9 @@ async function editCell(page, flags) {
 async function browserCommand(subcommand, flags) {
   const cfg = runConfig()
   const state = readState(cfg)
-  const result = await withPage(state, async (page) => {
+  const result = await withPage(
+    state,
+    async (page) => {
     switch (subcommand) {
       case 'click': {
         if (flags.text) {
@@ -571,6 +603,14 @@ async function browserCommand(subcommand, flags) {
         await page.mouse.up()
         return { resized: flags.name, dx, dy, ...(await maybeFollowup(page, flags)) }
       }
+      case 'measure': {
+        if (!flags.name) fail('Missing --name')
+        const card = widgetCard(page, flags.name)
+        await card.waitFor({ state: 'visible' })
+        const box = await card.boundingBox()
+        if (!box) fail(`No bounding box for ${flags.name}`)
+        return { measured: flags.name, box, ...(await maybeFollowup(page, flags)) }
+      }
       case 'reload': {
         await page.reload({ waitUntil: 'domcontentloaded' })
         await page.getByText('CHAMELEON', { exact: true }).waitFor({ state: 'visible' })
@@ -601,7 +641,9 @@ async function browserCommand(subcommand, flags) {
       default:
         fail(`Unknown browser subcommand: ${subcommand}`)
     }
-  })
+    },
+    flags,
+  )
   process.stdout.write(
     `${JSON.stringify({ ok: true, command: `browser ${subcommand}`, ...result }, null, 2)}\n`,
   )

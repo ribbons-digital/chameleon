@@ -33,13 +33,8 @@ const stepField: Field = {
   required: true,
 }
 
-export const initialDocument: BoardDocument = {
-  title: 'Untitled workspace',
-  theme: { name: 'neutral', mode: 'light', density: 'comfortable' },
-  stateVersion: 0,
-  mintedTools: [],
-  humanEditsSinceLastDescribe: 0,
-  widgets: [
+export function createSampleWidgets(): Widget[] {
+  return [
     createWidget({
       id: 'w_welcome',
       type: 'note',
@@ -73,7 +68,23 @@ export const initialDocument: BoardDocument = {
       updatedAt: now(),
       lastModifiedBy: 'agent',
     }),
-  ],
+  ]
+}
+
+export const initialDocument: BoardDocument = {
+  title: 'Untitled workspace',
+  theme: { name: 'neutral', mode: 'light', density: 'comfortable' },
+  stateVersion: 0,
+  mintedTools: [],
+  humanEditsSinceLastDescribe: 0,
+  widgets: [],
+}
+
+export function createSampleDocument(): BoardDocument {
+  return {
+    ...structuredClone(initialDocument),
+    widgets: createSampleWidgets(),
+  }
 }
 
 type LegacyWidget = {

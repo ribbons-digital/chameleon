@@ -216,9 +216,15 @@ describe('schema round-trip', () => {
         'undo',
       ]),
     )
-    expect(Object.values(ERROR_HINTS).join('\n')).toContain(
-      'remove_minted_tool',
-    )
+    expect(ERROR_HINTS.NAME_TAKEN).toContain('remove_minted_tool')
+    expect(ERROR_HINTS.WIDGET_NOT_FOUND).toContain('describe_current_state')
+    expect(ERROR_HINTS.ROW_NOT_FOUND).toContain('read_widget_data')
+    expect(ERROR_HINTS.NO_FIELDS_BOUND).toContain('bind_data')
+    expect(ERROR_HINTS.NO_FIELDS_BOUND).toContain('add_rows')
+    expect(ERROR_HINTS.LIMIT_EXCEEDED).toContain('remove_widget')
+    expect(ERROR_HINTS.LIMIT_EXCEEDED).toContain('delete_rows')
+    expect(ERROR_HINTS.TOOL_NOT_FOUND).toContain('describe_current_state')
+    expect(Object.values(ERROR_HINTS).join('\n')).not.toMatch(/\u2014/)
   })
 
   it('steers pipelines to kanban and empty widgets to add_rows', () => {

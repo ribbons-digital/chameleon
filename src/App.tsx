@@ -20,6 +20,7 @@ import { ActivityDrawer } from './components/ActivityDrawer'
 import { AgentPulse } from './components/AgentPulse'
 import { BoardGrid } from './grid/BoardGrid'
 import { useBoardStore } from './store/boardStore'
+import { usePersistHealth } from './store/persistStorage'
 import {
   getModelContextSource,
   WEBMCP_ENABLE_HINT,
@@ -52,6 +53,7 @@ function App() {
     (state) => state.document.mintedTools.length,
   )
   const webmcpSource = getModelContextSource()
+  const persistHealth = usePersistHealth()
   const hosted = Boolean(webmcpSource)
   const toolCount = STATIC_TOOL_NAMES.length + mintedCount
 
@@ -110,6 +112,16 @@ function App() {
               title="WebMCP not detected in this browser"
               description={WEBMCP_ENABLE_HINT}
               isDismissable
+              xstyle={styles.banner}
+            />
+          )}
+
+          {persistHealth === 'quota' && (
+            <Banner
+              status="warning"
+              container="card"
+              title="This browser is out of storage for the board"
+              description="New edits will not persist across reload until you free space or reset the canvas."
               xstyle={styles.banner}
             />
           )}
