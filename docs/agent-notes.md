@@ -397,3 +397,21 @@ ErrorCode audit with hint recovery.
 This VM still cannot drive ChatGPT. The Canary mechanical walk is backup.
 The ChatGPT path that judges will use is now verified by Ryan, not inferred.
 No hint rewrite from that session. Feature freeze is still his call.
+
+## 2026-08-29 — Day 6 demo + tag
+
+PR #9 (kanban cards + same-column reorder) is on `main`. Feature branch gone.
+
+Recorded `public/demo.mp4` (1080p, 2:24, neural voiceover) against the live URL
+in Chrome 154. HUD lists `document.modelContext` tool calls. Beats: empty
+canvas, wedding board, human drag/check/RSVP + activity log, dark job search,
+health form + chart, `create_form_tool` → `log_blood_sugar` (16 tools), minted
+call, reload, undo, title card. Gallery stills in `docs/gallery`. Hero GIF is
+`docs/demo-mint.gif`.
+
+This VM has no YouTube or Devpost login. The mp4 is on the Worker at `/demo.mp4`.
+Upload that file as a public YouTube video and paste the four sections from
+`docs/06-submission.md` into Devpost to finish the draft submission.
+
+Tag `v1.0.0`. Package version is `1.0.0`. Persist key stays `chameleon-board-v1`
+version 3.

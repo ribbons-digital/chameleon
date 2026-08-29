@@ -1,7 +1,7 @@
 {
   "name": "chameleon",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A WebMCP canvas composed in conversation.",
   "license": "MIT",
   "type": "module",
