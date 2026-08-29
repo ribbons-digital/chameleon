@@ -262,3 +262,35 @@ prompt still comes back as a table.
 - Drag by header and resize still persist through `mutate` and undo.
 - Click-to-edit on the note writes a human `update_widget` command.
 - Empty WebMCP banner is visible in stable Chrome and dismissable.
+
+## 2026-08-29 — Day 4 checkpoint #2
+
+### ChatGPT Sol vs Canary inspector
+
+Health-log minting worked in Canary with the inspector. The same diabetes
+prompt in ChatGPT Sol did not go to 16 tools and did not show the ⚡ token.
+`create_form_tool` was 13th in `STATIC_TOOL_NAMES`, and form `next` /
+`unfinished` still said `add_rows` after fields were bound. Sol follows
+those payloads, not descriptions. `unfinished` for a bound unminted form
+is now `create_form_tool`. Mint is REQUIRED in `add_widget` / `bind_data`
+`next`. Static tool order puts `create_form_tool` with `add_widget` /
+`bind_data` / `add_rows`.
+
+### Form UI submit vs prompt
+
+Ryan: adding a reading from a prompt wrote the row. Filling the on-canvas
+form did not show up on the Blood sugar log table.
+
+The minted tool and the form widget both call `appendRows` on the **form**.
+A same-title **table** is a second dataset. The prompt path that looked
+"working" was `add_rows` (or looking at the form's recent list / chart).
+The form button wrote only to the form.
+
+Also: native form validation can swallow submit (Astryx `CheckboxInput`
+sets the HTML `required` attribute) with no React error banner. The form
+now uses `noValidate` and reads `FormData` so a number still in the input
+is not lost if React state is one event behind.
+
+`appendRows` now copies a validated row onto every other form or table
+with the same title, in the same command, so undo reverts both. Hard
+refresh after deploy, then submit from the form and confirm the table.

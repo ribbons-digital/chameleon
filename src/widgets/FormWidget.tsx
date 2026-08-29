@@ -15,9 +15,12 @@ import { useState, type FormEvent } from 'react'
 import type { Field, FormWidget as FormWidgetModel } from '../model/types'
 import { formatCell } from '../store/human'
 import { submitFormValues } from '../store/submit'
+import {
+  collectFormSubmission,
+  type FormValue,
+  type FormValues,
+} from './formValues'
 
-type FormValue = string | number | boolean | undefined
-type FormValues = Record<string, FormValue>
 type ISODate = `${number}${number}${number}${number}-${number}${number}-${number}${number}`
 
 const styles = stylex.create({
@@ -199,7 +202,10 @@ export function FormWidgetView({
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const result = submitFormValues(widget.id, values)
+    const result = submitFormValues(
+      widget.id,
+      collectFormSubmission(fields, values, event.currentTarget),
+    )
     if (!result.ok) {
       setError(result.message)
       return
@@ -213,7 +219,11 @@ export function FormWidgetView({
       {widget.config.description && (
         <Text color="secondary">{widget.config.description}</Text>
       )}
-      <form onSubmit={submit} {...stylex.props(styles.form)}>
+      <form
+        noValidate
+        onSubmit={submit}
+        {...stylex.props(styles.form)}
+      >
         <FormLayout
           direction="vertical"
           defaultOptionality={defaultOptionality}

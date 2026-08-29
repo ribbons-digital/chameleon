@@ -1,7 +1,7 @@
 import { parseRowValues, type RowIssue } from '../model/fields'
 import { createRowId } from '../model/ids'
 import { LIMITS } from '../model/limits'
-import type { Actor, Row, Widget } from '../model/types'
+import type { Actor, DataSet, Row, Widget } from '../model/types'
 import { useBoardStore } from './boardStore'
 import { mutate } from './mutate'
 
@@ -25,6 +25,41 @@ function findWidget(widgetId: string): Widget | undefined {
   return useBoardStore
     .getState()
     .document.widgets.find((widget) => widget.id === widgetId)
+}
+
+function isLogWidget(
+  widget: Widget,
+): widget is Widget & { type: 'form' | 'table'; dataset: DataSet } {
+  return widget.type === 'form' || widget.type === 'table'
+}
+
+function normalizedTitle(title: string): string {
+  return title.trim().toLowerCase()
+}
+
+function pickSiblingValues(
+  fields: DataSet['fields'],
+  values: Record<string, unknown>,
+): Record<string, unknown> {
+  const next: Record<string, unknown> = {}
+  for (const field of fields) {
+    if (Object.prototype.hasOwnProperty.call(values, field.key)) {
+      next[field.key] = values[field.key]
+    }
+  }
+  return next
+}
+
+function sameTitleLogSiblings(widget: Widget, widgets: Widget[]): Widget[] {
+  if (!isLogWidget(widget)) return []
+  const title = normalizedTitle(widget.title)
+  return widgets.filter(
+    (candidate) =>
+      candidate.id !== widget.id &&
+      isLogWidget(candidate) &&
+      normalizedTitle(candidate.title) === title &&
+      candidate.dataset.fields.length > 0,
+  )
 }
 
 export function appendRows(
@@ -92,6 +127,10 @@ export function appendRows(
 
   const rowIds: string[] = []
   const timestamp = new Date().toISOString()
+  const siblings = sameTitleLogSiblings(
+    widget,
+    useBoardStore.getState().document.widgets,
+  )
   mutate(
     {
       actor,
@@ -104,20 +143,41 @@ export function appendRows(
         (candidate) => candidate.id === widgetId,
       )
       if (!target || target.type === 'note') return
+      const makeRow = (values: Record<string, unknown>): Row => ({
+        _id: createRowId(),
+        _createdAt: timestamp,
+        _updatedAt: timestamp,
+        _createdBy: actor,
+        ...values,
+      })
       for (const values of parsedRows) {
-        const rowId = createRowId()
-        const row: Row = {
-          _id: rowId,
-          _createdAt: timestamp,
-          _updatedAt: timestamp,
-          _createdBy: actor,
-          ...values,
-        }
-        rowIds.push(rowId)
+        const row = makeRow(values)
+        rowIds.push(row._id)
         target.dataset.rows.push(row)
       }
       target.updatedAt = timestamp
       target.lastModifiedBy = actor
+
+      for (const sibling of siblings) {
+        const live = draft.widgets.find(
+          (candidate) => candidate.id === sibling.id,
+        )
+        if (!live || !isLogWidget(live)) continue
+        if (live.dataset.rows.length + parsedRows.length > LIMITS.rowsPerWidget) {
+          continue
+        }
+        for (const values of parsedRows) {
+          const parsed = parseRowValues(
+            live.dataset.fields,
+            pickSiblingValues(live.dataset.fields, values),
+            { index: 0, partial: false },
+          )
+          if (!parsed.ok) continue
+          live.dataset.rows.push(makeRow(parsed.values))
+        }
+        live.updatedAt = timestamp
+        live.lastModifiedBy = actor
+      }
     },
   )
 
