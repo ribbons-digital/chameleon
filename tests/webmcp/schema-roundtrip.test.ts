@@ -242,6 +242,10 @@ describe('schema round-trip', () => {
     expect(byName.add_rows).toMatch(/note/)
     expect(byName.update_widget).toMatch(/add_rows/)
     expect(byName.describe_current_state).toMatch(/add_rows/)
+    expect(byName.add_widget).toMatch(/create_form_tool/)
+    expect(byName.create_form_tool).toMatch(/REQUIRED/)
+    expect(byName.add_rows).toMatch(/create_form_tool/)
+    expect(byName.describe_current_state).toMatch(/create_form_tool/)
   })
 
   for (const testCase of cases) {

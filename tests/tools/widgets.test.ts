@@ -133,6 +133,19 @@ describe('add_widget', () => {
     expect((result.error as { details?: unknown }).details).toBeTruthy()
   })
 
+  it('requires create_form_tool immediately after a form with fields', async () => {
+    const result = await executeTool(addWidget, {
+      type: 'form',
+      title: 'Blood sugar log',
+      fields: [
+        { key: 'reading', label: 'Reading', type: 'number', required: true },
+      ],
+    })
+    expect(result.ok).toBe(true)
+    expect(result.next).toMatch(/REQUIRED next call: create_form_tool/)
+    expect(result.next).toMatch(/add_rows does not mint/)
+  })
+
   it('rejects invalid input', async () => {
     const result = await executeTool(addWidget, { type: 'note' })
     expect(result.ok).toBe(false)

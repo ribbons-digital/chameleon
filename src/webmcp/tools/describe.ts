@@ -17,7 +17,7 @@ export const DescribeInput = z
 export const describeCurrentState = makeTool({
   name: 'describe_current_state',
   description:
-    'Returns the board snapshot plus unfinished: every table/kanban/checklist/form with 0 rows. If unfinished is not empty, call add_rows (or bind_data then add_rows) before you stop — "No rows yet" / "No items yet" is a failed run. Also: title, theme, every widget (id, type, title, grid position, config, fields, row count, up to 3 sample rows), minted tools if any, last 10 activity-log entries including human hand-edits, and stateVersion. Call this before your first mutation and again whenever a tool reports a stale or missing id.',
+    'Returns the board snapshot plus unfinished. Empty tables, kanban, and checklists need add_rows (or bind_data first). A form with fields but no minted tool needs create_form_tool. add_rows does not mint. Also: title, theme, widgets (id, type, title, position, config, fields, rowCount, sample rows), mintedTools, last 10 activity entries, stateVersion. Call before mutating and on stale ids.',
   input: DescribeInput,
   handler: (input) => {
     const snapshot = currentSnapshot(input.include_sample_rows)

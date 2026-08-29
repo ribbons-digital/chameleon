@@ -46,7 +46,7 @@ export const RemoveMintedToolInput = z
 export const createFormTool = makeTool({
   name: 'create_form_tool',
   description:
-    'Mints a persistent tool from a form widget. Prefer this when the user will log the same entry repeatedly; use add_rows for one-off or batch data. The input schema mirrors current form fields and re-registers when fields change. Choose a verb_noun name such as log_blood_sugar. Each call adds one validated row. The tool survives reloads until the form is deleted or remove_minted_tool is called. Returns the generated input schema.',
+    'Mints a persistent tool from a form widget. REQUIRED after you add a form for repeated entries such as blood sugar; add_rows does not mint and is not a substitute. Name it verb_noun such as log_blood_sugar. The schema mirrors current fields and remints when they change. Each call appends one validated row. Survives reload until the form is deleted or remove_minted_tool is called. Returns the generated input schema.',
   input: CreateFormToolInput,
   handler: (input) => {
     const state = useBoardStore.getState()

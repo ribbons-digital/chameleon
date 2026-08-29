@@ -173,7 +173,7 @@ export const bindData = makeTool({
 
     const next =
       widget.type === 'form'
-        ? `RECOMMENDED next call: create_form_tool on ${input.widgetId}. This form now has a reusable submission signature.`
+        ? `REQUIRED next call: create_form_tool on ${input.widgetId}. add_rows does not mint a tool.`
         : `REQUIRED next call: add_rows on ${input.widgetId}. bind_data only set columns. "No rows yet" means you are not done.`
     return ok({
       widgetId: input.widgetId,
@@ -188,7 +188,7 @@ export const bindData = makeTool({
 export const addRows = makeTool({
   name: 'add_rows',
   description:
-    'REQUIRED after you add a table, kanban, checklist, or form. Fills that widget. Do not put the data in a note. "No rows yet" / "No items yet" means you skipped this call. Checklist keys: text, done, due, note (skip bind_data). Up to 50 rows; unknown keys rejected; values coerced where safe. Returns new row ids. Then check unfinished on the result — fill every remaining empty widget before you stop.',
+    'REQUIRED after a table, kanban, or checklist. Do not put that data in a note. For a form, call create_form_tool first and then the minted tool; add_rows only seeds. "No rows yet" / "No items yet" means you skipped this. Checklist keys: text, done, due, note (skip bind_data). Up to 50 rows. Returns new row ids. Then check unfinished. A form without a minted tool is not done.',
   input: AddRowsInput,
   handler: (input) => {
     const widget = findWidget(input.widgetId)

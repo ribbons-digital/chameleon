@@ -77,7 +77,7 @@ export function nextAfterAdd(args: {
   if (type === 'form') {
     return {
       needsRows: true,
-      next: `RECOMMENDED next call: create_form_tool on ${widgetId}. The form has fields, so mint its reusable submission signature; use add_rows only to seed data.`,
+      next: `REQUIRED next call: create_form_tool on ${widgetId}. add_rows does not mint a tool and is not a substitute.`,
     }
   }
   return {
@@ -89,7 +89,7 @@ export function nextAfterAdd(args: {
 export const addWidget = makeTool({
   name: 'add_widget',
   description:
-    'Creates one widget and returns widgetId plus required next. Pipeline/status board: use kanban with a select groupByField, never table. Bind omitted fields for table, kanban, chart, or form. A form with fields should call create_form_tool; use add_rows to seed data. Checklist: skip bind_data, then add_rows with text/done/due/note. Notes use config.markdown only. "No rows yet" or "No items yet" means unfinished. Omit position to auto-place.',
+    'Creates one widget and returns widgetId plus required next. Repeated logs (blood sugar, applications) must be type=form, then create_form_tool. Pipeline/status board: kanban with a select groupByField, never table. Bind omitted fields for table, kanban, chart, or form. Checklist: skip bind_data, then add_rows with text/done/due/note. Notes: config.markdown only. "No rows yet" / "No items yet" means unfinished. Omit position to auto-place.',
   input: AddWidgetInput,
   handler: (input) => {
     const state = useBoardStore.getState()

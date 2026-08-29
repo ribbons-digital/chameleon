@@ -111,6 +111,26 @@ describe('describe_current_state', () => {
     ])
   })
 
+  it('lists a bound form without a minted tool as unfinished', async () => {
+    resetBoard(emptyBoard())
+    await executeTool(addWidget, {
+      type: 'form',
+      title: 'Blood sugar log',
+      fields: [
+        { key: 'reading', label: 'Reading', type: 'number', required: true },
+      ],
+    })
+    const result = await executeTool(describeCurrentState, {})
+    expect(result.ok).toBe(true)
+    expect(result.unfinished).toEqual([
+      expect.objectContaining({
+        title: 'Blood sugar log',
+        type: 'form',
+        action: 'create_form_tool',
+      }),
+    ])
+  })
+
   it('matches a stable snapshot of the default board', async () => {
     const result = await executeTool(describeCurrentState, {})
     expect(result).toMatchSnapshot()
