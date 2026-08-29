@@ -51,6 +51,14 @@ body {
   opacity: 0.55;
 }
 
+.kanban-card.drop-before {
+  box-shadow: 0 calc(var(--spacing-1) * -1) 0 var(--color-accent);
+}
+
+.kanban-card.drop-after {
+  box-shadow: 0 var(--spacing-1) 0 var(--color-accent);
+}
+
 .react-grid-item > .react-resizable-handle {
   opacity: 1 !important;
   z-index: 20;

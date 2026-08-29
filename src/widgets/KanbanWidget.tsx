@@ -7,11 +7,14 @@ import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { VStack } from '@astryxdesign/core/VStack'
 import { useState } from 'react'
+import {
+  columnValueOf,
+  KANBAN_UNGROUPED,
+} from '../model/kanbanOrder'
 import type { Field, KanbanWidget as KanbanWidgetModel, Row } from '../model/types'
-import { humanAddRow, humanUpdateCell } from '../store/human'
+import { humanAddRow, humanMoveKanbanCard } from '../store/human'
 import { widgetStyles } from './styles'
 
-const UNGROUPED = ''
 const CARD_MIME = 'application/x-chameleon-row'
 
 function columnsFor(widget: KanbanWidgetModel): string[] {
@@ -22,11 +25,11 @@ function columnsFor(widget: KanbanWidgetModel): string[] {
   const ordered = widget.config.columnOrder?.filter((option) => options.includes(option))
   const base = ordered && ordered.length > 0 ? ordered : options
   const extras = options.filter((option) => !base.includes(option))
-  return [...base, ...extras, UNGROUPED]
+  return [...base, ...extras, KANBAN_UNGROUPED]
 }
 
 function columnLabel(value: string): string {
-  return value === UNGROUPED ? 'No status' : value
+  return value === KANBAN_UNGROUPED ? 'No status' : value
 }
 
 function cardTitle(row: Row, field: Field | undefined): string {
@@ -46,15 +49,27 @@ function cardDetails(row: Row, fields: Field[]): string | undefined {
   return parts.length > 0 ? parts.join(' · ') : undefined
 }
 
-function columnValueOf(row: Row, groupKey: string): string {
-  const value = row[groupKey]
-  if (value === undefined || value === null || value === '') return UNGROUPED
-  return String(value)
+function dropIndexFromPoint(
+  columnEl: HTMLElement,
+  draggingId: string | null,
+  clientY: number,
+): number {
+  const cards = [...columnEl.querySelectorAll<HTMLElement>('.kanban-card')].filter(
+    (element) => element.dataset.rowId !== draggingId,
+  )
+  for (let index = 0; index < cards.length; index += 1) {
+    const rect = cards[index].getBoundingClientRect()
+    if (clientY < rect.top + rect.height / 2) return index
+  }
+  return cards.length
 }
 
 export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [dropHint, setDropHint] = useState<{ column: string; index: number } | null>(
+    null,
+  )
   const groupField = widget.dataset.fields.find(
     (field) => field.key === widget.config.groupByField,
   )
@@ -78,25 +93,27 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
 
   const columns = columnsFor(widget)
 
-  const moveCard = (row: Row, next: string) => {
-    if (columnValueOf(row, groupField.key) === next) return
-    humanUpdateCell(
-      widget.id,
-      row._id,
-      groupField,
-      next === UNGROUPED ? undefined : next,
-      `Moved “${cardTitle(row, titleField)}” to ${columnLabel(next)}`,
-    )
+  const moveCard = (row: Row, column: string, index: number) => {
+    const current = columnValueOf(row, groupField.key)
+    const title = cardTitle(row, titleField)
+    const summary =
+      current === column
+        ? `Reordered “${title}” in ${columnLabel(column)}`
+        : `Moved “${title}” to ${columnLabel(column)}`
+    humanMoveKanbanCard(widget.id, row._id, groupField, column, index, summary)
   }
 
   const addCard = (column: string) => {
     const title = (drafts[column] ?? '').trim()
     if (!title || !titleField) return
     const values: Record<string, unknown> = { [titleField.key]: title }
-    if (column !== UNGROUPED) values[groupField.key] = column
+    if (column !== KANBAN_UNGROUPED) values[groupField.key] = column
     const result = humanAddRow(widget.id, values, `Added “${title}”`)
     if (result.ok) setDrafts((current) => ({ ...current, [column]: '' }))
   }
+
+  const readRowId = (transfer: DataTransfer) =>
+    transfer.getData(CARD_MIME) || transfer.getData('text/plain')
 
   return (
     <HStack gap={3} xstyle={widgetStyles.kanbanBoard} vAlign="start">
@@ -104,6 +121,7 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
         const cards = widget.dataset.rows.filter(
           (row) => columnValueOf(row, groupField.key) === column,
         )
+        const others = cards.filter((candidate) => candidate._id !== draggingId)
         return (
           <VStack
             key={column || 'ungrouped'}
@@ -112,15 +130,32 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
             onDragOver={(event) => {
               event.preventDefault()
               event.dataTransfer.dropEffect = 'move'
+              const index = dropIndexFromPoint(
+                event.currentTarget,
+                draggingId,
+                event.clientY,
+              )
+              setDropHint({ column, index })
+            }}
+            onDragLeave={(event) => {
+              const next = event.relatedTarget
+              if (next instanceof Node && event.currentTarget.contains(next)) return
+              setDropHint((current) =>
+                current?.column === column ? null : current,
+              )
             }}
             onDrop={(event) => {
               event.preventDefault()
-              const rowId =
-                event.dataTransfer.getData(CARD_MIME) ||
-                event.dataTransfer.getData('text/plain')
+              const rowId = readRowId(event.dataTransfer)
               const row = widget.dataset.rows.find((candidate) => candidate._id === rowId)
+              const index = dropIndexFromPoint(
+                event.currentTarget,
+                rowId,
+                event.clientY,
+              )
               setDraggingId(null)
-              if (row) moveCard(row, column)
+              setDropHint(null)
+              if (row) moveCard(row, column, index)
             }}
           >
             <Heading level={3}>{columnLabel(column)}</Heading>
@@ -133,18 +168,33 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
               </Text>
             ) : (
               <VStack gap={2}>
-                {cards.map((row) => {
+                {cards.map((row, index) => {
                   const title = cardTitle(row, titleField)
                   const details = cardDetails(row, detailFields)
                   const dragging = draggingId === row._id
+                  const othersIndex = others.findIndex((candidate) => candidate._id === row._id)
+                  const hintHere =
+                    dropHint?.column === column &&
+                    othersIndex >= 0 &&
+                    dropHint.index === othersIndex
+                  const hintAfter =
+                    dropHint?.column === column &&
+                    index === cards.length - 1 &&
+                    dropHint.index === others.length
+                  const dropClass = hintHere
+                    ? ' drop-before'
+                    : hintAfter
+                      ? ' drop-after'
+                      : ''
                   return (
                     <Card
                       key={row._id}
-                      className={dragging ? 'kanban-card is-dragging' : 'kanban-card'}
+                      className={`kanban-card${dragging ? ' is-dragging' : ''}${dropClass}`}
                       padding={3}
                       elevation="med"
                       width="100%"
                       draggable
+                      data-row-id={row._id}
                       aria-label={`${title} card`}
                       xstyle={widgetStyles.kanbanCard}
                       onPointerDown={(event) => event.stopPropagation()}
@@ -155,7 +205,10 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
                         event.dataTransfer.effectAllowed = 'move'
                         setDraggingId(row._id)
                       }}
-                      onDragEnd={() => setDraggingId(null)}
+                      onDragEnd={() => {
+                        setDraggingId(null)
+                        setDropHint(null)
+                      }}
                     >
                       <VStack gap={1}>
                         <Heading level={4}>{title}</Heading>

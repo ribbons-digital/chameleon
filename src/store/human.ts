@@ -1,5 +1,6 @@
 import { createRowId } from '../model/ids'
 import { parseRowValues, validateValue } from '../model/fields'
+import { KANBAN_UNGROUPED, placeRowInColumn } from '../model/kanbanOrder'
 import type { Actor, Field, Row, Widget } from '../model/types'
 import { useBoardStore } from './boardStore'
 import { mutate } from './mutate'
@@ -131,6 +132,58 @@ export function humanUpdateCell(
     },
   )
   return { ok: true }
+}
+
+export function humanMoveKanbanCard(
+  widgetId: string,
+  rowId: string,
+  groupField: Field,
+  column: string,
+  index: number,
+  summary: string,
+): { ok: true; changed: boolean } | { ok: false; message: string } {
+  const widget = widgetById(widgetId)
+  if (!widget || widget.type !== 'kanban' || !widget.dataset) {
+    return { ok: false, message: 'This widget is not a kanban.' }
+  }
+  if (column !== KANBAN_UNGROUPED) {
+    const result = validateValue(groupField, column)
+    if (!result.ok) return { ok: false, message: result.message }
+  }
+  const placed = placeRowInColumn(
+    widget.dataset.rows,
+    rowId,
+    groupField.key,
+    column,
+    index,
+  )
+  if (!placed) return { ok: true, changed: false }
+
+  const timestamp = now()
+  mutate(
+    {
+      actor: 'human',
+      action: 'update_rows',
+      summary,
+    },
+    (draft) => {
+      const target = draft.widgets.find((candidate) => candidate.id === widgetId)
+      if (!target || target.type !== 'kanban' || !target.dataset) return
+      const next = placeRowInColumn(
+        target.dataset.rows,
+        rowId,
+        groupField.key,
+        column,
+        index,
+      )
+      if (!next) return
+      const moved = next.find((candidate) => candidate._id === rowId)
+      if (moved) moved._updatedAt = timestamp
+      target.dataset.rows = next
+      stamp(target, 'human', timestamp)
+    },
+  )
+  return { ok: true, changed: true }
 }
 
 export function humanDeleteRow(widgetId: string, rowId: string): void {
