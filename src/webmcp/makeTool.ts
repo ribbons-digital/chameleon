@@ -2,6 +2,7 @@ import type { InputSchema } from '@mcp-b/webmcp-types'
 import { z } from 'zod'
 import { err, formatZodIssues, safeRun, type ToolErr, type ToolOk } from './result'
 import type { RegisterableTool } from './modelContext'
+import { awaitMintedSync } from './mintedSync'
 
 export type JsonSchema = Record<string, unknown>
 
@@ -34,6 +35,7 @@ export function makeTool<I>(def: {
       const result = parsed.success
         ? safeRun(() => def.handler(parsed.data))
         : err('INVALID_INPUT', 'Arguments failed schema validation.', formatZodIssues(parsed.error))
+      await awaitMintedSync()
       return { content: [{ type: 'text', text: JSON.stringify(result) }] }
     },
   }

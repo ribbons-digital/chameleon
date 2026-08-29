@@ -262,3 +262,69 @@ prompt still comes back as a table.
 - Drag by header and resize still persist through `mutate` and undo.
 - Click-to-edit on the note writes a human `update_widget` command.
 - Empty WebMCP banner is visible in stable Chrome and dismissable.
+
+## 2026-08-29 — Day 4 checkpoint #2
+
+### ChatGPT Sol vs Canary inspector
+
+Health-log minting worked in Canary with the inspector. The same diabetes
+prompt in ChatGPT Sol did not go to 16 tools and did not show the ⚡ token.
+`create_form_tool` was 13th in `STATIC_TOOL_NAMES`, and form `next` /
+`unfinished` still said `add_rows` after fields were bound. Sol follows
+those payloads, not descriptions. `unfinished` for a bound unminted form
+is now `create_form_tool`. Mint is REQUIRED in `add_widget` / `bind_data`
+`next`. Static tool order puts `create_form_tool` with `add_widget` /
+`bind_data` / `add_rows`.
+
+### Form UI submit vs prompt
+
+Ryan: adding a reading from a prompt wrote the row. Filling the on-canvas
+form did not show up on the Blood sugar log table.
+
+The minted tool and the form widget both call `appendRows` on the **form**.
+A same-title **table** is a second dataset. The prompt path that looked
+"working" was `add_rows` (or looking at the form's recent list / chart).
+The form button wrote only to the form.
+
+Also: native form validation can swallow submit (Astryx `CheckboxInput`
+sets the HTML `required` attribute) with no React error banner. The form
+now uses `noValidate` and reads `FormData` so a number still in the input
+is not lost if React state is one event behind.
+
+`appendRows` copies a validated row onto companion form/table widgets
+in the same command, so undo reverts both. Companions are same-title
+widgets, or a form/table pair whose field keys match (Ryan's Canary
+board: table "Blood Sugar Log" + form "Log New Reading"). Hard refresh
+after deploy, then submit from Log New Reading and confirm the table.
+
+### ChatGPT Sol still does not mint
+
+Ryan confirmed Canary form submit now copies onto the table. The same
+diabetes prompt in ChatGPT's browser still stays at 15 tools with no ⚡.
+
+Cause: Sol builds a Blood Sugar Log **table** (plus a chart) and never a
+form. Our earlier steering only fired after a form existed. `unfinished`
+treated a filled table as done, so add_rows was a stop.
+
+Log-titled tables now stay unfinished with action `create_form_tool` until
+something is minted. `add_widget` / `bind_data` `next` for those tables
+says add a form then mint. An empty form nexts bind_data then
+create_form_tool, not add_rows. Hard-refresh the ChatGPT Chameleon tab
+(not only Canary), Reset canvas, re-run the diabetes prompt.
+
+### Table header clipped
+
+Ryan: generated table UI always cuts off the header. Screenshot of
+Blood Sugar Log shows only the bottom sliver of Date / Timing /
+Glucose labels. Astryx Table `containerBleed` uses `:first-child`
+negative `marginTop` of `--container-padding-block-start` (Card
+`padding={4}`). Widget `Card` is `overflow: clip`, the shell and
+`.react-grid-item` are `overflow: hidden`, so the header row is
+painted under the title and sliced.
+
+Zeroing that var with `var(--spacing-0)` was not enough:
+`--spacing-0` is a hashed StyleX token, so the declaration can be
+invalid and Card's 16px still inherits. Reset is now `0px` (same as
+Astryx Section). The table stack also has `paddingBlockStart={4}` so
+any leftover bleed is absorbed inside the table, not under the title.
+Hard-refresh after deploy.

@@ -37,7 +37,7 @@ export const ERROR_HINTS: Record<ErrorCode, string> = {
   FIELD_NOT_FOUND:
     'Config references a field key that is not in the schema. details names the missing key.',
   NAME_TAKEN:
-    'A tool with this name already exists. Pick a more specific name.',
+    'A tool with this name already exists. Pick a more specific name, or call remove_minted_tool first if you own it.',
   RESERVED_NAME:
     'This name is reserved by the app. Choose a different verb_noun name.',
   NO_CHANGES:

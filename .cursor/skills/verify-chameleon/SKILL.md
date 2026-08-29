@@ -9,7 +9,7 @@ Chameleon is a single-route web canvas. A user sees a header, two seed widgets o
 
 This skill is for agents that need to prove a change on the running page. Unit tests in `tests/` do not count as proof. Do not call Zustand setters, do not seed localStorage by hand, and do not drive `http://localhost:4711` unless this run launched it (it did not: launch refuses 4711).
 
-WebMCP tools (`document.modelContext`) are not a user path in this browser. Stable Chrome here shows the dismissable `WebMCP not detected in this browser` banner and a token like `11 tools ready`. Do not treat tool calls as verification of the canvas. Checklist, kanban, chart, and form widgets are not on the seed board; a human cannot add them without an agent host, so they are out of scope for this skill until a user-facing add-widget control exists.
+WebMCP tools (`document.modelContext`) are not a user path in this browser. Stable Chrome here shows the dismissable `WebMCP not detected in this browser` banner and a token like `15 tools ready`. Do not treat tool calls as verification of the canvas. Checklist, kanban, chart, and form widgets are not on the seed board; a human cannot add them without an agent host, so they are out of scope for this skill until a user-facing add-widget control exists.
 
 Each `browser` command opens Chrome against this run's profile, does the work, and closes it. Open editors and the activity list are React state, not persisted. Finish those in one command (`browser note`, `browser cell`, or a click with `--wait-text` / `--aria-snapshot` / `--screenshot`). Layout, cells, and the command log persist, so drag, reload, and undo can be separate commands.
 
@@ -85,7 +85,7 @@ Stable handles:
 | After delete widget | `Latest: Removed “A canvas that listens”` |
 | After undo | `Latest: Undid: Moved “A canvas that listens”` |
 | Version line | `state vN · M commands` |
-| Unhosted token | `11 tools ready` |
+| Unhosted token | `15 tools ready` |
 | Unhosted banner | `WebMCP not detected in this browser` |
 | Banner dismiss | button `Dismiss` |
 | Delete widget | button `Delete A canvas that listens` |

@@ -11,6 +11,10 @@ import type {
 } from '../model/types'
 import { useBoardStore } from './boardStore'
 
+export function isRepeatedLogTitle(title: string): boolean {
+  return /blood[\s-]?sugar|glucose|diabetes|readings?|\blog\b/i.test(title)
+}
+
 export function effectiveDataset(
   widget: Widget,
   widgets: Widget[],
@@ -101,7 +105,7 @@ export type UnfinishedWidget = {
   title: string
   type: Widget['type']
   reason: string
-  action: 'add_rows' | 'bind_data'
+  action: 'add_rows' | 'bind_data' | 'create_form_tool'
 }
 
 export function unfinishedWidgets(document: BoardDocument): UnfinishedWidget[] {
@@ -111,6 +115,49 @@ export function unfinishedWidgets(document: BoardDocument): UnfinishedWidget[] {
     const dataset = effectiveDataset(widget, document.widgets)
     const rowCount = dataset?.rows.length ?? 0
     const fieldCount = dataset?.fields.length ?? 0
+    if (widget.type === 'form') {
+      const minted = document.mintedTools.some(
+        (tool) => tool.widgetId === widget.id,
+      )
+      if (fieldCount === 0) {
+        unfinished.push({
+          widgetId: widget.id,
+          title: widget.title,
+          type: widget.type,
+          reason:
+            'No fields yet. Call bind_data, then create_form_tool. add_rows does not mint a tool.',
+          action: 'bind_data',
+        })
+        continue
+      }
+      if (!minted) {
+        unfinished.push({
+          widgetId: widget.id,
+          title: widget.title,
+          type: widget.type,
+          reason:
+            'Form has no minted tool. Call create_form_tool before you stop. add_rows is not a substitute.',
+          action: 'create_form_tool',
+        })
+        continue
+      }
+      continue
+    }
+    if (
+      widget.type === 'table' &&
+      isRepeatedLogTitle(widget.title) &&
+      document.mintedTools.length === 0
+    ) {
+      unfinished.push({
+        widgetId: widget.id,
+        title: widget.title,
+        type: widget.type,
+        reason:
+          'Repeated log has no minted tool. add_widget type=form with these fields, then create_form_tool. Filling this table is not a substitute.',
+        action: 'create_form_tool',
+      })
+      continue
+    }
     if (rowCount > 0) continue
     if (widget.type !== 'checklist' && fieldCount === 0) {
       unfinished.push({

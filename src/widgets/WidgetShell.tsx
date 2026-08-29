@@ -7,6 +7,7 @@ import { Token } from '@astryxdesign/core/Token'
 import { VStack } from '@astryxdesign/core/VStack'
 import type { ReactNode } from 'react'
 import type { Widget } from '../model/types'
+import { useBoardStore } from '../store/boardStore'
 import { humanDeleteWidget } from '../store/human'
 import { widgetStyles } from './styles'
 
@@ -29,6 +30,9 @@ export function WidgetShell({
   widget: Widget
   children: ReactNode
 }) {
+  const mintedTools = useBoardStore(
+    (state) => state.document.mintedTools,
+  ).filter((record) => record.widgetId === widget.id)
   return (
     <Card height="100%" padding={4} elevation="low" xstyle={widgetStyles.shell}>
       <VStack gap={3} height="100%">
@@ -38,6 +42,15 @@ export function WidgetShell({
               {widget.title}
             </Heading>
             <HStack gap={1} vAlign="center">
+              {widget.type === 'form' &&
+                mintedTools.map((record) => (
+                  <Token
+                    key={record.toolName}
+                    size="sm"
+                    color="yellow"
+                    label={`⚡ ${record.toolName}`}
+                  />
+                ))}
               <Token
                 size="sm"
                 color={typeColor[widget.type]}

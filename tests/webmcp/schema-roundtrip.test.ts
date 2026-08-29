@@ -12,6 +12,14 @@ import {
   DeleteRowsInput,
   UpdateRowsInput,
 } from '../../src/webmcp/tools/data'
+import {
+  SetLayoutInput,
+  SetThemeInput,
+} from '../../src/webmcp/tools/layout'
+import {
+  CreateFormToolInput,
+  RemoveMintedToolInput,
+} from '../../src/webmcp/tools/mint'
 import { UndoInput } from '../../src/webmcp/tools/undo'
 import {
   AddWidgetInput,
@@ -125,6 +133,46 @@ const cases = [
     reject: [{ widgetId: 'w_abcdef', rowIds: [] }],
   },
   {
+    name: 'set_layout',
+    schema: SetLayoutInput,
+    accept: [
+      {
+        items: [
+          { widgetId: 'w_abcdef', x: 0, y: 0, w: 6, h: 4 },
+        ],
+      },
+    ],
+    reject: [{ items: [] }, { items: [{ widgetId: 'bad' }] }],
+  },
+  {
+    name: 'set_theme',
+    schema: SetThemeInput,
+    accept: [{}, { boardTitle: 'Health', theme: 'matcha', mode: 'dark' }],
+    reject: [{ theme: 'ocean' }, { density: 'dense' }],
+  },
+  {
+    name: 'create_form_tool',
+    schema: CreateFormToolInput,
+    accept: [
+      {
+        widgetId: 'w_abcdef',
+        toolName: 'log_reading',
+        description:
+          'Records one health reading. Example: log a reading of 104.',
+      },
+    ],
+    reject: [
+      { widgetId: 'w_abcdef', toolName: 'Bad Name', description: 'Long enough description.' },
+      { widgetId: 'w_abcdef', toolName: 'log_ok', description: 'short' },
+    ],
+  },
+  {
+    name: 'remove_minted_tool',
+    schema: RemoveMintedToolInput,
+    accept: [{ toolName: 'log_reading' }],
+    reject: [{ toolName: 'x' }, { toolName: 'Bad Name' }],
+  },
+  {
     name: 'undo',
     schema: UndoInput,
     accept: [{}, { steps: 3 }],
@@ -138,13 +186,6 @@ function hasRef(value: unknown): boolean {
   return Object.values(value).some(hasRef)
 }
 
-const UNREGISTERED_TOOL_NAMES = [
-  'create_form_tool',
-  'remove_minted_tool',
-  'set_layout',
-  'set_theme',
-]
-
 describe('schema round-trip', () => {
   it('publishes inline Draft-7 schemas for every static tool', () => {
     for (const tool of STATIC_TOOLS) {
@@ -153,19 +194,31 @@ describe('schema round-trip', () => {
     }
   })
 
-  it('does not advertise tools that are not registered', () => {
+  it('registers every static tool name exactly once', () => {
     const registered = new Set(STATIC_TOOLS.map((tool) => tool.name))
-    for (const tool of STATIC_TOOLS) {
-      const published = `${tool.description}\n${JSON.stringify(tool.inputSchema)}`
-      for (const name of UNREGISTERED_TOOL_NAMES) {
-        expect(published, `${tool.name} mentions ${name}`).not.toContain(name)
-      }
-      expect(registered.has(tool.name)).toBe(true)
-    }
-    const hints = Object.values(ERROR_HINTS).join('\n')
-    for (const name of UNREGISTERED_TOOL_NAMES) {
-      expect(hints, `ERROR_HINTS mentions ${name}`).not.toContain(name)
-    }
+    expect(registered.size).toBe(STATIC_TOOLS.length)
+    expect(registered).toEqual(
+      new Set([
+        'describe_current_state',
+        'read_widget_data',
+        'get_activity_log',
+        'add_widget',
+        'update_widget',
+        'remove_widget',
+        'bind_data',
+        'add_rows',
+        'update_rows',
+        'delete_rows',
+        'set_layout',
+        'set_theme',
+        'create_form_tool',
+        'remove_minted_tool',
+        'undo',
+      ]),
+    )
+    expect(Object.values(ERROR_HINTS).join('\n')).toContain(
+      'remove_minted_tool',
+    )
   })
 
   it('steers pipelines to kanban and empty widgets to add_rows', () => {
@@ -189,6 +242,10 @@ describe('schema round-trip', () => {
     expect(byName.add_rows).toMatch(/note/)
     expect(byName.update_widget).toMatch(/add_rows/)
     expect(byName.describe_current_state).toMatch(/add_rows/)
+    expect(byName.add_widget).toMatch(/create_form_tool/)
+    expect(byName.create_form_tool).toMatch(/REQUIRED/)
+    expect(byName.add_rows).toMatch(/create_form_tool/)
+    expect(byName.describe_current_state).toMatch(/create_form_tool/)
   })
 
   for (const testCase of cases) {

@@ -11,18 +11,31 @@ export const widgetStyles = stylex.create({
     minHeight: '0',
     overflow: 'auto',
     paddingBottom: 'var(--spacing-4)',
+    // Kill vertical Table bleed. Use 0px (Astryx Section's reset) rather
+    // than var(--spacing-0), which is a hashed StyleX token and can leave
+    // this declaration invalid so Card's 16px still inherits.
+    '--container-padding-block-start': '0px',
   },
-  tableHost: {
-    minHeight: '0',
+  tableStack: {
     width: '100%',
     maxWidth: '100%',
-    overflow: 'auto',
+    flexShrink: 0,
+    minHeight: 'min-content',
+    '--container-padding-block-start': '0px',
+  },
+  tableHost: {
+    width: '100%',
+    maxWidth: '100%',
   },
   noteEditor: {
     width: '100%',
   },
   placeholder: {
     height: '100%',
+  },
+  chartHost: {
+    width: '100%',
+    minHeight: 'calc(var(--spacing-10) * 4)',
   },
   kanbanBoard: {
     width: '100%',

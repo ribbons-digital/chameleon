@@ -48,6 +48,7 @@ describe('bind_data', () => {
     expect(result.ok).toBe(true)
     expect(result.migratedRowCount).toBe(1)
     expect(result.next).toMatch(/add_rows/)
+    expect(result.next).not.toMatch(/create_form_tool/)
     const table = useBoardStore.getState().document.widgets[0]
     expect(table.type).toBe('table')
     if (table.type !== 'table') return
@@ -99,6 +100,42 @@ describe('bind_data', () => {
     })
     expect(result.ok).toBe(false)
     expect((result.error as { code: string }).code).toBe('FIELD_NOT_FOUND')
+  })
+
+  it('requires create_form_tool after binding a form', async () => {
+    await executeTool(addWidget, { type: 'form', title: 'Blood sugar log' })
+    const widgetId = useBoardStore.getState().document.widgets[0].id
+    const result = await executeTool(bindData, {
+      widgetId,
+      fields: [
+        { key: 'reading', label: 'Reading', type: 'number', required: true },
+      ],
+    })
+    expect(result.ok).toBe(true)
+    expect(result.next).toMatch(/create_form_tool/)
+    expect(result.next).not.toMatch(/add_rows on /)
+  })
+
+  it('steers binding a blood sugar table toward a form and mint', async () => {
+    await executeTool(addWidget, { type: 'table', title: 'Blood Sugar Log' })
+    const widgetId = useBoardStore.getState().document.widgets[0].id
+    const result = await executeTool(bindData, {
+      widgetId,
+      fields: [
+        { key: 'glucose', label: 'Glucose', type: 'number', required: true },
+      ],
+    })
+    expect(result.ok).toBe(true)
+    expect(result.next).toMatch(/type=form/)
+    expect(result.next).toMatch(/create_form_tool/)
+    expect(result.unfinished).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: 'Blood Sugar Log',
+          action: 'create_form_tool',
+        }),
+      ]),
+    )
   })
 })
 
