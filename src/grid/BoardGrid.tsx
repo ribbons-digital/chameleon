@@ -134,7 +134,7 @@ export function BoardGrid() {
             dragConfig={{
               handle: '.widget-drag-handle',
               cancel:
-                '.react-resizable-handle, textarea, input, button, [role="checkbox"]',
+                '.react-resizable-handle, textarea, input, button, [role="checkbox"], .kanban-card',
               enabled: !stacked,
             }}
             resizeConfig={{

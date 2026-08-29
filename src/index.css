@@ -46,6 +46,11 @@ body {
   cursor: grabbing;
 }
 
+.kanban-card.is-dragging {
+  cursor: grabbing;
+  opacity: 0.55;
+}
+
 .react-grid-item > .react-resizable-handle {
   opacity: 1 !important;
   z-index: 20;
