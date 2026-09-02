@@ -194,7 +194,7 @@ async function waitForHttp(url, timeoutMs) {
   while (Date.now() - start < timeoutMs) {
     try {
       const res = await fetch(url, { redirect: 'manual' })
-      if (res.status >= 200 && res.status < 500) return
+      if (res.ok) return
       last = `HTTP ${res.status}`
     } catch (err) {
       last = err instanceof Error ? err.message : String(err)
@@ -416,6 +416,8 @@ async function doctor(flags) {
     const canvas = await page.getByRole('region', { name: 'Widget canvas' }).isVisible()
     const undo = page.getByRole('button', { name: 'Undo last change', exact: true })
     const reset = page.getByRole('button', { name: 'Reset canvas', exact: true })
+    const addWidget = page.getByRole('button', { name: 'Add widget', exact: true })
+    const renameBoard = page.getByRole('button', { name: 'Rename board', exact: true })
     const showActivity = page.getByRole('button', { name: 'Show activity', exact: true })
     const info = {
       chameleon,
@@ -423,6 +425,8 @@ async function doctor(flags) {
       undoVisible: await undo.isVisible(),
       undoDisabled: await undo.isDisabled(),
       resetVisible: await reset.isVisible(),
+      addWidgetVisible: await addWidget.isVisible(),
+      renameBoardVisible: await renameBoard.isVisible(),
       showActivityVisible: await showActivity.isVisible(),
       title: (await page.getByRole('heading', { level: 1 }).textContent())?.trim() ?? '',
       activity:
@@ -477,7 +481,14 @@ async function doctor(flags) {
     }
     return info
   })
-  if (!pageInfo.chameleon || !pageInfo.canvas || !pageInfo.undoVisible || !pageInfo.resetVisible) {
+  if (
+    !pageInfo.chameleon ||
+    !pageInfo.canvas ||
+    !pageInfo.undoVisible ||
+    !pageInfo.resetVisible ||
+    !pageInfo.addWidgetVisible ||
+    !pageInfo.renameBoardVisible
+  ) {
     fail('Page is missing Chameleon identity controls.', JSON.stringify(pageInfo, null, 2))
   }
   process.stdout.write(
@@ -516,7 +527,7 @@ async function editCell(page, flags) {
   await box.waitFor({ state: 'visible' })
   await box.fill(String(flags.value))
   await box.press('Enter')
-  return { from: flags.from, value: flags.value, field }
+  return { from: flags.from, field, valueLength: String(flags.value).length }
 }
 
 async function browserCommand(subcommand, flags) {
@@ -628,15 +639,34 @@ async function browserCommand(subcommand, flags) {
         const item = gridItem(page, flags.name)
         const handle = item.locator('.react-resizable-handle').last()
         await handle.waitFor({ state: 'visible' })
+        const before = await item.boundingBox()
+        if (!before) fail(`No bounding box for widget ${flags.name}`)
         const box = await handle.boundingBox()
         if (!box) fail(`No resize handle for ${flags.name}`)
-        const startX = box.x + box.width / 2
-        const startY = box.y + box.height / 2
+        // react-resizable draws the active southeast grip in the handle's
+        // lower-right corner. Its centre can be covered by card content even
+        // though Playwright sees the whole span, producing a false-positive
+        // "resized" command with no mutation.
+        const startX = box.x + box.width - 2
+        const startY = box.y + box.height - 2
         await page.mouse.move(startX, startY)
         await page.mouse.down()
         await page.mouse.move(startX + dx, startY + dy, { steps: 30 })
         await page.mouse.up()
-        return { resized: flags.name, dx, dy, ...(await maybeFollowup(page, flags)) }
+        await page.waitForTimeout(100)
+        const after = await item.boundingBox()
+        const changed = Boolean(
+          after && (after.width !== before.width || after.height !== before.height),
+        )
+        return {
+          resized: flags.name,
+          dx,
+          dy,
+          changed,
+          before: { width: before.width, height: before.height },
+          after: after ? { width: after.width, height: after.height } : null,
+          ...(await maybeFollowup(page, flags)),
+        }
       }
       case 'measure': {
         if (!flags.name) fail('Missing --name')
