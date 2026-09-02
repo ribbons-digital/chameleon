@@ -466,6 +466,16 @@ dead exports: `DAY2_STATIC_TOOLS`, `datasetWidget`, `ConfigByType`,
 - Form submit toasts `Logged to “…” (N entries)`; activity rows show the
   time.
 
+**Verified in this VM** with `control-chameleon` (run `audit1`, port 14711,
+stable Chrome): empty doctor, load sample, drag (store now holds the pushed
+table at `y: 5`), undo restores both, invalid cell edit keeps the editor open
+with `Field "step" must be 2000 characters or fewer.`, valid cell and note
+edits, `Add widget` → checklist and table, `Rename board`, checklist item,
+reload keeps `state v9 · 9 commands`, activity list with times, 375px
+stack, Reset back to empty. Harness gained `browser menu` and
+`browser rename` for the two-step controls. Artifacts:
+`.cursor/skills/verify-chameleon/artifacts/final-audit/`.
+
 **Left alone, worth a look later.**
 
 - Stored positions are agent intent; the grid compacts vertically on
@@ -477,4 +487,9 @@ dead exports: `DAY2_STATIC_TOOLS`, `datasetWidget`, `ConfigByType`,
   agent-only.
 - `.cursor/skills/verify-chameleon/scripts/record-day6-demo.mjs` has an
   unused `guestRows` (oxlint warning, not in `src/`).
+- `control-chameleon browser resize` reports ok but records nothing, on
+  `main` as well as on this branch (checked side by side on ports 14711 and
+  14712). Drag works. The harness's mouse path over `.react-resizable-handle`
+  is not reaching react-grid-layout's resize handler; resize was proven by
+  hand in the Day 6 demo, not by this harness.
 - Main chunk is ~1 MB minified; Recharts is already split out.

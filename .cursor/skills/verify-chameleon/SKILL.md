@@ -99,9 +99,9 @@ Stable handles:
 | Empty canvas | heading `What are you working on?` |
 | Copy wedding prompt | button `Copy wedding planner prompt`, then `Copied` |
 | Sample board | button `Load a sample board` |
-| Add widget | button `Add widget`, then menu items `Note`, `Checklist`, `Table` |
+| Add widget | `browser menu --name "Add widget" --item Note` (also `Checklist`, `Table`) |
 | After add widget | `Latest: Added note “New note”` |
-| Rename board | button `Rename board`, then textbox `Board name`; Enter commits |
+| Rename board | `browser rename --value "<name>"` (button `Rename board`, textbox `Board name`, Enter) |
 | After rename | `Latest: Renamed board to “<name>”` |
 | Measure widget box | `browser measure --name <heading>` |
 | Viewport | `--width` and `--height` on any `browser` command (default 1400x900) |
@@ -115,6 +115,8 @@ control-chameleon browser drag --name "A canvas that listens" --dx 320 --dy 0
 control-chameleon browser wait --text "Latest: Moved “A canvas that listens”"
 control-chameleon browser note --name "A canvas that listens" --markdown "Edited from verification." --wait-text "Latest: Edited note “A canvas that listens”"
 control-chameleon browser cell --from "Your agent reads the board" --value "Hand edits land in the log" --wait-text "Latest: Edited “What happens next”"
+control-chameleon browser menu --name "Add widget" --item Checklist --wait-text "Latest: Added checklist “New checklist”"
+control-chameleon browser rename --value "Audit board" --wait-text "Latest: Renamed board to “Audit board”"
 control-chameleon browser click --role button --name "Show activity" --wait-text "No activity yet" --aria-snapshot artifacts/open-canvas/activity.aria.txt --screenshot artifacts/open-canvas/activity.png
 control-chameleon browser snapshot --aria --path artifacts/open-canvas/home.aria.txt
 control-chameleon browser screenshot --path artifacts/open-canvas/home.png

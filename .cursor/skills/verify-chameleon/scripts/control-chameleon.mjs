@@ -46,6 +46,8 @@ Commands:
   browser fill --role <role> --name <name> --value <text> [--blur|--press <key>]
   browser note --name <heading> --markdown <text>
   browser cell --from <button-label> --value <text> [--field <textbox-name>]
+  browser menu --name <button> --item <menuitem-name-prefix>
+  browser rename --value <board-name>
   browser drag --name <heading> --dx <px> --dy <px>
   browser resize --name <heading> --dx <px> --dy <px>
   browser measure --name <heading>
@@ -281,6 +283,10 @@ async function withPage(state, fn, flags = {}) {
   } finally {
     await context.close()
   }
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 function roleLocator(page, flags) {
@@ -562,6 +568,28 @@ async function browserCommand(subcommand, flags) {
       case 'cell': {
         const edited = await editCell(page, flags)
         return { ...edited, ...(await maybeFollowup(page, flags)) }
+      }
+      case 'menu': {
+        // Open a dropdown menu and pick an item in one Chrome session; the menu
+        // is React state and would be gone by the next command.
+        if (!flags.name) fail('Missing --name')
+        if (!flags.item || flags.item === true) fail('Missing --item')
+        await page.getByRole('button', { name: flags.name, exact: true }).click()
+        const item = page.getByRole('menuitem', {
+          name: new RegExp(`^${escapeRegExp(String(flags.item))}\\b`),
+        })
+        await item.waitFor({ state: 'visible' })
+        await item.click()
+        return { menu: flags.name, item: flags.item, ...(await maybeFollowup(page, flags)) }
+      }
+      case 'rename': {
+        if (flags.value === undefined || flags.value === true) fail('Missing --value')
+        await page.getByRole('button', { name: 'Rename board', exact: true }).click()
+        const box = page.getByRole('textbox', { name: 'Board name', exact: true })
+        await box.waitFor({ state: 'visible' })
+        await box.fill(String(flags.value))
+        await box.press('Enter')
+        return { renamed: flags.value, ...(await maybeFollowup(page, flags)) }
       }
       case 'wait': {
         if (!flags.text) fail('Missing --text')

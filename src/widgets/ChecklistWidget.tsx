@@ -50,7 +50,7 @@ export function ChecklistWidgetView({ widget }: { widget: ChecklistWidgetModel }
     <VStack gap={3}>
       {widget.config.showProgress && total > 0 && (
         <ProgressBar
-          label={`${doneCount} of ${total} done`}
+          label="Progress"
           value={doneCount}
           max={total}
           hasValueLabel
