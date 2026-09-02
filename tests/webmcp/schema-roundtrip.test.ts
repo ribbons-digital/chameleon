@@ -148,7 +148,11 @@ const cases = [
     name: 'set_theme',
     schema: SetThemeInput,
     accept: [{}, { boardTitle: 'Health', theme: 'matcha', mode: 'dark' }],
-    reject: [{ theme: 'ocean' }, { density: 'dense' }],
+    reject: [
+      { theme: 'ocean' },
+      { density: 'dense' },
+      { boardTitle: '   ' },
+    ],
   },
   {
     name: 'create_form_tool',

@@ -32,7 +32,7 @@ export const SetLayoutInput = z
 
 export const SetThemeInput = z
   .object({
-    boardTitle: z.string().min(1).max(60).optional(),
+    boardTitle: z.string().trim().min(1).max(60).optional(),
     theme: z
       .enum([
         'neutral',

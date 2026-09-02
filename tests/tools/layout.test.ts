@@ -58,7 +58,7 @@ describe('set_theme', () => {
 
   it('updates the title and complete theme state', async () => {
     const result = await executeTool(setTheme, {
-      boardTitle: 'Health log',
+      boardTitle: '  Health log  ',
       theme: 'matcha',
       mode: 'dark',
       density: 'compact',
