@@ -17,6 +17,7 @@ export type ErrorCode =
   | 'DUPLICATE_ID'
   | 'LIMIT_EXCEEDED'
   | 'TOOL_NOT_FOUND'
+  | 'STALE_STATE'
   | 'INTERNAL'
 
 export const ERROR_HINTS: Record<ErrorCode, string> = {
@@ -50,6 +51,8 @@ export const ERROR_HINTS: Record<ErrorCode, string> = {
     'A hard limit was hit. details names which limit and the maximum. Call remove_widget, delete_rows, or remove_minted_tool until you are under it, then retry.',
   TOOL_NOT_FOUND:
     'No minted tool has this name. describe_current_state lists minted tools. Static tools cannot be removed.',
+  STALE_STATE:
+    'The board changed after your last read. Call describe_current_state, review humanChangesSinceLastDescribe, then retry against the returned stateVersion.',
   INTERNAL:
     'Unexpected app error. State was not changed. Call describe_current_state and retry once.',
 }

@@ -276,7 +276,12 @@ The exact JSON an agent sees mid-way through the health-log demo (this doubles a
       "action": "log_blood_sugar", "summary": "Logged reading 104 (after meal) via minted tool",
       "rationale": "User asked to log their post-lunch reading." }
   ],
-  "humanEditsSinceLastDescribe": 1
+  "humanEditsSinceLastDescribe": 1,
+  "humanChangesSinceLastDescribe": [
+    { "seq": 41, "at": "2026-08-30T14:10:05Z", "actor": "human",
+      "action": "update_rows", "summary": "Checked off \"Morning fasting reading\" in Daily routine",
+      "undone": false }
+  ]
 }
 ```
 
@@ -290,4 +295,6 @@ Notes that make this shape agent-friendly (deliberate choices):
   are documented in field cross-check errors so the agent discovers them on failure, and
   `_createdAt` is explicitly mentioned in the chart section of `add_widget`'s error details.
 - `humanEditsSinceLastDescribe` gives the agent a one-integer answer to "did the human touch
-  anything since I last looked?"
+  anything since I last looked?", and `humanChangesSinceLastDescribe` lists exactly those
+  edits (newest first) so the agent does not need a second `get_activity_log` call to find out
+  what changed.

@@ -6,10 +6,36 @@ import { VStack } from '@astryxdesign/core/VStack'
 import { useState } from 'react'
 import { useBoardStore } from '../store/boardStore'
 import { activityEntries } from '../store/selectors'
+import { useBoardDensity } from '../widgets/density'
+
+const timeFormat = new Intl.DateTimeFormat(undefined, {
+  hour: 'numeric',
+  minute: '2-digit',
+})
+
+function describeEntry(entry: {
+  at: string
+  actor: string
+  action: string
+  undone: boolean
+  rationale?: string
+}): string {
+  const at = new Date(entry.at)
+  return [
+    Number.isNaN(at.getTime()) ? undefined : timeFormat.format(at),
+    entry.actor,
+    entry.action,
+    entry.undone ? 'undone' : undefined,
+    entry.rationale,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}
 
 export function ActivityDrawer() {
   const [open, setOpen] = useState(false)
   const commands = useBoardStore((state) => state.commands)
+  const density = useBoardDensity()
   const entries = activityEntries(commands, { limit: 20 })
 
   return (
@@ -22,7 +48,7 @@ export function ActivityDrawer() {
       />
       {open && (
         <List
-          density="compact"
+          density={density.rows}
           hasDividers
           header={<Heading level={2}>Activity</Heading>}
         >
@@ -36,9 +62,7 @@ export function ActivityDrawer() {
               <ListItem
                 key={entry.seq}
                 label={entry.summary}
-                description={`${entry.actor} · ${entry.action}${entry.undone ? ' · undone' : ''}${
-                  entry.rationale ? ` · ${entry.rationale}` : ''
-                }`}
+                description={describeEntry(entry)}
               />
             ))
           )}

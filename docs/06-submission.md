@@ -44,8 +44,8 @@ Copyright line: the project author, year 2026. Also set `"license": "MIT"` in `p
 
 ## 4. Deployment steps (Cloudflare Workers, static assets)
 
-1. `wrangler.toml`: name `chameleon`, `[assets] directory = "dist"`,
-   `not_found_handling = "single-page-application"` (SPA fallback for TanStack Router).
+1. `wrangler.jsonc`: name `chameleon-webmcp`, assets directory `./dist`,
+   `not_found_handling = "single-page-application"` (safe SPA fallback).
 2. `npm run build` → `wrangler deploy` → `https://chameleon.<account>.workers.dev` (HTTPS by
    default; custom domain optional, skip unless free time on Day 6).
 3. Verify headers: no `X-Frame-Options` weirdness, correct `content-type` on the JS chunks.
@@ -86,9 +86,10 @@ answered from the real state of *your* data, not a guess.
 
 Two things. First, **co-editing one live artifact with symmetric visibility**: the human and the
 agent mutate the same client-side state through the same command log — the human drags a widget,
-the agent reads that edit (`humanEditsSinceLastDescribe`, `get_activity_log`) and adapts its next
-layout decision; the agent seeds rows and the human corrects them inline. Neither party works on
-a stale copy, and either can undo the other. Before WebMCP, an agent could fill forms *at* a page
+the agent reads that edit (`humanChangesSinceLastDescribe`, `get_activity_log`) and adapts its next
+layout decision; the agent seeds rows and the human corrects them inline. Static mutations can
+carry the last-read `stateVersion`, so a newer human or agent change returns `STALE_STATE`
+instead of being overwritten, and either party can undo the other. Before WebMCP, an agent could fill forms *at* a page
 via screen scraping, or call a backend API *around* the page — it could never share the page's
 own state with its user in real time. Second, **the agent extending the app's API for its
 successor**: `create_form_tool` means the agent that designs your health log also authors the
@@ -99,7 +100,7 @@ before tools could be registered by the page, at runtime, from client state.
 
 ### Implementation notes
 
-- **Stack**: Vite + React 19 SPA (TanStack Router, no SSR — `modelContext` is client-only and
+- **Stack**: Vite + React 19 SPA (one route rendered directly, no SSR — `modelContext` is client-only and
   the app is local-first), Astryx design system (pre-built CSS + StyleX `xstyle` for custom
   styles), Zustand + Immer, react-grid-layout, Recharts. Static deploy on Cloudflare Workers.
 - **One schema, two consumers**: every tool's input schema is authored once in Zod 4 and
@@ -114,7 +115,9 @@ before tools could be registered by the page, at runtime, from client state.
   and reserved-name policy; all covered by lifecycle tests including simulated reload.
 - **Everything is a command**: human drags and agent tool calls flow through one mutation gate
   (Immer `produceWithPatches`), giving a unified activity log, inverse-patch undo (exposed to
-  both the human and the agent), and the `stateVersion` counter agents use to detect staleness.
+  both the human and the agent), and optional optimistic concurrency via
+  `expectedStateVersion`. Reset clears history but advances the version, so it is still visible
+  to an agent holding an older snapshot.
 - **Errors are a UX surface for agents**: tools never throw; every failure returns a stable code
   plus a `hint` sentence telling the agent what to do next ("Call describe_current_state to list
   valid widget ids"). Hints were tuned against real agent transcripts in ChatGPT's browser and

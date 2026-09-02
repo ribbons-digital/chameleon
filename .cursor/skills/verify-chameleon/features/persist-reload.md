@@ -4,7 +4,7 @@ Persist across reload keeps widget positions, hand edits, and the command log wh
 
 ## Sub-features
 
-- `persist-after-move` keeps the moved layout and `Latest: Moved “A canvas that listens”` after reload.
+- `persist-after-move` keeps an intentional vertical gap and `Latest: Moved “A canvas that listens”` after reload instead of compacting it only on screen.
 - `persist-storage` writes key `chameleon-board-v1` in this profile.
 - `persist-reset` keeps the empty canvas after reset then reload.
 
@@ -20,9 +20,9 @@ Preconditions:
 - Chameleon is healthy at `http://127.0.0.1:$CHAMELEON_VERIFY_PORT/`.
 - Start from empty, then load the sample board (`control-chameleon browser click --role button --name "Load a sample board" --wait-text "Latest: Loaded a sample board"`).
 
-- **Mutate.** Drag the welcome note. Run `control-chameleon browser drag --name "A canvas that listens" --dx 320 --dy 0` then `control-chameleon browser wait --text "Latest: Moved “A canvas that listens”"`.
-- **Reload tab.** Reload. Run `control-chameleon browser reload` then `control-chameleon browser wait --text "Latest: Moved “A canvas that listens”"`. The moved summary and `state v2 · 2 commands` are still visible. Both widget titles remain.
-- **Storage dump.** Read the persisted document. Run `control-chameleon browser storage --path artifacts/persist-reload/board.json`. The file is non-empty JSON that includes `A canvas that listens` and a commands array.
+- **Mutate.** Drag the welcome note down, leaving empty rows above it. Run `control-chameleon browser drag --name "A canvas that listens" --dx 0 --dy 240 --wait-text "Latest: Moved “A canvas that listens”"` then `control-chameleon browser measure --name "A canvas that listens"`. Record the returned `y`.
+- **Reload tab.** Reload. Run `control-chameleon browser reload --wait-text "Latest: Moved “A canvas that listens”"` then measure again. The moved summary and `state v2 · 2 commands` remain, and the note has the same lower `y`; the grid did not visually compact away the stored gap.
+- **Storage dump.** Read the persisted document. Run `control-chameleon browser storage --path artifacts/persist-reload/board.json`. The file is non-empty JSON that includes `A canvas that listens`, a positive stored `position.y`, and a commands array.
 - **Fresh Chrome, same profile.** Run a new command so Chrome starts again on this user-data-dir. Run `control-chameleon browser assert --text "Latest: Moved “A canvas that listens”"`. The mutation is still visible.
 - **Proof.** Capture the reloaded board. Run `control-chameleon browser snapshot --aria --path artifacts/persist-reload/reloaded.aria.txt` and `control-chameleon browser screenshot --path artifacts/persist-reload/reloaded.png`. The artifacts show the moved activity line and the `CHAMELEON` mark.
 

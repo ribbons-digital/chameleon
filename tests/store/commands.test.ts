@@ -10,7 +10,6 @@ describe('board command log', () => {
     useBoardStore.setState({
       document: createSampleDocument(),
       commands: [],
-      hydrated: true,
     })
   })
 
@@ -82,7 +81,7 @@ describe('board command log', () => {
     expect(useBoardStore.getState().commands).toHaveLength(0)
   })
 
-  it('does not rewind stateVersion to 0 on reset', () => {
+  it('advances stateVersion on reset so stale agents can detect replacement', () => {
     useBoardStore.getState().mutate(
       {
         actor: 'human',
@@ -95,7 +94,7 @@ describe('board command log', () => {
     )
     expect(useBoardStore.getState().document.stateVersion).toBe(1)
     useBoardStore.getState().reset()
-    expect(useBoardStore.getState().document.stateVersion).toBe(1)
+    expect(useBoardStore.getState().document.stateVersion).toBe(2)
     expect(useBoardStore.getState().document.widgets).toHaveLength(0)
     expect(useBoardStore.getState().commands).toHaveLength(0)
   })
@@ -116,5 +115,23 @@ describe('board command log', () => {
       action: 'undo',
       actor: 'agent',
     })
+  })
+
+  it('counts a human undo as a human edit the agent has not seen', () => {
+    useBoardStore.getState().mutate(
+      {
+        actor: 'agent',
+        action: 'update_widget',
+        summary: 'Renamed',
+      },
+      (draft) => {
+        draft.widgets[0].title = 'Renamed'
+      },
+    )
+    expect(useBoardStore.getState().document.humanEditsSinceLastDescribe).toBe(0)
+    useBoardStore.getState().undo('human')
+    expect(useBoardStore.getState().document.humanEditsSinceLastDescribe).toBe(1)
+    useBoardStore.getState().undo('agent')
+    expect(useBoardStore.getState().document.humanEditsSinceLastDescribe).toBe(1)
   })
 })

@@ -148,7 +148,11 @@ const cases = [
     name: 'set_theme',
     schema: SetThemeInput,
     accept: [{}, { boardTitle: 'Health', theme: 'matcha', mode: 'dark' }],
-    reject: [{ theme: 'ocean' }, { density: 'dense' }],
+    reject: [
+      { theme: 'ocean' },
+      { density: 'dense' },
+      { boardTitle: '   ' },
+    ],
   },
   {
     name: 'create_form_tool',
@@ -179,6 +183,21 @@ const cases = [
     reject: [{ steps: 0 }, { steps: 11 }],
   },
 ] as const
+
+const staticMutationNames = new Set([
+  'add_widget',
+  'update_widget',
+  'remove_widget',
+  'bind_data',
+  'add_rows',
+  'update_rows',
+  'delete_rows',
+  'set_layout',
+  'set_theme',
+  'create_form_tool',
+  'remove_minted_tool',
+  'undo',
+])
 
 function hasRef(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false
@@ -224,6 +243,7 @@ describe('schema round-trip', () => {
     expect(ERROR_HINTS.LIMIT_EXCEEDED).toContain('remove_widget')
     expect(ERROR_HINTS.LIMIT_EXCEEDED).toContain('delete_rows')
     expect(ERROR_HINTS.TOOL_NOT_FOUND).toContain('describe_current_state')
+    expect(ERROR_HINTS.STALE_STATE).toContain('describe_current_state')
     expect(Object.values(ERROR_HINTS).join('\n')).not.toMatch(/\u2014/)
   })
 
@@ -268,6 +288,21 @@ describe('schema round-trip', () => {
         expect(validate(input), `ajv should accept ${JSON.stringify(input)}`).toBe(
           true,
         )
+      }
+
+      if (staticMutationNames.has(testCase.name)) {
+        const guarded = {
+          ...testCase.accept[0],
+          expectedStateVersion: 7,
+        }
+        expect(
+          testCase.schema.safeParse(guarded).success,
+          `zod should accept expectedStateVersion for ${testCase.name}`,
+        ).toBe(true)
+        expect(
+          validate(guarded),
+          `ajv should accept expectedStateVersion for ${testCase.name}`,
+        ).toBe(true)
       }
 
       for (const input of testCase.reject) {

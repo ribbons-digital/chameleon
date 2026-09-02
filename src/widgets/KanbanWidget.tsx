@@ -12,6 +12,7 @@ import {
   dropInsertIndex,
   KANBAN_UNGROUPED,
 } from '../model/kanbanOrder'
+import { LIMITS } from '../model/limits'
 import type { Field, KanbanWidget as KanbanWidgetModel, Row } from '../model/types'
 import { humanAddRow, humanMoveKanbanCard } from '../store/human'
 import { widgetStyles } from './styles'
@@ -71,6 +72,7 @@ function dropIndexFromPoint(
 
 export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dropHint, setDropHint] = useState<{ column: string; index: number } | null>(
     null,
@@ -84,6 +86,7 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
   const detailFields = widget.config.cardDetailFields
     .map((key) => widget.dataset.fields.find((field) => field.key === key))
     .filter((field): field is Field => Boolean(field))
+  const full = widget.dataset.rows.length >= LIMITS.rowsPerWidget
 
   if (widget.dataset.fields.length === 0 || !groupField || groupField.type !== 'select') {
     return (
@@ -114,7 +117,12 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
     const values: Record<string, unknown> = { [titleField.key]: title }
     if (column !== KANBAN_UNGROUPED) values[groupField.key] = column
     const result = humanAddRow(widget.id, values, `Added “${title}”`)
-    if (result.ok) setDrafts((current) => ({ ...current, [column]: '' }))
+    if (result.ok) {
+      setDrafts((current) => ({ ...current, [column]: '' }))
+      setErrors((current) => ({ ...current, [column]: '' }))
+      return
+    }
+    setErrors((current) => ({ ...current, [column]: result.message }))
   }
 
   const readRowId = (transfer: DataTransfer) =>
@@ -241,9 +249,17 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
                 size="sm"
                 placeholder="Add a card"
                 value={drafts[column] ?? ''}
-                onChange={(value) =>
-                  setDrafts((current) => ({ ...current, [column]: value }))
+                isDisabled={full}
+                disabledMessage={`This board already has ${LIMITS.rowsPerWidget} cards.`}
+                status={
+                  errors[column]
+                    ? { type: 'error', message: errors[column] }
+                    : undefined
                 }
+                onChange={(value) => {
+                  setDrafts((current) => ({ ...current, [column]: value }))
+                  setErrors((current) => ({ ...current, [column]: '' }))
+                }}
                 onEnter={() => addCard(column)}
                 width="100%"
               />
@@ -252,6 +268,12 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
               label="Add card"
               variant="secondary"
               size="sm"
+              isDisabled={full}
+              tooltip={
+                full
+                  ? `This board already has ${LIMITS.rowsPerWidget} cards.`
+                  : undefined
+              }
               onClick={() => addCard(column)}
             />
           </VStack>

@@ -54,8 +54,9 @@ string in one of two shapes:
 ```
 
 - `stateVersion` is a monotonically increasing integer bumped on every board mutation (human or
-  agent). Agents use it to detect that the board changed under them; if a mutation tool is called
-  with stale assumptions the data doesn't corrupt — the agent just re-reads.
+  agent), including Reset. Every static mutation accepts optional `expectedStateVersion`; a
+  mismatch returns `STALE_STATE` before its handler runs, so stale assumptions cannot overwrite
+  newer human or agent work.
 - `hint` is an **instruction to the agent**, e.g. `"Call describe_current_state to list valid
   widget ids."` Every error code has a fixed hint (table in §5).
 
@@ -104,11 +105,17 @@ const WidgetId  = z.string().regex(/^w_[a-zA-Z0-9_-]{6,}$/)
   .describe('A widget id as returned by add_widget or describe_current_state, e.g. "w_x8Kd2q".');
 const Rationale = z.string().max(300).optional()
   .describe('One sentence explaining why you are making this change. Shown to the human in the activity log.');
+const ExpectedStateVersion = z.number().int().min(0).optional()
+  .describe('The stateVersion from your latest describe_current_state call. STALE_STATE leaves the board unchanged.');
 const Position  = z.object({
   x: z.number().int().min(0).max(11), y: z.number().int().min(0),
   w: z.number().int().min(2).max(12), h: z.number().int().min(2).max(20),
 }).describe('Grid placement on a 12-column grid. One row unit is ~40px. Omit to auto-place below existing widgets.');
 ```
+
+Every static mutation input below also includes `expectedStateVersion` and `rationale`. They are
+shown once here rather than repeated in every snippet. Minted tools are append-only submissions;
+their input remains exactly the form-derived fields.
 
 ---
 
@@ -155,6 +162,9 @@ const DescribeInput = z.object({
   recentActivity: Array<{ seq: number, at: string, actor: 'human'|'agent',
                           action: string, summary: string, rationale?: string }>,  // last 10
   humanEditsSinceLastDescribe: number,   // resets to 0 on each call — cheap "what changed" signal
+  humanChangesSinceLastDescribe: Array<{ seq, at, actor: 'human', action, summary, undone }>,
+                                          // the hand edits behind that count, newest first
+                                          // (drags, cell edits, deletes, undo); empty after each call
 }
 ```
 
@@ -290,7 +300,8 @@ const UpdateWidgetInput = z.object({
 });
 ```
 
-**Returns**: `{ ok, stateVersion, widgetId }`
+**Returns**: `{ ok, stateVersion, widgetId, position? }`; when position was requested, the returned
+position is the collision-resolved value persisted for that widget.
 **Errors**: `WIDGET_NOT_FOUND`, `INVALID_CONFIG`, `NO_CHANGES` (nothing passed).
 
 ---
@@ -543,7 +554,11 @@ cannot be removed).
 > changes their mind.
 
 ```ts
-const UndoInput = z.object({ steps: z.number().int().min(1).max(10).default(1) });
+const UndoInput = z.object({
+  steps: z.number().int().min(1).max(10).default(1),
+  expectedStateVersion: ExpectedStateVersion,
+  rationale: Rationale,
+});
 ```
 
 **Returns**: `{ ok, stateVersion, undone: Array<{ seq, action, summary, actor }> }`
@@ -672,6 +687,7 @@ the agent doesn't know the name of.
 | `DUPLICATE_ID` | "The same widgetId appears more than once in items. Each widget may appear at most once." |
 | `LIMIT_EXCEEDED` | "A hard limit was hit. details names which limit and the maximum. Call remove_widget, delete_rows, or remove_minted_tool until you are under it, then retry." |
 | `TOOL_NOT_FOUND` | "No minted tool has this name. describe_current_state lists minted tools. Static tools cannot be removed." |
+| `STALE_STATE` | "The board changed after your last read. Call describe_current_state, review humanChangesSinceLastDescribe, then retry against the returned stateVersion." |
 | `INTERNAL` | "Unexpected app error. State was not changed. Call describe_current_state and retry once." |
 
 ## 6. Description quality bar (checklist applied to every tool before ship)

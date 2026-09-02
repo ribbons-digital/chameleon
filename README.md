@@ -36,7 +36,7 @@ Switch gears. I'm tracking my job search.
 I'm managing my type 2 diabetes. I want to log blood sugar readings and see trends.
 ```
 
-Stable Chrome without WebMCP still loads the app. You will see a dismissable banner and a token that reads `15 tools ready`. Hand edits still work. Agents need ChatGPT's browser or Canary with the flag.
+Stable Chrome without WebMCP still loads the app. You will see a dismissable banner and a token that reads `15 tools ready`. Hand edits still work: **Add widget** places a note, checklist, or table; board and widget names can be corrected inline; and every widget can be dragged, resized, edited, and deleted. Agents need ChatGPT's browser or Canary with the flag.
 
 On viewports narrower than 700px the grid stacks to one column and drag/resize is off, so a phone does not scramble stored layout.
 
@@ -46,7 +46,7 @@ The contract lives in [docs/01-tool-spec.md](docs/01-tool-spec.md). These 15 sta
 
 | Tool | What it does |
 |---|---|
-| `describe_current_state` | Returns the board snapshot, unfinished work, and `stateVersion`. Call this first. |
+| `describe_current_state` | Returns the board snapshot, unfinished work, the human's edits since the last call, and `stateVersion`. Call this first. |
 | `add_widget` | Adds a table, kanban, checklist, chart, note, or form. |
 | `bind_data` | Sets the field schema on a data widget. |
 | `add_rows` | Appends up to 50 validated rows. |
@@ -61,6 +61,10 @@ The contract lives in [docs/01-tool-spec.md](docs/01-tool-spec.md). These 15 sta
 | `set_theme` | Sets theme, mode, density, or board title. |
 | `remove_minted_tool` | Unregisters a minted tool. Static tools cannot be removed. |
 | `undo` | Reverts the newest mutations, human or agent. |
+
+Every static mutation also accepts optional `expectedStateVersion` from the latest
+`describe_current_state`. If the human or another agent changed the board in between, it returns
+`STALE_STATE` without overwriting that work.
 
 **Minted tools.** After `create_form_tool` on a form with `reading` (number, required) and `context` (`fasting` or `after_meal`), the page registers `log_blood_sugar`. One call appends one validated row. The form header shows a ⚡ token with that name. The tool survives reload until the form is deleted or `remove_minted_tool` runs.
 

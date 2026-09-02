@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { LIMITS } from '../../src/model/limits'
-import { useBoardStore } from '../../src/store/boardStore'
+import {
+  createSampleDocument,
+  useBoardStore,
+} from '../../src/store/boardStore'
 import {
   addWidget,
   removeWidget,
@@ -214,6 +217,77 @@ describe('update_widget', () => {
       variant: 'plain',
     })
     expect(widget.position).toEqual({ x: 2, y: 1, w: 4, h: 5 })
+  })
+
+  it('clamps a position that would overflow the 12-column grid', async () => {
+    const widgetId = useBoardStore.getState().document.widgets[0].id
+    const result = await executeTool(updateWidget, {
+      widgetId,
+      position: { x: 10, y: 0, w: 6, h: 4 },
+    })
+    expect(result.ok).toBe(true)
+    expect(result.position).toEqual({ x: 6, y: 0, w: 6, h: 4 })
+    expect(useBoardStore.getState().document.widgets[0].position).toEqual({
+      x: 6,
+      y: 0,
+      w: 6,
+      h: 4,
+    })
+  })
+
+  it('persists collision pushes when one agent-moved widget overlaps another', async () => {
+    resetBoard(createSampleDocument())
+    const result = await executeTool(updateWidget, {
+      widgetId: 'w_welcome',
+      position: { x: 5, y: 0, w: 5, h: 5 },
+    })
+    expect(result).toMatchObject({
+      ok: true,
+      position: { x: 5, y: 0, w: 5, h: 5 },
+    })
+    const positions = Object.fromEntries(
+      useBoardStore
+        .getState()
+        .document.widgets.map((candidate) => [
+          candidate.id,
+          candidate.position,
+        ]),
+    )
+    expect(positions).toEqual({
+      w_welcome: { x: 5, y: 0, w: 5, h: 5 },
+      w_first_steps: { x: 5, y: 5, w: 7, h: 5 },
+    })
+  })
+
+  it('rejects a stale mutation before it can overwrite a newer change', async () => {
+    const before = useBoardStore.getState()
+    const widgetId = before.document.widgets[0].id
+    const result = await executeTool(updateWidget, {
+      widgetId,
+      title: 'Stale agent title',
+      expectedStateVersion: before.document.stateVersion - 1,
+    })
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatchObject({
+      code: 'STALE_STATE',
+      details: {
+        expectedStateVersion: before.document.stateVersion - 1,
+        currentStateVersion: before.document.stateVersion,
+      },
+    })
+    const after = useBoardStore.getState()
+    expect(after.document.widgets[0].title).toBe('Menu')
+    expect(after.commands).toHaveLength(before.commands.length)
+
+    const retried = await executeTool(updateWidget, {
+      widgetId,
+      title: 'Fresh agent title',
+      expectedStateVersion: after.document.stateVersion,
+    })
+    expect(retried.ok).toBe(true)
+    expect(useBoardStore.getState().document.widgets[0].title).toBe(
+      'Fresh agent title',
+    )
   })
 
   it('clears a config key when patched to null', async () => {

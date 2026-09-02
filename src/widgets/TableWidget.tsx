@@ -2,12 +2,14 @@ import { Button } from '@astryxdesign/core/Button'
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput'
 import { EmptyState } from '@astryxdesign/core/EmptyState'
 import { IconButton } from '@astryxdesign/core/IconButton'
+import { Selector } from '@astryxdesign/core/Selector'
 import { Table, proportional, useTableRowIndex } from '@astryxdesign/core/Table'
 import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { VStack } from '@astryxdesign/core/VStack'
 import type { TableColumn } from '@astryxdesign/core/Table'
 import { useState } from 'react'
+import { LIMITS } from '../model/limits'
 import type { Field, Row, TableWidget } from '../model/types'
 import {
   formatCell,
@@ -15,6 +17,7 @@ import {
   humanDeleteRow,
   humanUpdateCell,
 } from '../store/human'
+import { useBoardDensity } from './density'
 import { widgetStyles } from './styles'
 
 type TableRow = Row & Record<string, unknown>
@@ -29,8 +32,9 @@ function CellEditor({
   field: Field
 }) {
   const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [error, setError] = useState<string>()
   const current = row[field.key]
-  const [draft, setDraft] = useState(current === undefined || current === null ? '' : String(current))
 
   if (field.type === 'boolean') {
     return (
@@ -45,8 +49,9 @@ function CellEditor({
     )
   }
 
+  const display = formatCell(field, row)
+
   if (!editing) {
-    const display = formatCell(field, row)
     return (
       <Button
         label={display || 'Edit'}
@@ -54,8 +59,52 @@ function CellEditor({
         size="sm"
         onClick={() => {
           setDraft(display)
+          setError(undefined)
           setEditing(true)
         }}
+      />
+    )
+  }
+
+  const close = () => {
+    setEditing(false)
+    setError(undefined)
+  }
+
+  const commit = (value: unknown) => {
+    const result = humanUpdateCell(widgetId, row._id, field, value)
+    if (!result.ok) {
+      setError(result.message)
+      return
+    }
+    close()
+  }
+
+  if (field.type === 'select') {
+    const selected = typeof current === 'string' && current !== '' ? current : undefined
+    const shared = {
+      label: field.label,
+      isLabelHidden: true,
+      size: 'sm',
+      width: '100%',
+      options: field.options ?? [],
+      status: error ? { type: 'error' as const, message: error } : undefined,
+    } as const
+    if (field.required) {
+      return (
+        <Selector
+          {...shared}
+          value={selected}
+          onChange={(next: string) => commit(next)}
+        />
+      )
+    }
+    return (
+      <Selector
+        {...shared}
+        value={selected ?? null}
+        hasClear
+        onChange={(next: string | null) => commit(next ?? undefined)}
       />
     )
   }
@@ -68,22 +117,29 @@ function CellEditor({
       value={draft}
       hasAutoFocus
       width="100%"
-      onChange={setDraft}
-      onEnter={() => {
-        humanUpdateCell(widgetId, row._id, field, draft === '' ? undefined : draft)
-        setEditing(false)
+      status={error ? { type: 'error', message: error } : undefined}
+      onChange={(value) => {
+        setDraft(value)
+        setError(undefined)
+      }}
+      onEnter={() => commit(draft === '' ? undefined : draft)}
+      onBlur={() => {
+        if (draft === display) close()
+        else commit(draft === '' ? undefined : draft)
       }}
       onKeyDown={(event) => {
-        if (event.key === 'Escape') setEditing(false)
+        if (event.key === 'Escape') close()
       }}
     />
   )
 }
 
 export function TableWidgetView({ widget }: { widget: TableWidget }) {
+  const density = useBoardDensity()
   const config = widget.config
   const fields = widget.dataset.fields
   const rows = widget.dataset.rows as TableRow[]
+  const full = rows.length >= LIMITS.rowsPerWidget
   const orderedFields = orderFields(fields, config.columnOrder)
   const sortedRows = sortRows(rows, orderedFields, config.sort)
 
@@ -143,7 +199,7 @@ export function TableWidgetView({ widget }: { widget: TableWidget }) {
           data={sortedRows}
           columns={columns}
           idKey="_id"
-          density="compact"
+          density={density.rows}
           dividers="grid"
           hasHover
           textOverflow="truncate"
@@ -155,6 +211,10 @@ export function TableWidgetView({ widget }: { widget: TableWidget }) {
         label="Add row"
         variant="secondary"
         size="sm"
+        isDisabled={full}
+        tooltip={
+          full ? `This table already has ${LIMITS.rowsPerWidget} rows.` : undefined
+        }
         onClick={() => humanAddBlankRow(widget.id)}
       />
     </VStack>

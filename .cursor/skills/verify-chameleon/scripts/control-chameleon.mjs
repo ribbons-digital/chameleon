@@ -46,6 +46,10 @@ Commands:
   browser fill --role <role> --name <name> --value <text> [--blur|--press <key>]
   browser note --name <heading> --markdown <text>
   browser cell --from <button-label> --value <text> [--field <textbox-name>]
+  browser menu --name <button> --item <menuitem-name-prefix>
+  browser rename --value <board-name>
+  browser rename-widget --name <heading> --value <widget-name>
+  browser reset
   browser drag --name <heading> --dx <px> --dy <px>
   browser resize --name <heading> --dx <px> --dy <px>
   browser measure --name <heading>
@@ -57,6 +61,7 @@ Commands:
 
 Follow-up flags (same Chrome session as the action):
   --wait-text <text>
+  --settle <ms>            Pause after the action so transitions finish
   --aria-snapshot <file>
   --screenshot <file>
   --width <px>             Viewport width (default 1400)
@@ -191,7 +196,7 @@ async function waitForHttp(url, timeoutMs) {
   while (Date.now() - start < timeoutMs) {
     try {
       const res = await fetch(url, { redirect: 'manual' })
-      if (res.status >= 200 && res.status < 500) return
+      if (res.ok) return
       last = `HTTP ${res.status}`
     } catch (err) {
       last = err instanceof Error ? err.message : String(err)
@@ -283,6 +288,10 @@ async function withPage(state, fn, flags = {}) {
   }
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function roleLocator(page, flags) {
   if (!flags.role) fail('Missing --role')
   if (!flags.name) fail('Missing --name')
@@ -312,6 +321,12 @@ async function maybeFollowup(page, flags) {
   if (flags['wait-text'] && flags['wait-text'] !== true) {
     await page.getByText(flags['wait-text']).first().waitFor({ state: 'visible' })
     extra.waited = flags['wait-text']
+  }
+  const settle = Number(flags.settle)
+  if (Number.isFinite(settle) && settle > 0) {
+    // Let open/close transitions finish before a snapshot or screenshot.
+    await page.waitForTimeout(settle)
+    extra.settled = settle
   }
   if (flags['aria-snapshot'] && flags['aria-snapshot'] !== true) {
     const path = resolveArtifactPath(flags['aria-snapshot'])
@@ -403,6 +418,8 @@ async function doctor(flags) {
     const canvas = await page.getByRole('region', { name: 'Widget canvas' }).isVisible()
     const undo = page.getByRole('button', { name: 'Undo last change', exact: true })
     const reset = page.getByRole('button', { name: 'Reset canvas', exact: true })
+    const addWidget = page.getByRole('button', { name: 'Add widget', exact: true })
+    const renameBoard = page.getByRole('button', { name: 'Rename board', exact: true })
     const showActivity = page.getByRole('button', { name: 'Show activity', exact: true })
     const info = {
       chameleon,
@@ -410,6 +427,8 @@ async function doctor(flags) {
       undoVisible: await undo.isVisible(),
       undoDisabled: await undo.isDisabled(),
       resetVisible: await reset.isVisible(),
+      addWidgetVisible: await addWidget.isVisible(),
+      renameBoardVisible: await renameBoard.isVisible(),
       showActivityVisible: await showActivity.isVisible(),
       title: (await page.getByRole('heading', { level: 1 }).textContent())?.trim() ?? '',
       activity:
@@ -464,7 +483,14 @@ async function doctor(flags) {
     }
     return info
   })
-  if (!pageInfo.chameleon || !pageInfo.canvas || !pageInfo.undoVisible || !pageInfo.resetVisible) {
+  if (
+    !pageInfo.chameleon ||
+    !pageInfo.canvas ||
+    !pageInfo.undoVisible ||
+    !pageInfo.resetVisible ||
+    !pageInfo.addWidgetVisible ||
+    !pageInfo.renameBoardVisible
+  ) {
     fail('Page is missing Chameleon identity controls.', JSON.stringify(pageInfo, null, 2))
   }
   process.stdout.write(
@@ -503,7 +529,7 @@ async function editCell(page, flags) {
   await box.waitFor({ state: 'visible' })
   await box.fill(String(flags.value))
   await box.press('Enter')
-  return { from: flags.from, value: flags.value, field }
+  return { from: flags.from, field, valueLength: String(flags.value).length }
 }
 
 async function browserCommand(subcommand, flags) {
@@ -563,6 +589,64 @@ async function browserCommand(subcommand, flags) {
         const edited = await editCell(page, flags)
         return { ...edited, ...(await maybeFollowup(page, flags)) }
       }
+      case 'menu': {
+        // Open a dropdown menu and pick an item in one Chrome session; the menu
+        // is React state and would be gone by the next command.
+        if (!flags.name) fail('Missing --name')
+        if (!flags.item || flags.item === true) fail('Missing --item')
+        await page.getByRole('button', { name: flags.name, exact: true }).click()
+        const item = page.getByRole('menuitem', {
+          name: new RegExp(`^${escapeRegExp(String(flags.item))}\\b`),
+        })
+        await item.waitFor({ state: 'visible' })
+        await item.click()
+        return { menu: flags.name, item: flags.item, ...(await maybeFollowup(page, flags)) }
+      }
+      case 'rename': {
+        if (flags.value === undefined || flags.value === true) fail('Missing --value')
+        await page.getByRole('button', { name: 'Rename board', exact: true }).click()
+        const box = page.getByRole('textbox', { name: 'Board name', exact: true })
+        await box.waitFor({ state: 'visible' })
+        await box.fill(String(flags.value))
+        await box.press('Enter')
+        return { renamed: flags.value, ...(await maybeFollowup(page, flags)) }
+      }
+      case 'rename-widget': {
+        if (!flags.name || flags.name === true) fail('Missing --name')
+        if (flags.value === undefined || flags.value === true) fail('Missing --value')
+        await page
+          .getByRole('button', {
+            name: `Rename ${flags.name}`,
+            exact: true,
+          })
+          .click()
+        const box = page.getByRole('textbox', {
+          name: 'Widget name',
+          exact: true,
+        })
+        await box.waitFor({ state: 'visible' })
+        await box.fill(String(flags.value))
+        await box.press('Enter')
+        return {
+          renamedWidget: flags.name,
+          value: flags.value,
+          ...(await maybeFollowup(page, flags)),
+        }
+      }
+      case 'reset': {
+        await page
+          .getByRole('button', { name: 'Reset canvas', exact: true })
+          .click()
+        const dialog = page.getByRole('alertdialog', {
+          name: 'Reset this canvas?',
+          exact: true,
+        })
+        await dialog.waitFor({ state: 'visible' })
+        await dialog
+          .getByRole('button', { name: 'Reset workspace', exact: true })
+          .click()
+        return { reset: true, ...(await maybeFollowup(page, flags)) }
+      }
       case 'wait': {
         if (!flags.text) fail('Missing --text')
         await page.getByText(flags.text).first().waitFor({ state: 'visible' })
@@ -593,15 +677,34 @@ async function browserCommand(subcommand, flags) {
         const item = gridItem(page, flags.name)
         const handle = item.locator('.react-resizable-handle').last()
         await handle.waitFor({ state: 'visible' })
+        const before = await item.boundingBox()
+        if (!before) fail(`No bounding box for widget ${flags.name}`)
         const box = await handle.boundingBox()
         if (!box) fail(`No resize handle for ${flags.name}`)
-        const startX = box.x + box.width / 2
-        const startY = box.y + box.height / 2
+        // react-resizable draws the active southeast grip in the handle's
+        // lower-right corner. Its centre can be covered by card content even
+        // though Playwright sees the whole span, producing a false-positive
+        // "resized" command with no mutation.
+        const startX = box.x + box.width - 2
+        const startY = box.y + box.height - 2
         await page.mouse.move(startX, startY)
         await page.mouse.down()
         await page.mouse.move(startX + dx, startY + dy, { steps: 30 })
         await page.mouse.up()
-        return { resized: flags.name, dx, dy, ...(await maybeFollowup(page, flags)) }
+        await page.waitForTimeout(100)
+        const after = await item.boundingBox()
+        const changed = Boolean(
+          after && (after.width !== before.width || after.height !== before.height),
+        )
+        return {
+          resized: flags.name,
+          dx,
+          dy,
+          changed,
+          before: { width: before.width, height: before.height },
+          after: after ? { width: after.width, height: after.height } : null,
+          ...(await maybeFollowup(page, flags)),
+        }
       }
       case 'measure': {
         if (!flags.name) fail('Missing --name')

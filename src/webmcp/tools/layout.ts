@@ -5,7 +5,7 @@ import { useBoardStore } from '../../store/boardStore'
 import { mutate } from '../../store/mutate'
 import { makeTool } from '../makeTool'
 import { err, ok } from '../result'
-import { Position, Rationale, WidgetId } from '../schemas'
+import { MutationFields, Position, WidgetId } from '../schemas'
 
 const LayoutItem = z
   .object({
@@ -26,13 +26,18 @@ export const SetLayoutInput = z
       .describe(
         'Widgets to move or resize. Unlisted widgets keep their position but may be pushed down.',
       ),
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 
 export const SetThemeInput = z
   .object({
-    boardTitle: z.string().min(1).max(60).optional(),
+    boardTitle: z
+      .string()
+      .min(1)
+      .max(60)
+      .regex(/\S/, 'Board title must include a non-whitespace character.')
+      .optional(),
     theme: z
       .enum([
         'neutral',
@@ -47,7 +52,7 @@ export const SetThemeInput = z
       .describe('Astryx theme name. matcha suits a health log; neutral suits a job search.'),
     mode: z.enum(['light', 'dark']).optional(),
     density: z.enum(['comfortable', 'compact']).optional(),
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 
@@ -146,7 +151,7 @@ export const setTheme = makeTool({
       mode: input.mode ?? current.theme.mode,
       density: input.density ?? current.theme.density,
     }
-    const boardTitle = input.boardTitle ?? current.title
+    const boardTitle = input.boardTitle?.trim() ?? current.title
     if (
       theme.name === current.theme.name &&
       theme.mode === current.theme.mode &&
@@ -156,11 +161,21 @@ export const setTheme = makeTool({
       return err('NO_CHANGES', 'No theme, mode, density, or title change was provided.')
     }
 
+    const themeChanged =
+      theme.name !== current.theme.name ||
+      theme.mode !== current.theme.mode ||
+      theme.density !== current.theme.density
+    const summary = [
+      themeChanged ? `Set theme to ${theme.name} ${theme.mode} ${theme.density}` : '',
+      boardTitle !== current.title ? `Renamed board to “${boardTitle}”` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ')
     mutate(
       {
         actor: 'agent',
         action: 'set_theme',
-        summary: `Set theme to ${theme.name} ${theme.mode}`,
+        summary,
         rationale: input.rationale,
       },
       (draft) => {

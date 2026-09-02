@@ -196,12 +196,3 @@ export type ActivityEntry = {
   rationale?: string
   undone: boolean
 }
-
-export type ConfigByType = {
-  table: TableConfig
-  kanban: KanbanConfig
-  checklist: ChecklistConfig
-  chart: ChartConfig
-  note: NoteConfig
-  form: FormConfig
-}

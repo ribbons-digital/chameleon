@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { LIMITS } from '../model/limits'
 import type { NoteConfig, NoteWidget as NoteWidgetModel } from '../model/types'
 import { mutate } from '../store/mutate'
+import { useBoardDensity } from './density'
 import { widgetStyles } from './styles'
 
 function noteConfig(widget: NoteWidgetModel): NoteConfig {
@@ -19,6 +20,7 @@ function noteConfig(widget: NoteWidgetModel): NoteConfig {
 
 export function NoteWidget({ widget }: { widget: NoteWidgetModel }) {
   const config = noteConfig(widget)
+  const density = useBoardDensity()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(config.markdown)
 
@@ -86,10 +88,18 @@ export function NoteWidget({ widget }: { widget: NoteWidgetModel }) {
   }
 
   const markdown = (
-    <VStack gap={2} onClick={startEditing}>
-      <Markdown headingLevelStart={3} density="compact" contentWidth="100%">
-        {config.markdown}
-      </Markdown>
+    <VStack gap={2}>
+      <VStack gap={2} onClick={startEditing}>
+        <Markdown headingLevelStart={3} density={density.prose} contentWidth="100%">
+          {config.markdown}
+        </Markdown>
+      </VStack>
+      <Button
+        label="Edit note"
+        variant="ghost"
+        size="sm"
+        onClick={startEditing}
+      />
     </VStack>
   )
 

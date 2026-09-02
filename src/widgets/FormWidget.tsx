@@ -10,11 +10,13 @@ import { NumberInput } from '@astryxdesign/core/NumberInput'
 import { Selector } from '@astryxdesign/core/Selector'
 import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
+import { useToast } from '@astryxdesign/core/Toast'
 import { VStack } from '@astryxdesign/core/VStack'
 import { useState, type FormEvent } from 'react'
 import type { Field, FormWidget as FormWidgetModel } from '../model/types'
 import { formatCell } from '../store/human'
 import { submitFormValues } from '../store/submit'
+import { useBoardDensity } from './density'
 import {
   collectFormSubmission,
   type FormValue,
@@ -177,10 +179,12 @@ export function FormWidgetView({
   widget: FormWidgetModel
 }) {
   const fields = widget.dataset.fields
+  const density = useBoardDensity()
   const [values, setValues] = useState<FormValues>(() =>
     initialValues(fields),
   )
   const [error, setError] = useState<string>()
+  const showToast = useToast()
 
   if (fields.length === 0) {
     return (
@@ -215,6 +219,17 @@ export function FormWidgetView({
     }
     setError(undefined)
     setValues(initialValues(fields))
+    showToast({
+      type: 'info',
+      body: (
+        <Text>
+          Logged to “{widget.title}” ({result.rowCount}{' '}
+          {result.rowCount === 1 ? 'entry' : 'entries'})
+        </Text>
+      ),
+      uniqueID: `form-${widget.id}-${result.rowIds[0]}`,
+      isAutoHide: true,
+    })
   }
 
   return (
@@ -263,7 +278,7 @@ export function FormWidgetView({
       </form>
       {recent.length > 0 && (
         <List
-          density="compact"
+          density={density.rows}
           hasDividers
           header={<Text weight="semibold">Recent submissions</Text>}
         >

@@ -151,7 +151,8 @@ do not recreate it. Day 2 is on `main` as well (PR #2).
 - `Widget` is a `type` discriminant union. Renderers switch on `widget.type`, not duck-typed config.
 - `mutate` runs `produceWithPatches` *before* `set`. A throwing recipe leaves the store unchanged.
 - Persist version 3 drops command-log entries whose inverse patches still mention Day 1 `content`. Persist key remains `chameleon-board-v1`.
-- Reset keeps the current `stateVersion` (does not rewind to 0) and clears the log.
+- Reset advances `stateVersion` and clears the log, so an agent holding an
+  older snapshot detects that the human replaced the board.
 - Store `undo(actor)` records the caller. The undo tool passes `'agent'`. The header button still defaults to `'human'`.
 
 **UI:** table cells edit through `mutate(actor: 'human')`; checklist and kanban render for real; widget delete, activity list, and an agent toast are wired. Chart and form stay shells.
@@ -415,3 +416,146 @@ Upload that file as a public YouTube video and paste the four sections from
 
 Tag `v1.0.0`. Package version is `1.0.0`. Persist key stays `chameleon-board-v1`
 version 3.
+
+## 2026-09-02 — Final audit
+
+Read-through of `src/`, `tests/`, docs, and the verify harness before the
+Sep 3 deadline. Lint, `tsc -b`, 135 tests, and `vite build` were green on
+`main` at `3a89930`; the changes below keep them green (150 tests after).
+
+**Removed.** Vite scaffold leftovers (`App.css`, `src/assets/*`), the
+`PlaceholderWidget` whose copy still said chart and form "will ship", the
+single-route `@tanstack/react-router` (plus the unused router plugin), and
+dead exports: `DAY2_STATIC_TOOLS`, `datasetWidget`, `ConfigByType`,
+`getBootResult`, `getModelContext`, `ToolRegistry.unregisterAll` /
+`lastRegisterError`, and the store's write-only `hydrated` flag.
+`AppShell data-density` was read by nothing in Astryx.
+
+**Bugs fixed.**
+
+- Human drag or resize only wrote the dragged widget. react-grid-layout
+  compacts and pushes neighbours, so `describe_current_state` reported
+  widgets overlapping at stale coordinates until an agent `set_layout`
+  happened to touch them. `humanApplyLayout` now writes every changed
+  position in one command; undo restores the pushed neighbour too.
+- `update_widget.position` skipped `clampPosition`, so `x: 10, w: 6`
+  overflowed the 12-column grid in the stored document. Clamped; the
+  applied position is returned.
+- Table cell edits that failed validation (text in a number column) closed
+  the editor with no message and no change. The editor stays open with the
+  error, commits on Enter or blur, and select columns use a `Selector`.
+  Kanban `Add card` into `No status` on a required status field failed
+  silently; the input shows why.
+- `set_theme density` was a no-op; Table, List, and Markdown density now
+  follow it.
+- A human undo did not count toward `humanEditsSinceLastDescribe`, and
+  inverse patches rewound the counter on every undo. Both fixed.
+- `set_theme` with only `boardTitle` logged `Set theme to neutral light`.
+  It now logs `Renamed board to “…”`.
+- A persisted checklist with `fields: []` rendered blank and rejected adds;
+  `createWidget` restores the fixed schema.
+
+**Added for human–agent collaboration.**
+
+- `describe_current_state.humanChangesSinceLastDescribe`: the human
+  commands behind the counter, newest first, so one call answers "what did
+  the human change?" (spec: `docs/01-tool-spec.md` §3.1).
+- Header `Add widget` (note, checklist, table) and `Rename board`. Both are
+  human commands in the same log. A hand-made table is `unfinished`
+  `bind_data` work for the agent, which is the handoff the table empty
+  state already described.
+- Form submit toasts `Logged to “…” (N entries)`; activity rows show the
+  time.
+
+**Verified in this VM** with `control-chameleon` (run `audit1`, port 14711,
+stable Chrome): empty doctor, load sample, drag (store now holds the pushed
+table at `y: 5`), undo restores both, invalid cell edit keeps the editor open
+with `Field "step" must be 2000 characters or fewer.`, valid cell and note
+edits, `Add widget` → checklist and table, `Rename board`, checklist item,
+reload keeps `state v9 · 9 commands`, activity list with times, 375px
+stack, Reset back to empty. Harness gained `browser menu` and
+`browser rename` for the two-step controls. The Sep 2 skill-maintenance pass
+fixed `browser resize`: react-resizable's active southeast grip is in the
+span's lower-right corner, while the old centre coordinate was covered by
+card content in headless Chrome. Resize now writes the expected command and
+has screenshot + ARIA proof under `artifacts/skill-maintenance/`. Artifacts:
+`.cursor/skills/verify-chameleon/artifacts/final-audit/`.
+
+**Left alone, worth a look later.**
+
+- No redo. The `undo` tool says so; the header button has no redo either.
+- Humans cannot bind fields by hand; that remains an intentional agent
+  handoff.
+- Main chunk is ~1 MB minified; Recharts is already split out.
+
+## 2026-09-02 — PR #15 re-audit against the WebMCP challenge
+
+The challenge's differentiator is not merely exposing tools. It asks for an
+app that becomes meaningfully better when people and agents use it together.
+PR #15 materially advances that criterion:
+
+- Humans can create, name, arrange, edit, and delete board structure without
+  waiting for an agent. Their actions use the same command log as tool calls.
+- `describe_current_state` returns the actual hand edits since the agent's
+  previous read, not only a counter.
+- Human drag/resize and agent layout tools persist the collision-resolved
+  arrangement both parties see.
+- Inline validation, activity attribution, form feedback, and the agent pulse
+  make actions legible to the other party.
+
+The second audit found gaps behind two existing claims and fixed them:
+
+1. Tools returned `stateVersion`, but mutations could not use it. Every static
+   mutation now accepts optional `expectedStateVersion`; mismatch returns
+   `STALE_STATE` without mutation. A Canary test reads version 87, has the
+   human add a note (88), confirms stale `set_theme` is rejected, reads
+   `humanChangesSinceLastDescribe`, and retries successfully at 88.
+2. `update_widget.position` could overlap another widget in stored state while
+   react-grid-layout showed a pushed arrangement. It now uses `applyLayout`,
+   just like `set_layout`, and persists every collision push.
+
+Additional fixes from the same pass:
+
+- Reset advances the version and requires a destructive-action confirmation,
+  protecting the shared artifact while making replacement visible to a stale
+  agent.
+- Humans can correct widget titles; that correction appears as a human
+  `update_widget` command.
+- The first live agent mutation now toasts. Persisted history remains quiet on
+  reload.
+- Human row creation obeys the same 5,000-row limit as agent tools.
+- Rendering uses `noCompactor`, so an intentional stored `y` gap is no longer
+  silently collapsed only on screen.
+- A repeated-log table is complete only when a compatible form owns a minted
+  tool; an unrelated minted tool elsewhere no longer hides the handoff.
+- Human deltas retain `undone`, so an agent can distinguish a reverted edit
+  without parsing the undo summary.
+- Architecture and submission docs no longer describe the removed router or
+  aspirational files as shipped code.
+
+**Verification.** The maintained stable-Chrome skill passed on local port
+14722: empty doctor, Add widget menu, note/checklist/table, widget and board
+rename, checklist edit, attributed activity, reset warning, confirmed reset
+to `state v7 · 0 commands`, drag, resize (`changed: true`, 504×264 to
+650×323), reload, storage dump, and undo. Chrome 154 with real
+`document.modelContext` listed all 15 static tools; two full demo walks passed
+in 5.0s and 5.4s; all 16 recoverable error codes, including the new
+human-interleaved `STALE_STATE`, recovered with no failures. The first-agent
+toast was separately visible on the first live `add_widget` and absent after
+reload; unit coverage now locks both cases.
+
+**Valuable follow-ups, not added before submission:**
+
+- Replace form/table schema-similarity syncing with an explicit shared
+  dataset id. The current heuristic is convenient for generated logs but can
+  copy a submission into an unrelated form/table pair with sufficiently
+  similar fields.
+- Add named checkpoints or redo. Undo is shared but linear; a human cannot
+  return to a known-good agent-generated arrangement after several edits.
+- Show agent intent before a multi-widget mutation (short plan / affected
+  widgets), then let the human accept or revise it. This would turn
+  collaboration from observable co-editing into negotiated co-editing.
+- Surface registry health from the live `ToolRegistry`, not the theoretical
+  static + minted count, so a host registration failure cannot look ready.
+- Add export/import for a local-first board before users depend on it for
+  long-lived data.

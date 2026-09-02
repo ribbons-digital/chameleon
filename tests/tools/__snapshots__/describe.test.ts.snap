@@ -15,6 +15,7 @@ exports[`describe_current_state > matches a stable snapshot of the empty board 1
     "title": "Untitled workspace",
     "widgetCount": 0,
   },
+  "humanChangesSinceLastDescribe": [],
   "humanEditsSinceLastDescribe": 0,
   "mintedTools": [],
   "ok": true,

@@ -1,5 +1,4 @@
 import { Card } from '@astryxdesign/core/Card'
-import { Heading } from '@astryxdesign/core/Heading'
 import { HStack } from '@astryxdesign/core/HStack'
 import { IconButton } from '@astryxdesign/core/IconButton'
 import { Text } from '@astryxdesign/core/Text'
@@ -10,6 +9,7 @@ import type { Widget } from '../model/types'
 import { useBoardStore } from '../store/boardStore'
 import { humanDeleteWidget } from '../store/human'
 import { widgetStyles } from './styles'
+import { WidgetTitle } from './WidgetTitle'
 
 const typeColor: Record<
   Widget['type'],
@@ -38,9 +38,7 @@ export function WidgetShell({
       <VStack gap={3} height="100%">
         <header className="widget-drag-handle">
           <HStack hAlign="between" vAlign="center" gap={3}>
-            <Heading level={2} maxLines={1}>
-              {widget.title}
-            </Heading>
+            <WidgetTitle widget={widget} />
             <HStack gap={1} vAlign="center">
               {widget.type === 'form' &&
                 mintedTools.map((record) => (

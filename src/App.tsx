@@ -1,12 +1,13 @@
+import { AlertDialog } from '@astryxdesign/core/AlertDialog'
 import { AppShell } from '@astryxdesign/core/AppShell'
 import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
-import { Heading } from '@astryxdesign/core/Heading'
 import { HStack } from '@astryxdesign/core/HStack'
 import { Text } from '@astryxdesign/core/Text'
 import { Token } from '@astryxdesign/core/Token'
 import { VStack } from '@astryxdesign/core/VStack'
 import { Theme, type DefinedTheme } from '@astryxdesign/core/theme'
+import { useState } from 'react'
 import { butterTheme } from '@astryxdesign/theme-butter/built'
 import { chocolateTheme } from '@astryxdesign/theme-chocolate/built'
 import { gothicTheme } from '@astryxdesign/theme-gothic/built'
@@ -17,7 +18,9 @@ import { y2kTheme } from '@astryxdesign/theme-y2k/built'
 import type { ThemeName } from './model/types'
 import { styles } from './app/styles'
 import { ActivityDrawer } from './components/ActivityDrawer'
+import { AddWidgetMenu } from './components/AddWidgetMenu'
 import { AgentPulse } from './components/AgentPulse'
+import { BoardTitle } from './components/BoardTitle'
 import { BoardGrid } from './grid/BoardGrid'
 import { useBoardStore } from './store/boardStore'
 import { usePersistHealth } from './store/persistStorage'
@@ -38,7 +41,7 @@ const THEMES: Record<ThemeName, DefinedTheme> = {
 }
 
 function App() {
-  const title = useBoardStore((state) => state.document.title)
+  const [resetOpen, setResetOpen] = useState(false)
   const boardTheme = useBoardStore(
     (state) => state.document.theme,
   )
@@ -60,7 +63,6 @@ function App() {
   return (
     <Theme theme={THEMES[boardTheme.name]} mode={boardTheme.mode}>
       <AppShell
-        data-density={boardTheme.density}
         height="auto"
         variant="wash"
         contentPadding={0}
@@ -78,9 +80,7 @@ function App() {
               <Text type="label" color="accent" weight="semibold">
                 CHAMELEON
               </Text>
-              <Heading level={1} type="display-3" xstyle={styles.brandMark}>
-                {title}
-              </Heading>
+              <BoardTitle />
               <Text as="p" color="secondary">
                 A workspace composed in conversation.
               </Text>
@@ -95,13 +95,18 @@ function App() {
                     : `${toolCount} tools ready`
                 }
               />
+              <AddWidgetMenu />
               <Button
                 label="Undo last change"
                 variant="secondary"
                 isDisabled={!canUndo}
                 onClick={() => undo()}
               />
-              <Button label="Reset canvas" variant="ghost" onClick={reset} />
+              <Button
+                label="Reset canvas"
+                variant="ghost"
+                onClick={() => setResetOpen(true)}
+              />
             </HStack>
           </HStack>
 
@@ -144,6 +149,17 @@ function App() {
         </VStack>
       </AppShell>
       <AgentPulse />
+      <AlertDialog
+        isOpen={resetOpen}
+        onOpenChange={setResetOpen}
+        title="Reset this canvas?"
+        description="Returns to an untitled empty board and removes every widget, row, minted tool, and activity entry. This cannot be undone."
+        actionLabel="Reset workspace"
+        onAction={() => {
+          reset()
+          setResetOpen(false)
+        }}
+      />
     </Theme>
   )
 }

@@ -297,16 +297,27 @@ export function createWidget(input: {
         config: input.config as KanbanConfig,
         dataset: input.dataset ?? { fields: [], rows: [] },
       } satisfies KanbanWidget
-    case 'checklist':
+    case 'checklist': {
+      const checklistFields = input.dataset?.fields ?? []
+      const hasFixedChecklistFields = CHECKLIST_FIELDS.every((required) =>
+        checklistFields.some(
+          (field) =>
+            field.key === required.key && field.type === required.type,
+        ),
+      )
       return {
         ...input,
         type: 'checklist',
         config: input.config as ChecklistConfig,
-        dataset: input.dataset ?? {
-          fields: structuredClone(CHECKLIST_FIELDS),
-          rows: [],
+        dataset: {
+          // The schema is fixed, so an empty or partial persisted schema heals here.
+          fields: hasFixedChecklistFields
+            ? checklistFields
+            : structuredClone(CHECKLIST_FIELDS),
+          rows: input.dataset?.rows ?? [],
         },
       } satisfies ChecklistWidget
+    }
     case 'chart':
       return {
         ...input,
@@ -326,10 +337,4 @@ export function createWidget(input: {
       return _exhaustive
     }
   }
-}
-
-export function datasetWidget(
-  widget: Widget,
-): Exclude<Widget, NoteWidget> | undefined {
-  return widget.type === 'note' ? undefined : widget
 }

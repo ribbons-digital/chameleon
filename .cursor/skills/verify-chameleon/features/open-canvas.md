@@ -1,12 +1,13 @@
 # Open the empty canvas
 
-Open canvas is the first paint of a new Chameleon profile: the brand mark, untitled workspace title, empty-state heading, three copy-prompt buttons, Load a sample board, disabled undo, empty activity copy, and (in browsers without WebMCP) a dismissable banner.
+Open canvas is the first paint of a new Chameleon profile: the brand mark, editable untitled workspace title, Add widget, three copy-prompt buttons, Load a sample board, disabled undo, empty activity copy, and (in browsers without WebMCP) a dismissable banner.
 
 ## Sub-features
 
 - `open-identity` shows the `CHAMELEON` mark and heading `Untitled workspace`.
 - `open-empty` shows heading `What are you working on?` and the three copy-prompt buttons.
 - `open-sample-control` shows `Load a sample board`.
+- `open-build-controls` shows `Add widget` and `Rename board`.
 - `open-empty-activity` shows the empty activity line and `state v0 · 0 commands` on a fresh profile.
 - `open-activity-drawer` opens the activity list to `No activity yet`.
 - `open-undo-disabled` leaves `Undo last change` disabled until a mutation exists.
@@ -26,7 +27,7 @@ Preconditions:
 - This run's Chrome profile is new.
 - `control-chameleon doctor --expect-empty` reports the empty canvas, copy buttons, empty activity, and disabled undo.
 
-- **Open URL.** Load the launched URL. Run `control-chameleon doctor --expect-empty`. The page shows `CHAMELEON`, heading `Untitled workspace`, region `Widget canvas`, heading `What are you working on?`, button `Copy wedding planner prompt`, button `Load a sample board`, and `state v0 · 0 commands`.
+- **Open URL.** Load the launched URL. Run `control-chameleon doctor --expect-empty`. The page shows `CHAMELEON`, heading `Untitled workspace`, region `Widget canvas`, heading `What are you working on?`, buttons `Add widget`, `Rename board`, `Copy wedding planner prompt`, and `Load a sample board`, plus `state v0 · 0 commands`.
 - **Empty activity.** Read the footer. Run `control-chameleon browser assert --text "Drag, edit, or ask an agent to create the first activity entry."`. The empty-state sentence is visible and `Latest:` is not.
 - **Activity drawer.** Expand the empty list. Run `control-chameleon browser click --role button --name "Show activity" --wait-text "No activity yet" --aria-snapshot artifacts/open-canvas/activity.aria.txt --screenshot artifacts/open-canvas/activity.png`. The heading `Activity` and the row `No activity yet` are visible in the same session. The next command will find the list closed again.
 - **Undo disabled.** Inspect the header control. Run `control-chameleon browser assert --role button --name "Undo last change" --disabled`. The button is visible and disabled.

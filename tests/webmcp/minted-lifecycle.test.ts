@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useBoardStore } from '../../src/store/boardStore'
+import { humanDeleteWidget } from '../../src/store/human'
 import { bootWebmcp, resetBootForTests } from '../../src/webmcp/boot'
 import {
   makeMintedTool,
   syncMintedRegistry,
 } from '../../src/webmcp/minted'
 import { ToolRegistry } from '../../src/webmcp/registry'
+import { awaitMintedSync } from '../../src/webmcp/mintedSync'
 import { bindData } from '../../src/webmcp/tools/data'
 import { createFormTool } from '../../src/webmcp/tools/mint'
 import { undoBoard } from '../../src/webmcp/tools/undo'
@@ -17,7 +19,7 @@ const description =
   'Records one blood sugar reading in mg/dL. Example: log a reading of 104.'
 
 async function settleRegistry(): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 0))
+  await awaitMintedSync()
 }
 
 async function createMintedForm(): Promise<{
@@ -104,6 +106,18 @@ describe('minted tool lifecycle', () => {
     expect(registry.has(toolName)).toBe(false)
 
     await executeTool(undoBoard, {})
+    await settleRegistry()
+    expect(registry.has(toolName)).toBe(true)
+  })
+
+  it('unregisters after human delete and restores after human undo', async () => {
+    const { widgetId, toolName } = await createMintedForm()
+    humanDeleteWidget(widgetId)
+    await settleRegistry()
+    expect(registry.has(toolName)).toBe(false)
+    expect(useBoardStore.getState().document.mintedTools).toEqual([])
+
+    useBoardStore.getState().undo('human')
     await settleRegistry()
     expect(registry.has(toolName)).toBe(true)
   })

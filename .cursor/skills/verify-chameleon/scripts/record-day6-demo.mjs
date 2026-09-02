@@ -231,6 +231,7 @@ async function typePrompt(page, text) {
 
 async function resetCanvas(page) {
   await page.getByRole('button', { name: 'Reset canvas' }).click()
+  await page.getByRole('button', { name: 'Reset workspace' }).click()
   await sleep(500)
 }
 
@@ -298,7 +299,6 @@ await beat(BEATS[1], async () => {
 
 let checklist
 let guests
-let guestRows
 let vendors
 let note
 
@@ -331,7 +331,7 @@ await beat(BEATS[2], async () => {
     ],
     rationale: 'Track 80 guests.',
   }, 'table')
-  guestRows = await agentCall(page, 'add_rows', {
+  await agentCall(page, 'add_rows', {
     widgetId: guests.widgetId,
     rows: [
       { name: 'Avery Chen', rsvp: 'pending' },

@@ -35,15 +35,13 @@ function commandPatchesAreSafe(command: Command): boolean {
 type BoardStore = {
   document: BoardDocument
   commands: Command[]
-  hydrated: boolean
   mutate: (
     meta: MutationMeta,
     recipe: (draft: Draft<BoardDocument>) => void,
   ) => number
-  undo: (actor?: Actor) => Command | undefined
+  undo: (actor?: Actor, rationale?: string) => Command | undefined
   reset: () => void
   loadSample: () => void
-  setHydrated: (hydrated: boolean) => void
   resetHumanEditCount: () => number
 }
 
@@ -52,7 +50,6 @@ export const useBoardStore = create<BoardStore>()(
     (set, get) => ({
       document: structuredClone(initialDocument),
       commands: [],
-      hydrated: false,
 
       mutate: (meta, recipe) => {
         const current = get()
@@ -100,7 +97,7 @@ export const useBoardStore = create<BoardStore>()(
         return nextVersion
       },
 
-      undo: (actor: Actor = 'human') => {
+      undo: (actor: Actor = 'human', rationale?: string) => {
         const state = get()
         const index = state.commands.findLastIndex(
           (command) => !command.undone && command.action !== 'undo',
@@ -109,10 +106,15 @@ export const useBoardStore = create<BoardStore>()(
         const target = state.commands[index]
         set((current) => {
           const version = current.document.stateVersion + 1
+          // Inverse patches would also rewind these two counters; they only move forward.
+          const humanEdits =
+            current.document.humanEditsSinceLastDescribe +
+            (actor === 'human' ? 1 : 0)
           const restored = produce(
             applyPatches(current.document, target.inversePatches),
             (draft) => {
               draft.stateVersion = version
+              draft.humanEditsSinceLastDescribe = humanEdits
             },
           )
           const commands = current.commands.map((command, commandIndex) =>
@@ -124,6 +126,7 @@ export const useBoardStore = create<BoardStore>()(
             actor,
             action: 'undo',
             summary: `Undid: ${target.summary}`,
+            rationale,
             inversePatches: [],
             undone: false,
           })
@@ -136,7 +139,10 @@ export const useBoardStore = create<BoardStore>()(
       },
 
       reset: () => {
-        const version = get().document.stateVersion
+        // Reset clears history, but still advances the monotonic version so an
+        // agent holding an older snapshot can detect that the human replaced
+        // the board.
+        const version = get().document.stateVersion + 1
         const document = structuredClone(initialDocument)
         document.stateVersion = version
         set({
@@ -156,7 +162,6 @@ export const useBoardStore = create<BoardStore>()(
           },
         )
       },
-      setHydrated: (hydrated) => set({ hydrated }),
       resetHumanEditCount: () => {
         const current = get().document.humanEditsSinceLastDescribe
         set((state) => ({
@@ -184,7 +189,6 @@ export const useBoardStore = create<BoardStore>()(
           commands: commands.filter(commandPatchesAreSafe),
         }
       },
-      onRehydrateStorage: () => (state) => state?.setHydrated(true),
     },
   ),
 )

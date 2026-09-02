@@ -95,6 +95,8 @@ async function resetCanvas(page) {
   const button = page.getByRole('button', { name: 'Reset canvas' })
   if (await button.count()) {
     await button.click()
+    const confirm = page.getByRole('button', { name: 'Reset workspace' })
+    if (await confirm.count()) await confirm.click()
     await sleep(400)
   }
 }
@@ -746,6 +748,41 @@ async function errorAudit(page) {
         'hint says the log is empty; describe_current_state confirmed 0 commands',
       ],
       emptyLog,
+    })
+  }
+
+  // STALE_STATE — a human changes the board after the agent's read
+  {
+    await resetCanvas(page)
+    const before = await callTool(page, 'describe_current_state', {})
+    await page.getByRole('button', { name: 'Add widget', exact: true }).click()
+    await page.getByRole('menuitem', { name: /^Note\b/ }).click()
+    await page
+      .getByRole('heading', { name: 'New note', exact: true })
+      .waitFor({ state: 'visible' })
+    const trigger = await callTool(page, 'set_theme', {
+      boardTitle: 'Stale title',
+      expectedStateVersion: before.stateVersion,
+    })
+    trigger._tool = 'set_theme'
+    const described = await callTool(page, 'describe_current_state', {})
+    const sawHumanAdd = described.humanChangesSinceLastDescribe?.some(
+      (entry) => entry.actor === 'human' && entry.action === 'add_widget',
+    )
+    const retry = await callTool(page, 'set_theme', {
+      boardTitle: 'Fresh title',
+      expectedStateVersion: described.stateVersion,
+    })
+    await record('STALE_STATE', trigger, {
+      recovered: sawHumanAdd && retry.ok === true,
+      steps: [
+        'human chose Add widget after the agent read stateVersion',
+        'describe_current_state surfaced the human add',
+        'retried set_theme against the fresh stateVersion',
+      ],
+      retryOk: retry.ok,
+      sawHumanAdd,
+      details: trigger.error?.details,
     })
   }
 

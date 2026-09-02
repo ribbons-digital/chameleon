@@ -8,8 +8,10 @@ import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { VStack } from '@astryxdesign/core/VStack'
 import { useState } from 'react'
+import { LIMITS } from '../model/limits'
 import type { ChecklistWidget as ChecklistWidgetModel, Row } from '../model/types'
 import { humanAddRow, humanDeleteRow, humanUpdateCell } from '../store/human'
+import { useBoardDensity } from './density'
 
 function sortItems(rows: Row[], sortBy: ChecklistWidgetModel['config']['sortBy']): Row[] {
   if (sortBy === 'manual') return rows
@@ -25,6 +27,7 @@ function sortItems(rows: Row[], sortBy: ChecklistWidgetModel['config']['sortBy']
 
 export function ChecklistWidgetView({ widget }: { widget: ChecklistWidgetModel }) {
   const [draft, setDraft] = useState('')
+  const density = useBoardDensity()
   const fields = widget.dataset.fields
   const textField = fields.find((field) => field.key === 'text')
   const doneField = fields.find((field) => field.key === 'done')
@@ -36,6 +39,7 @@ export function ChecklistWidgetView({ widget }: { widget: ChecklistWidgetModel }
   })
   const doneCount = widget.dataset.rows.filter((row) => row.done === true).length
   const total = widget.dataset.rows.length
+  const full = total >= LIMITS.rowsPerWidget
 
   const addItem = () => {
     const text = draft.trim()
@@ -48,7 +52,7 @@ export function ChecklistWidgetView({ widget }: { widget: ChecklistWidgetModel }
     <VStack gap={3}>
       {widget.config.showProgress && total > 0 && (
         <ProgressBar
-          label={`${doneCount} of ${total} done`}
+          label="Progress"
           value={doneCount}
           max={total}
           hasValueLabel
@@ -64,7 +68,7 @@ export function ChecklistWidgetView({ widget }: { widget: ChecklistWidgetModel }
           description="Add a checklist item, or ask the agent to fill this list."
         />
       ) : (
-        <List density="compact" hasDividers header={<Text type="label">Items</Text>}>
+        <List density={density.rows} hasDividers header={<Text type="label">Items</Text>}>
           {visible.map((row) => {
             const label = typeof row.text === 'string' ? row.text : 'Untitled'
             const due = typeof row.due === 'string' ? row.due : undefined
@@ -111,11 +115,24 @@ export function ChecklistWidgetView({ widget }: { widget: ChecklistWidgetModel }
         isLabelHidden
         placeholder="Add an item"
         value={draft}
+        isDisabled={full}
+        disabledMessage={`This checklist already has ${LIMITS.rowsPerWidget} items.`}
         onChange={setDraft}
         onEnter={addItem}
         width="100%"
       />
-      <Button label="Add item" variant="secondary" size="sm" onClick={addItem} />
+      <Button
+        label="Add item"
+        variant="secondary"
+        size="sm"
+        isDisabled={full}
+        tooltip={
+          full
+            ? `This checklist already has ${LIMITS.rowsPerWidget} items.`
+            : undefined
+        }
+        onClick={addItem}
+      />
     </VStack>
   )
 }

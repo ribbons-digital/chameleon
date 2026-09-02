@@ -36,5 +36,4 @@ export const STATIC_TOOLS: RegisterableTool[] = STATIC_TOOL_NAMES.map(
   (name) => TOOLS_BY_NAME[name],
 )
 
-export const DAY2_STATIC_TOOLS = STATIC_TOOLS
 export { STATIC_TOOL_NAMES }

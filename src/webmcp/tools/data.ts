@@ -10,13 +10,13 @@ import { unfinishedWidgets, isRepeatedLogTitle } from '../../store/selectors'
 import { appendRows } from '../../store/submit'
 import { makeTool } from '../makeTool'
 import { err, ok } from '../result'
-import { Rationale, WidgetId } from '../schemas'
+import { MutationFields, WidgetId } from '../schemas'
 
 export const BindDataInput = z
   .object({
     widgetId: WidgetId,
     fields: z.array(fieldSchema).min(1).max(LIMITS.fieldsPerDataset),
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 
@@ -30,7 +30,7 @@ export const AddRowsInput = z
       .describe(
         'Objects keyed by this widget\'s field keys. Checklist keys: text, done, due, note. This is how you fill table/kanban/checklist data — do not put it in a note.',
       ),
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 
@@ -50,7 +50,7 @@ export const UpdateRowsInput = z
       )
       .min(1)
       .max(LIMITS.rowsPerMutation),
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 
@@ -58,7 +58,7 @@ export const DeleteRowsInput = z
   .object({
     widgetId: WidgetId,
     rowIds: z.array(z.string()).min(1).max(LIMITS.rowsPerMutation),
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 

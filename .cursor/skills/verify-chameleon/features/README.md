@@ -12,7 +12,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 ## Driving conventions
 
-- Start every recipe from the empty canvas unless its preconditions say otherwise. Recipes that drag or edit widgets first choose `Load a sample board`. `Reset canvas` returns the empty canvas and an empty log inside the same profile. It does not rewind `stateVersion` to 0.
+- Start every recipe from the empty canvas unless its preconditions say otherwise. Recipes that drag or edit widgets first choose `Load a sample board`. `Reset canvas` returns the empty canvas and an empty log inside the same profile. It increments `stateVersion` so an agent holding an older snapshot can detect the replacement.
 - Prefer ARIA roles and accessible names over CSS selectors or DOM position. The drag handle class `widget-drag-handle` and resize handle `.react-resizable-handle` are the exceptions the grid requires.
 - Treat every command as literal. Keep quoted names, curly quotes in activity copy, and the middle dot in `state v0 · 0 commands` unchanged.
 - Run browser actions through `control-chameleon browser`. Open editors and the activity list must finish in that same command.
@@ -41,8 +41,10 @@ Keep implementation details out of the map. Name only user paths, stable handles
 ## Features
 
 - [Open the empty canvas](./open-canvas.md) covers first paint, identity, copy prompts, empty activity, and the unhosted WebMCP banner.
+- [Build the board by hand](./build-by-hand.md) covers Add widget, a ready checklist, the table-to-agent handoff, and Rename board.
 - [Move and resize widgets](./move-and-resize.md) covers dragging and resizing a card and the activity line that follows.
 - [Edit widgets by hand](./edit-widgets.md) covers note markdown, table cells, adding a row, and deleting a widget.
+- [Review human and agent activity](./review-activity.md) covers timestamps, actor/action attribution, and undone commands.
 - [Undo last change](./undo.md) covers enabling undo after a mutation and restoring the prior layout.
 - [Reset the canvas](./reset-canvas.md) covers wiping commands and returning to the empty canvas.
 - [Persist across reload](./persist-reload.md) covers localStorage surviving a browser reload.

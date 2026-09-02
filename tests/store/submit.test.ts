@@ -139,6 +139,29 @@ describe('form submissions onto a companion table', () => {
       useBoardStore.getState().document.widgets[1].dataset?.rows,
     ).toHaveLength(0)
   })
+
+  it('does not mirror rows between two same-title tables', async () => {
+    await executeTool(addWidget, {
+      type: 'table',
+      title: 'Blood Sugar Log',
+      fields: [...logFields],
+    })
+    await executeTool(addWidget, {
+      type: 'table',
+      title: 'Blood Sugar Log',
+      fields: [...logFields],
+    })
+    const [first, second] = useBoardStore.getState().document.widgets
+    appendRows(
+      first.id,
+      [{ reading: 110, context: 'fasting' }],
+      'agent',
+      'Added a row',
+    )
+    const widgets = useBoardStore.getState().document.widgets
+    expect(widgets.find((widget) => widget.id === first.id)?.dataset?.rows).toHaveLength(1)
+    expect(widgets.find((widget) => widget.id === second.id)?.dataset?.rows).toHaveLength(0)
+  })
 })
 
 describe('collectFormSubmission', () => {

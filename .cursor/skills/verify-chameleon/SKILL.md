@@ -1,17 +1,17 @@
 ---
 name: verify-chameleon
-description: Drive the Chameleon Vite/React canvas the way a user does. Open the empty workspace, load the sample board, drag and resize widgets, edit a note or table cell, undo, reset, and prove localStorage persistence. Use when proving a Chameleon UI change, before claiming a board mutation works, or when a PR touches src/App.tsx, src/grid, src/store, or src/widgets.
+description: Drive the Chameleon Vite/React canvas the way a user does. Open or name a workspace; add and rename widgets; drag, resize, and edit them; review activity; undo, reset, and prove localStorage persistence. Use when proving a Chameleon UI change, before claiming a board mutation works, or when a PR touches src/App.tsx, src/grid, src/store, or src/widgets.
 ---
 
 # Verify Chameleon
 
-Chameleon is a single-route web canvas. A user sees a header, an empty canvas with copy-prompt buttons, Undo last change, Reset canvas, Show activity, and a footer version line. There is no login. State lives in the browser under localStorage key `chameleon-board-v1`. `Load a sample board` places a note and a table so hand-edit recipes have widgets.
+Chameleon is a single-route web canvas. A user sees a header with Add widget, Rename board, Undo last change, and Reset canvas; an empty canvas with copy-prompt buttons; Show activity; and a footer version line. There is no login. State lives in the browser under localStorage key `chameleon-board-v1`. `Load a sample board` places a note and a table so hand-edit recipes have widgets.
 
 This skill is for agents that need to prove a change on the running page. Unit tests in `tests/` do not count as proof. Do not call Zustand setters, do not seed localStorage by hand, and do not drive `http://localhost:4711` unless this run launched it (it did not: launch refuses 4711).
 
-WebMCP tools (`document.modelContext`) are not a user path in this browser. Stable Chrome here shows the dismissable `WebMCP not detected in this browser` banner and a token like `15 tools ready`. Do not treat tool calls as verification of the canvas. Checklist, kanban, chart, and form widgets are not on the sample board; a human cannot add them without an agent host, so they are out of scope for this skill until a user-facing add-widget control exists.
+WebMCP tools (`document.modelContext`) are not a user path in this browser. Stable Chrome here shows the dismissable `WebMCP not detected in this browser` banner and a token like `15 tools ready`. Do not treat tool calls as verification of the canvas. The header `Add widget` menu places a note, checklist, or table by hand (titles `New note`, `New checklist`, `New table`); kanban, chart, and form widgets still need an agent host and are out of scope for this skill.
 
-Each `browser` command opens Chrome against this run's profile, does the work, and closes it. Open editors and the activity list are React state, not persisted. Finish those in one command (`browser note`, `browser cell`, or a click with `--wait-text` / `--aria-snapshot` / `--screenshot`). Layout, cells, and the command log persist, so drag, reload, and undo can be separate commands.
+Each `browser` command opens Chrome against this run's profile, does the work, and closes it. Open editors, menus, and the activity list are React state, not persisted. Finish those in one command (`browser note`, `browser cell`, `browser menu`, `browser rename`, `browser rename-widget`, or a click with follow-up flags). Layout, cells, and the command log persist, so drag, reload, and undo can be separate commands.
 
 ## Launch
 
@@ -47,7 +47,7 @@ It checks:
 
 - The Vite pid in `/tmp/chameleon-verify/<run>/state.json` is alive.
 - `GET` of that state's URL returns HTTP 2xx.
-- The page shows the `CHAMELEON` mark, a region named `Widget canvas`, a button named `Undo last change`, and a button named `Reset canvas`.
+- The page shows the `CHAMELEON` mark, a region named `Widget canvas`, and buttons named `Add widget`, `Rename board`, `Undo last change`, and `Reset canvas`.
 - The URL and profile match this run. If they do not, stop. That is someone else's session.
 
 `--expect-empty` also requires the first-load board:
@@ -55,8 +55,9 @@ It checks:
 - Heading `Untitled workspace`
 - Heading `What are you working on?`
 - Buttons `Copy wedding planner prompt` and `Load a sample board`
+- Buttons `Add widget` and `Rename board`
 - Activity copy `Drag, edit, or ask an agent to create the first activity entry.`
-- Footer matching `state vN · 0 commands` (middle dot is `·`). A fresh profile is `v0`. Reset keeps the current `N` and clears the log, so a reset board can be `state v1 · 0 commands`.
+- Footer matching `state vN · 0 commands` (middle dot is `·`). A fresh profile is `v0`. Reset increments `N` and clears the log, so stale agents can detect that the board was replaced.
 - `Undo last change` disabled
 
 `--expect-sample` requires headings `A canvas that listens` and `What happens next` after `Load a sample board`.
@@ -95,23 +96,33 @@ Stable handles:
 | Delete widget | button `Delete A canvas that listens` |
 | Add table row | button `Add row` |
 | Note editor | textbox `Note markdown` |
+| Edit populated note | button `Edit note` (rendered markdown remains clickable) |
 | Seed table cell | button whose name is the cell text, then textbox `Step` |
 | Empty canvas | heading `What are you working on?` |
 | Copy wedding prompt | button `Copy wedding planner prompt`, then `Copied` |
 | Sample board | button `Load a sample board` |
+| Add widget | `browser menu --name "Add widget" --item Note` (also `Checklist`, `Table`) |
+| After add widget | `Latest: Added note “New note”` |
+| Rename board | `browser rename --value "<name>"` (button `Rename board`, textbox `Board name`, Enter) |
+| After rename | `Latest: Renamed board to “<name>”` |
+| Rename widget | `browser rename-widget --name "<old>" --value "<new>"` |
+| After widget rename | `Latest: Renamed “<old>” to “<new>”` |
 | Measure widget box | `browser measure --name <heading>` |
 | Viewport | `--width` and `--height` on any `browser` command (default 1400x900) |
 
 Drag from `header.widget-drag-handle` (the card header, including the heading). Resize from that card's `.react-resizable-handle` (southeast corner). Clicking markdown or a table cell does not drag; the grid cancels drag on `textarea`, `input`, `button`, and `[role="checkbox"]`.
 
 ```bash
-control-chameleon browser click --role button --name "Reset canvas"
+control-chameleon browser reset --wait-text "What are you working on?"
 control-chameleon browser assert --role button --name "Undo last change" --disabled
-control-chameleon browser drag --name "A canvas that listens" --dx 320 --dy 0
-control-chameleon browser wait --text "Latest: Moved “A canvas that listens”"
+control-chameleon browser click --role button --name "Load a sample board" --wait-text "Latest: Loaded a sample board"
+control-chameleon browser drag --name "A canvas that listens" --dx 320 --dy 0 --wait-text "Latest: Moved “A canvas that listens”"
+control-chameleon browser resize --name "A canvas that listens" --dx 80 --dy 80 --wait-text "Latest: Resized “A canvas that listens”"
 control-chameleon browser note --name "A canvas that listens" --markdown "Edited from verification." --wait-text "Latest: Edited note “A canvas that listens”"
 control-chameleon browser cell --from "Your agent reads the board" --value "Hand edits land in the log" --wait-text "Latest: Edited “What happens next”"
-control-chameleon browser click --role button --name "Show activity" --wait-text "No activity yet" --aria-snapshot artifacts/open-canvas/activity.aria.txt --screenshot artifacts/open-canvas/activity.png
+control-chameleon browser menu --name "Add widget" --item Checklist --wait-text "Latest: Added checklist “New checklist”"
+control-chameleon browser rename --value "Audit board" --wait-text "Latest: Renamed board to “Audit board”"
+control-chameleon browser click --role button --name "Show activity" --wait-text "Renamed board to “Audit board”" --aria-snapshot artifacts/review-activity/activity.aria.txt --screenshot artifacts/review-activity/activity.png
 control-chameleon browser snapshot --aria --path artifacts/open-canvas/home.aria.txt
 control-chameleon browser screenshot --path artifacts/open-canvas/home.png
 control-chameleon browser storage --path artifacts/open-canvas/board.json
