@@ -491,3 +491,69 @@ has screenshot + ARIA proof under `artifacts/skill-maintenance/`. Artifacts:
 - Humans cannot rename a widget or bind fields by hand; both stay
   agent-only.
 - Main chunk is ~1 MB minified; Recharts is already split out.
+
+## 2026-09-02 — PR #15 re-audit against the WebMCP challenge
+
+The challenge's differentiator is not merely exposing tools. It asks for an
+app that becomes meaningfully better when people and agents use it together.
+PR #15 materially advances that criterion:
+
+- Humans can create, name, arrange, edit, and delete board structure without
+  waiting for an agent. Their actions use the same command log as tool calls.
+- `describe_current_state` returns the actual hand edits since the agent's
+  previous read, not only a counter.
+- Human drag/resize and agent layout tools persist the collision-resolved
+  arrangement both parties see.
+- Inline validation, activity attribution, form feedback, and the agent pulse
+  make actions legible to the other party.
+
+The second audit found gaps behind two existing claims and fixed them:
+
+1. Tools returned `stateVersion`, but mutations could not use it. Every static
+   mutation now accepts optional `expectedStateVersion`; mismatch returns
+   `STALE_STATE` without mutation. A Canary test reads version 87, has the
+   human add a note (88), confirms stale `set_theme` is rejected, reads
+   `humanChangesSinceLastDescribe`, and retries successfully at 88.
+2. `update_widget.position` could overlap another widget in stored state while
+   react-grid-layout showed a pushed arrangement. It now uses `applyLayout`,
+   just like `set_layout`, and persists every collision push.
+
+Additional fixes from the same pass:
+
+- Reset advances the version and requires a destructive-action confirmation,
+  protecting the shared artifact while making replacement visible to a stale
+  agent.
+- Humans can correct widget titles; that correction appears as a human
+  `update_widget` command.
+- The first live agent mutation now toasts. Persisted history remains quiet on
+  reload.
+- Human row creation obeys the same 5,000-row limit as agent tools.
+- Architecture and submission docs no longer describe the removed router or
+  aspirational files as shipped code.
+
+**Verification.** The maintained stable-Chrome skill passed on local port
+14722: empty doctor, Add widget menu, note/checklist/table, widget and board
+rename, checklist edit, attributed activity, reset warning, confirmed reset
+to `state v7 · 0 commands`, drag, resize (`changed: true`, 504×264 to
+650×323), reload, storage dump, and undo. Chrome 154 with real
+`document.modelContext` listed all 15 static tools; two full demo walks passed
+in 5.0s and 5.4s; all 16 recoverable error codes, including the new
+human-interleaved `STALE_STATE`, recovered with no failures. The first-agent
+toast was separately visible on the first live `add_widget` and absent after
+reload; unit coverage now locks both cases.
+
+**Valuable follow-ups, not added before submission:**
+
+- Replace form/table schema-similarity syncing with an explicit shared
+  dataset id. The current heuristic is convenient for generated logs but can
+  copy a submission into an unrelated form/table pair with sufficiently
+  similar fields.
+- Add named checkpoints or redo. Undo is shared but linear; a human cannot
+  return to a known-good agent-generated arrangement after several edits.
+- Show agent intent before a multi-widget mutation (short plan / affected
+  widgets), then let the human accept or revise it. This would turn
+  collaboration from observable co-editing into negotiated co-editing.
+- Surface registry health from the live `ToolRegistry`, not the theoretical
+  static + minted count, so a host registration failure cannot look ready.
+- Add export/import for a local-first board before users depend on it for
+  long-lived data.
