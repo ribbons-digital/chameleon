@@ -96,6 +96,7 @@ Stable handles:
 | Delete widget | button `Delete A canvas that listens` |
 | Add table row | button `Add row` |
 | Note editor | textbox `Note markdown` |
+| Edit populated note | button `Edit note` (rendered markdown remains clickable) |
 | Seed table cell | button whose name is the cell text, then textbox `Step` |
 | Empty canvas | heading `What are you working on?` |
 | Copy wedding prompt | button `Copy wedding planner prompt`, then `Copied` |
