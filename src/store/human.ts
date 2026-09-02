@@ -1,9 +1,30 @@
-import { createRowId } from '../model/ids'
+import { createRowId, createWidgetId } from '../model/ids'
 import { parseRowValues, validateValue } from '../model/fields'
 import { KANBAN_UNGROUPED, placeRowInColumn } from '../model/kanbanOrder'
-import type { Actor, Field, GridPosition, Row, Widget } from '../model/types'
+import { autoPlace } from '../model/layout'
+import { LIMITS } from '../model/limits'
+import type {
+  Actor,
+  Field,
+  GridPosition,
+  Row,
+  Widget,
+} from '../model/types'
+import { createWidget, defaultConfig, defaultDataset } from '../model/widgets'
 import { useBoardStore } from './boardStore'
 import { mutate } from './mutate'
+
+/** Widget types a human can create without an agent; the rest need bound fields first. */
+export const HUMAN_WIDGET_TYPES = ['note', 'checklist', 'table'] as const
+export type HumanWidgetType = (typeof HUMAN_WIDGET_TYPES)[number]
+
+const HUMAN_WIDGET_TITLES: Record<HumanWidgetType, string> = {
+  note: 'New note',
+  checklist: 'New checklist',
+  table: 'New table',
+}
+
+export const BOARD_TITLE_MAX = 60
 
 const now = () => new Date().toISOString()
 
@@ -64,6 +85,69 @@ export function humanApplyLayout(
     },
   )
   return true
+}
+
+export function humanAddWidget(
+  type: HumanWidgetType,
+): { ok: true; widgetId: string } | { ok: false; message: string } {
+  const widgets = useBoardStore.getState().document.widgets
+  if (widgets.length >= LIMITS.widgetsPerBoard) {
+    return {
+      ok: false,
+      message: `The board already has ${LIMITS.widgetsPerBoard} widgets.`,
+    }
+  }
+  const widgetId = createWidgetId()
+  const title = HUMAN_WIDGET_TITLES[type]
+  const timestamp = now()
+  mutate(
+    {
+      actor: 'human',
+      action: 'add_widget',
+      summary: `Added ${type} “${title}”`,
+    },
+    (draft) => {
+      draft.widgets.push(
+        createWidget({
+          id: widgetId,
+          type,
+          title,
+          position: autoPlace(draft.widgets, type),
+          config: defaultConfig(type),
+          dataset: defaultDataset(type),
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          lastModifiedBy: 'human',
+        }),
+      )
+    },
+  )
+  return { ok: true, widgetId }
+}
+
+export function humanRenameBoard(
+  title: string,
+): { ok: true } | { ok: false; message: string } {
+  const next = title.trim()
+  if (!next) return { ok: false, message: 'Give the board a name.' }
+  if (next.length > BOARD_TITLE_MAX) {
+    return {
+      ok: false,
+      message: `Keep the name to ${BOARD_TITLE_MAX} characters.`,
+    }
+  }
+  if (next === useBoardStore.getState().document.title) return { ok: true }
+  mutate(
+    {
+      actor: 'human',
+      action: 'rename_board',
+      summary: `Renamed board to “${next}”`,
+    },
+    (draft) => {
+      draft.title = next
+    },
+  )
+  return { ok: true }
 }
 
 export function humanDeleteWidget(widgetId: string): void {

@@ -79,7 +79,7 @@ export function BoardGrid() {
         <EmptyState
           headingLevel={2}
           title="What are you working on?"
-          description="This canvas has no widgets. Ask an agent in this tab, or copy a prompt to get started."
+          description="This canvas has no widgets. Ask an agent in this tab, copy a prompt to get started, or use Add widget to start by hand."
           actions={
             <VStack gap={2}>
               {SUGGESTED_PROMPTS.map((prompt) => (

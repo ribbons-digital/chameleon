@@ -1,7 +1,6 @@
 import { AppShell } from '@astryxdesign/core/AppShell'
 import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
-import { Heading } from '@astryxdesign/core/Heading'
 import { HStack } from '@astryxdesign/core/HStack'
 import { Text } from '@astryxdesign/core/Text'
 import { Token } from '@astryxdesign/core/Token'
@@ -17,7 +16,9 @@ import { y2kTheme } from '@astryxdesign/theme-y2k/built'
 import type { ThemeName } from './model/types'
 import { styles } from './app/styles'
 import { ActivityDrawer } from './components/ActivityDrawer'
+import { AddWidgetMenu } from './components/AddWidgetMenu'
 import { AgentPulse } from './components/AgentPulse'
+import { BoardTitle } from './components/BoardTitle'
 import { BoardGrid } from './grid/BoardGrid'
 import { useBoardStore } from './store/boardStore'
 import { usePersistHealth } from './store/persistStorage'
@@ -38,7 +39,6 @@ const THEMES: Record<ThemeName, DefinedTheme> = {
 }
 
 function App() {
-  const title = useBoardStore((state) => state.document.title)
   const boardTheme = useBoardStore(
     (state) => state.document.theme,
   )
@@ -77,9 +77,7 @@ function App() {
               <Text type="label" color="accent" weight="semibold">
                 CHAMELEON
               </Text>
-              <Heading level={1} type="display-3" xstyle={styles.brandMark}>
-                {title}
-              </Heading>
+              <BoardTitle />
               <Text as="p" color="secondary">
                 A workspace composed in conversation.
               </Text>
@@ -94,6 +92,7 @@ function App() {
                     : `${toolCount} tools ready`
                 }
               />
+              <AddWidgetMenu />
               <Button
                 label="Undo last change"
                 variant="secondary"
