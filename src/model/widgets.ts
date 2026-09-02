@@ -148,7 +148,7 @@ function referencedKeys(type: WidgetType, config: WidgetConfig): string[] {
       const chart = config as ChartConfig
       return [chart.xField, ...chart.yFields].filter((key) => !key.startsWith('_'))
     }
-    case 'checklist': {
+    case 'checklist':
     case 'note':
     case 'form':
       return []
@@ -297,7 +297,7 @@ export function createWidget(input: {
         config: input.config as KanbanConfig,
         dataset: input.dataset ?? { fields: [], rows: [] },
       } satisfies KanbanWidget
-    case 'checklist':
+    case 'checklist': {
       const checklistFields = input.dataset?.fields ?? []
       const hasFixedChecklistFields = CHECKLIST_FIELDS.every((required) =>
         checklistFields.some(
