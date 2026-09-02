@@ -155,6 +155,9 @@ const DescribeInput = z.object({
   recentActivity: Array<{ seq: number, at: string, actor: 'human'|'agent',
                           action: string, summary: string, rationale?: string }>,  // last 10
   humanEditsSinceLastDescribe: number,   // resets to 0 on each call — cheap "what changed" signal
+  humanChangesSinceLastDescribe: Array<{ seq, at, actor: 'human', action, summary }>,
+                                          // the hand edits behind that count, newest first
+                                          // (drags, cell edits, deletes, undo); empty after each call
 }
 ```
 

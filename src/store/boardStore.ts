@@ -106,11 +106,15 @@ export const useBoardStore = create<BoardStore>()(
         const target = state.commands[index]
         set((current) => {
           const version = current.document.stateVersion + 1
+          // Inverse patches would also rewind these two counters; they only move forward.
+          const humanEdits =
+            current.document.humanEditsSinceLastDescribe +
+            (actor === 'human' ? 1 : 0)
           const restored = produce(
             applyPatches(current.document, target.inversePatches),
             (draft) => {
               draft.stateVersion = version
-              if (actor === 'human') draft.humanEditsSinceLastDescribe += 1
+              draft.humanEditsSinceLastDescribe = humanEdits
             },
           )
           const commands = current.commands.map((command, commandIndex) =>

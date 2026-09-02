@@ -194,6 +194,18 @@ export type BoardSnapshot = {
   mintedTools: BoardDocument['mintedTools']
   recentActivity: Array<Omit<ActivityEntry, 'undone'>>
   humanEditsSinceLastDescribe: number
+  /** The hand edits behind that count, newest first, so one call answers "what did the human change?" */
+  humanChangesSinceLastDescribe: Array<Omit<ActivityEntry, 'undone'>>
+}
+
+export function humanChangesSince(
+  commands: Command[],
+  count: number,
+): Array<Omit<ActivityEntry, 'undone'>> {
+  if (count <= 0) return []
+  return activityEntries(commands, { actor: 'human', limit: count }).map(
+    ({ undone: _undone, ...entry }) => entry,
+  )
 }
 
 export function snapshot(
@@ -235,6 +247,10 @@ export function snapshot(
       ({ undone: _undone, ...entry }) => entry,
     ),
     humanEditsSinceLastDescribe: document.humanEditsSinceLastDescribe,
+    humanChangesSinceLastDescribe: humanChangesSince(
+      commands,
+      document.humanEditsSinceLastDescribe,
+    ),
   }
 }
 

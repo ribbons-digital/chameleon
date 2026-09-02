@@ -82,6 +82,34 @@ describe('describe_current_state', () => {
     expect(second.humanEditsSinceLastDescribe).toBe(0)
   })
 
+  it('lists the hand edits behind the counter, newest first, and only those', async () => {
+    resetBoard(createSampleDocument())
+    const edit = (actor: 'human' | 'agent', summary: string) =>
+      useBoardStore.getState().mutate(
+        { actor, action: 'update_widget', summary },
+        (draft) => {
+          draft.widgets[0].title = summary
+        },
+      )
+    edit('human', 'Older hand edit')
+    await executeTool(describeCurrentState, {})
+    edit('agent', 'Agent rename')
+    edit('human', 'First hand edit')
+    edit('human', 'Second hand edit')
+    useBoardStore.getState().undo('human')
+
+    const result = await executeTool(describeCurrentState, {})
+    expect(result.humanEditsSinceLastDescribe).toBe(3)
+    expect(
+      (result.humanChangesSinceLastDescribe as Array<{ summary: string; actor: string }>).map(
+        (entry) => entry.summary,
+      ),
+    ).toEqual(['Undid: Second hand edit', 'Second hand edit', 'First hand edit'])
+
+    const after = await executeTool(describeCurrentState, {})
+    expect(after.humanChangesSinceLastDescribe).toEqual([])
+  })
+
   it('rejects invalid input', async () => {
     const result = await executeTool(describeCurrentState, {
       include_sample_rows: 'nope',
