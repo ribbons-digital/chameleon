@@ -112,7 +112,7 @@ Stable handles:
 Drag from `header.widget-drag-handle` (the card header, including the heading). Resize from that card's `.react-resizable-handle` (southeast corner). Clicking markdown or a table cell does not drag; the grid cancels drag on `textarea`, `input`, `button`, and `[role="checkbox"]`.
 
 ```bash
-control-chameleon browser click --role button --name "Reset canvas"
+control-chameleon browser reset --wait-text "What are you working on?"
 control-chameleon browser assert --role button --name "Undo last change" --disabled
 control-chameleon browser click --role button --name "Load a sample board" --wait-text "Latest: Loaded a sample board"
 control-chameleon browser drag --name "A canvas that listens" --dx 320 --dy 0 --wait-text "Latest: Moved “A canvas that listens”"

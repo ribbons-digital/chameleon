@@ -9,7 +9,7 @@ Reset the canvas wipes the command log, advances the board version, and returns 
 
 ## How to get to it (user POV)
 
-- Choose the `Reset canvas` button in the header.
+- Choose `Reset canvas` in the header, then choose destructive action `Reset workspace` in the confirmation dialog. Choose Cancel or press Escape to keep the board.
 
 ## Driving it with control-chameleon
 
@@ -20,13 +20,15 @@ Preconditions:
 
 - **Load sample.** Choose `Load a sample board`. Run `control-chameleon browser click --role button --name "Load a sample board" --wait-text "Latest: Loaded a sample board"`.
 - **Dirty the board.** Drag the welcome note. Run `control-chameleon browser drag --name "A canvas that listens" --dx 320 --dy 0` then `control-chameleon browser wait --text "Latest: Moved “A canvas that listens”"`.
-- **Reset.** Choose `Reset canvas`. Run `control-chameleon browser click --role button --name "Reset canvas"`. Heading `What are you working on?` returns. The empty activity sentence returns. The footer matches `state vN · 0 commands`. After load plus one drag that `N` is 3: one version each for load, drag, and reset.
+- **Review the warning.** Choose `Reset canvas`. Run `control-chameleon browser click --role button --name "Reset canvas" --wait-text "Returns to an untitled empty board" --aria-snapshot artifacts/reset-canvas/confirm.aria.txt --screenshot artifacts/reset-canvas/confirm.png`. An alert dialog titled `Reset this canvas?` explains that widgets, rows, minted tools, and activity will be removed; Cancel has initial focus.
+- **Reset.** Choose `Reset workspace`. In automated verification run the complete two-step flow with `control-chameleon browser reset --wait-text "What are you working on?"`. The empty activity sentence returns. The footer matches `state vN · 0 commands`. After load plus one drag that `N` is 3: one version each for load, drag, and reset.
 - **Doctor empty.** Re-check first paint. Run `control-chameleon doctor --expect-empty`. It passes on this same profile even though the version is not 0.
 - **Proof.** Capture the reset board. Run `control-chameleon browser snapshot --aria --path artifacts/reset-canvas/empty.aria.txt` and `control-chameleon browser screenshot --path artifacts/reset-canvas/empty.png`. The artifacts match the open-canvas empty state. Do not require `v0` in the screenshot.
 
 ## Gotchas
 
-- Reset is immediate. There is no confirm dialog.
+- Clicking the header button only opens the dialog. `browser reset` confirms it in the same Chrome session.
+- Escape or `Cancel` leaves the board unchanged and returns focus to `Reset canvas`.
 - Reset restores the empty document in this profile and increments `stateVersion`. Assert `0 commands` and `What are you working on?`, not `v0` or the sample widgets.
 - Reset does not delete proof files under `artifacts/`.
 - After reset, a later reload must still show the empty canvas. If it shows the pre-reset layout, persist wrote stale state; file that as a persist bug, not a reset pass.

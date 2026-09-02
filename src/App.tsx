@@ -1,3 +1,4 @@
+import { AlertDialog } from '@astryxdesign/core/AlertDialog'
 import { AppShell } from '@astryxdesign/core/AppShell'
 import { Banner } from '@astryxdesign/core/Banner'
 import { Button } from '@astryxdesign/core/Button'
@@ -6,6 +7,7 @@ import { Text } from '@astryxdesign/core/Text'
 import { Token } from '@astryxdesign/core/Token'
 import { VStack } from '@astryxdesign/core/VStack'
 import { Theme, type DefinedTheme } from '@astryxdesign/core/theme'
+import { useState } from 'react'
 import { butterTheme } from '@astryxdesign/theme-butter/built'
 import { chocolateTheme } from '@astryxdesign/theme-chocolate/built'
 import { gothicTheme } from '@astryxdesign/theme-gothic/built'
@@ -39,6 +41,7 @@ const THEMES: Record<ThemeName, DefinedTheme> = {
 }
 
 function App() {
+  const [resetOpen, setResetOpen] = useState(false)
   const boardTheme = useBoardStore(
     (state) => state.document.theme,
   )
@@ -99,7 +102,11 @@ function App() {
                 isDisabled={!canUndo}
                 onClick={() => undo()}
               />
-              <Button label="Reset canvas" variant="ghost" onClick={reset} />
+              <Button
+                label="Reset canvas"
+                variant="ghost"
+                onClick={() => setResetOpen(true)}
+              />
             </HStack>
           </HStack>
 
@@ -142,6 +149,17 @@ function App() {
         </VStack>
       </AppShell>
       <AgentPulse />
+      <AlertDialog
+        isOpen={resetOpen}
+        onOpenChange={setResetOpen}
+        title="Reset this canvas?"
+        description="Returns to an untitled empty board and removes every widget, row, minted tool, and activity entry. This cannot be undone."
+        actionLabel="Reset workspace"
+        onAction={() => {
+          reset()
+          setResetOpen(false)
+        }}
+      />
     </Theme>
   )
 }

@@ -49,6 +49,7 @@ Commands:
   browser menu --name <button> --item <menuitem-name-prefix>
   browser rename --value <board-name>
   browser rename-widget --name <heading> --value <widget-name>
+  browser reset
   browser drag --name <heading> --dx <px> --dy <px>
   browser resize --name <heading> --dx <px> --dy <px>
   browser measure --name <heading>
@@ -631,6 +632,20 @@ async function browserCommand(subcommand, flags) {
           value: flags.value,
           ...(await maybeFollowup(page, flags)),
         }
+      }
+      case 'reset': {
+        await page
+          .getByRole('button', { name: 'Reset canvas', exact: true })
+          .click()
+        const dialog = page.getByRole('alertdialog', {
+          name: 'Reset this canvas?',
+          exact: true,
+        })
+        await dialog.waitFor({ state: 'visible' })
+        await dialog
+          .getByRole('button', { name: 'Reset workspace', exact: true })
+          .click()
+        return { reset: true, ...(await maybeFollowup(page, flags)) }
       }
       case 'wait': {
         if (!flags.text) fail('Missing --text')
