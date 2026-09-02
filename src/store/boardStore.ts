@@ -35,7 +35,6 @@ function commandPatchesAreSafe(command: Command): boolean {
 type BoardStore = {
   document: BoardDocument
   commands: Command[]
-  hydrated: boolean
   mutate: (
     meta: MutationMeta,
     recipe: (draft: Draft<BoardDocument>) => void,
@@ -43,7 +42,6 @@ type BoardStore = {
   undo: (actor?: Actor) => Command | undefined
   reset: () => void
   loadSample: () => void
-  setHydrated: (hydrated: boolean) => void
   resetHumanEditCount: () => number
 }
 
@@ -52,7 +50,6 @@ export const useBoardStore = create<BoardStore>()(
     (set, get) => ({
       document: structuredClone(initialDocument),
       commands: [],
-      hydrated: false,
 
       mutate: (meta, recipe) => {
         const current = get()
@@ -113,6 +110,7 @@ export const useBoardStore = create<BoardStore>()(
             applyPatches(current.document, target.inversePatches),
             (draft) => {
               draft.stateVersion = version
+              if (actor === 'human') draft.humanEditsSinceLastDescribe += 1
             },
           )
           const commands = current.commands.map((command, commandIndex) =>
@@ -156,7 +154,6 @@ export const useBoardStore = create<BoardStore>()(
           },
         )
       },
-      setHydrated: (hydrated) => set({ hydrated }),
       resetHumanEditCount: () => {
         const current = get().document.humanEditsSinceLastDescribe
         set((state) => ({
@@ -184,7 +181,6 @@ export const useBoardStore = create<BoardStore>()(
           commands: commands.filter(commandPatchesAreSafe),
         }
       },
-      onRehydrateStorage: () => (state) => state?.setHydrated(true),
     },
   ),
 )

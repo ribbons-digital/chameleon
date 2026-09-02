@@ -200,9 +200,7 @@ export function snapshot(
   document: BoardDocument,
   commands: Command[],
   options: { includeSampleRows: boolean },
-): Omit<BoardSnapshot, 'humanEditsSinceLastDescribe'> & {
-  humanEditsSinceLastDescribe: number
-} {
+): BoardSnapshot {
   return {
     board: {
       title: document.title,

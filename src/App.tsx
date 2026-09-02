@@ -60,7 +60,6 @@ function App() {
   return (
     <Theme theme={THEMES[boardTheme.name]} mode={boardTheme.mode}>
       <AppShell
-        data-density={boardTheme.density}
         height="auto"
         variant="wash"
         contentPadding={0}

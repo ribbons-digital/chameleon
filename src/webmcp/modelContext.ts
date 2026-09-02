@@ -40,10 +40,6 @@ export function detectModelContext(
   return { context: undefined, source: undefined }
 }
 
-export function getModelContext(): ModelContext | undefined {
-  return detectModelContext().context
-}
-
 export function getModelContextSource(): ModelContextSource {
   return detectModelContext().source
 }

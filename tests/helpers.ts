@@ -26,7 +26,6 @@ export function resetBoard(document: BoardDocument = initialDocument) {
   useBoardStore.setState({
     document: structuredClone(document),
     commands: [],
-    hydrated: true,
   })
 }
 

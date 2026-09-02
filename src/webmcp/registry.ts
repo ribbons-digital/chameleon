@@ -24,7 +24,6 @@ export class ToolRegistry {
   private readonly live = new Map<string, LiveRegistration>()
   private readonly context: ModelContext | undefined
   schemaEncoding: 'object' | 'string' | 'unhosted' | undefined
-  lastRegisterError: unknown
 
   constructor(context: ModelContext | undefined) {
     this.context = context
@@ -51,9 +50,6 @@ export class ToolRegistry {
       throw new NameTakenError(def.name)
     }
     const controller = new AbortController()
-    if (controller.signal.aborted) {
-      return
-    }
     if (!this.context) {
       this.live.set(def.name, { controller, def, schemaEncoding: 'unhosted' })
       this.schemaEncoding = 'unhosted'
@@ -73,7 +69,6 @@ export class ToolRegistry {
         { once: true },
       )
     } catch (error) {
-      this.lastRegisterError = error
       const message = error instanceof Error ? error.message : String(error)
       if (/already|duplicate|taken|exists/i.test(message)) {
         throw new NameTakenError(def.name)
@@ -94,11 +89,5 @@ export class ToolRegistry {
   async replace(def: RegisterableTool): Promise<void> {
     this.unregister(def.name)
     await this.register(def)
-  }
-
-  unregisterAll(): void {
-    for (const name of [...this.live.keys()]) {
-      this.unregister(name)
-    }
   }
 }

@@ -18,10 +18,6 @@ export type BootResult = {
 let booted: BootResult | undefined
 let stopWatchingMintedTools: (() => void) | undefined
 
-export function getBootResult(): BootResult | undefined {
-  return booted
-}
-
 export async function bootWebmcp(
   registry = new ToolRegistry(detectModelContext().context),
 ): Promise<BootResult> {

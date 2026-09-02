@@ -327,9 +327,3 @@ export function createWidget(input: {
     }
   }
 }
-
-export function datasetWidget(
-  widget: Widget,
-): Exclude<Widget, NoteWidget> | undefined {
-  return widget.type === 'note' ? undefined : widget
-}

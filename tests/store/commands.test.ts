@@ -10,7 +10,6 @@ describe('board command log', () => {
     useBoardStore.setState({
       document: createSampleDocument(),
       commands: [],
-      hydrated: true,
     })
   })
 

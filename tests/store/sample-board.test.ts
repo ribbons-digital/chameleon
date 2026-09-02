@@ -7,7 +7,6 @@ describe('empty first load and sample board', () => {
     useBoardStore.setState({
       document: structuredClone(initialDocument),
       commands: [],
-      hydrated: true,
     })
   })
 

@@ -7,8 +7,7 @@ import {
   isReservedToolName,
   registeredToolKind,
 } from '../minted'
-import { toDraft7Schema } from '../makeTool'
-import { makeTool } from '../makeTool'
+import { makeTool, toDraft7Schema } from '../makeTool'
 import { err, ok } from '../result'
 import { Rationale, WidgetId } from '../schemas'
 
