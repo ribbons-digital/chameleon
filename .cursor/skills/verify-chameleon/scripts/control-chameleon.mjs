@@ -59,6 +59,7 @@ Commands:
 
 Follow-up flags (same Chrome session as the action):
   --wait-text <text>
+  --settle <ms>            Pause after the action so transitions finish
   --aria-snapshot <file>
   --screenshot <file>
   --width <px>             Viewport width (default 1400)
@@ -318,6 +319,12 @@ async function maybeFollowup(page, flags) {
   if (flags['wait-text'] && flags['wait-text'] !== true) {
     await page.getByText(flags['wait-text']).first().waitFor({ state: 'visible' })
     extra.waited = flags['wait-text']
+  }
+  const settle = Number(flags.settle)
+  if (Number.isFinite(settle) && settle > 0) {
+    // Let open/close transitions finish before a snapshot or screenshot.
+    await page.waitForTimeout(settle)
+    extra.settled = settle
   }
   if (flags['aria-snapshot'] && flags['aria-snapshot'] !== true) {
     const path = resolveArtifactPath(flags['aria-snapshot'])

@@ -47,7 +47,7 @@ export function AddWidgetMenu() {
   return (
     <DropdownMenu
       button={{ label: 'Add widget', variant: 'secondary', isDisabled: full }}
-      menuWidth={280}
+      menuWidth="max-content"
       items={OPTIONS.map((option) => ({
         id: option.type,
         label: option.label,
