@@ -1,6 +1,6 @@
 # Clear the canvas to the empty state
 
-Empty canvas is first paint, and it is also what Reset canvas restores. The heading is "What are you working on?" with three copy-prompt buttons and Load a sample board. There are no widgets until an agent adds them or the human loads the sample board.
+Empty canvas is first paint, and it is also what Reset canvas restores. The heading is "What are you working on?" with three copy-prompt buttons and Load a sample board. There are no widgets until an agent adds them, the human chooses Add widget, or the human loads the sample board.
 
 ## Sub-features
 
@@ -15,6 +15,7 @@ Empty canvas is first paint, and it is also what Reset canvas restores. The head
 - Choose `Reset canvas`.
 - Choose `Copy wedding planner prompt`.
 - Choose `Load a sample board` when you want widgets without an agent.
+- Choose `Add widget` when you want to start by hand; that path is covered in `build-by-hand.md`.
 
 ## Driving it with control-chameleon
 

@@ -41,8 +41,10 @@ Keep implementation details out of the map. Name only user paths, stable handles
 ## Features
 
 - [Open the empty canvas](./open-canvas.md) covers first paint, identity, copy prompts, empty activity, and the unhosted WebMCP banner.
+- [Build the board by hand](./build-by-hand.md) covers Add widget, a ready checklist, the table-to-agent handoff, and Rename board.
 - [Move and resize widgets](./move-and-resize.md) covers dragging and resizing a card and the activity line that follows.
 - [Edit widgets by hand](./edit-widgets.md) covers note markdown, table cells, adding a row, and deleting a widget.
+- [Review human and agent activity](./review-activity.md) covers timestamps, actor/action attribution, and undone commands.
 - [Undo last change](./undo.md) covers enabling undo after a mutation and restoring the prior layout.
 - [Reset the canvas](./reset-canvas.md) covers wiping commands and returning to the empty canvas.
 - [Persist across reload](./persist-reload.md) covers localStorage surviving a browser reload.

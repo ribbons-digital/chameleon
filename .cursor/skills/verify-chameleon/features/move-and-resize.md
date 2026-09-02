@@ -22,9 +22,9 @@ Preconditions:
 - Load the sample board first. Run `control-chameleon browser click --role button --name "Load a sample board" --wait-text "Latest: Loaded a sample board"`.
 - No other `browser` command is using this run's Chrome profile.
 
-- **Drag note.** Drag the welcome note to the right. Run `control-chameleon browser drag --name "A canvas that listens" --dx 320 --dy 0`. The footer shows `Latest: Moved “A canvas that listens”` and `state v2 · 2 commands`. Confirm with `control-chameleon browser wait --text "Latest: Moved “A canvas that listens”"` and `control-chameleon browser assert --text "state v2 · 2 commands"`.
+- **Drag note.** Drag the welcome note to the right. Run `control-chameleon browser drag --name "A canvas that listens" --dx 320 --dy 0 --wait-text "Latest: Moved “A canvas that listens”"`. The footer shows that summary and `state v2 · 2 commands`. Confirm the version with `control-chameleon browser assert --text "state v2 · 2 commands"`.
 - **Undo enabled.** Inspect undo. Run `control-chameleon browser assert --role button --name "Undo last change" --enabled`. The button is no longer disabled.
-- **Resize note.** Pull the southeast handle. Run `control-chameleon browser resize --name "A canvas that listens" --dx 80 --dy 80`. The footer shows `Latest: Resized “A canvas that listens”` and `state v3 · 3 commands`. Confirm with `control-chameleon browser wait --text "Latest: Resized “A canvas that listens”"`.
+- **Resize note.** Pull the southeast handle. Run `control-chameleon browser resize --name "A canvas that listens" --dx 80 --dy 80 --wait-text "Latest: Resized “A canvas that listens”"`. The result reports `"changed": true`, larger before/after dimensions, and the footer shows that summary with `state v3 · 3 commands`.
 - **Proof.** Capture the mutated board. Run `control-chameleon browser snapshot --aria --path artifacts/move-and-resize/moved.aria.txt` and `control-chameleon browser screenshot --path artifacts/move-and-resize/moved.png`. Both artifacts show the `CHAMELEON` mark and the `Latest: Resized` line.
 
 ## Gotchas
@@ -32,5 +32,6 @@ Preconditions:
 - Activity summaries use curly quotes: `“A canvas that listens”`. Straight quotes will not match.
 - A drag shorter than one grid cell records nothing. If activity stays on `Latest: Loaded a sample board`, increase `--dx` and retry.
 - The resize handle sits on the card corner. Clicking the heading drags; it does not resize.
+- `browser resize` targets the visible grip in the handle's lower-right corner. The span's centre is covered by card content in headless Chrome and produces no mutation.
 - `dx` 320 is about two columns on a 1400px window. Do not use coordinate clicks against another machine's layout.
 - Drag from the header. Clicks on markdown, table cells, or `Add row` are cancelled as drags on purpose.

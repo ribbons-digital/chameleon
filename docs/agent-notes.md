@@ -473,7 +473,11 @@ with `Field "step" must be 2000 characters or fewer.`, valid cell and note
 edits, `Add widget` → checklist and table, `Rename board`, checklist item,
 reload keeps `state v9 · 9 commands`, activity list with times, 375px
 stack, Reset back to empty. Harness gained `browser menu` and
-`browser rename` for the two-step controls. Artifacts:
+`browser rename` for the two-step controls. The Sep 2 skill-maintenance pass
+fixed `browser resize`: react-resizable's active southeast grip is in the
+span's lower-right corner, while the old centre coordinate was covered by
+card content in headless Chrome. Resize now writes the expected command and
+has screenshot + ARIA proof under `artifacts/skill-maintenance/`. Artifacts:
 `.cursor/skills/verify-chameleon/artifacts/final-audit/`.
 
 **Left alone, worth a look later.**
@@ -485,11 +489,4 @@ stack, Reset back to empty. Harness gained `browser menu` and
 - No redo. The `undo` tool says so; the header button has no redo either.
 - Humans cannot rename a widget or bind fields by hand; both stay
   agent-only.
-- `.cursor/skills/verify-chameleon/scripts/record-day6-demo.mjs` has an
-  unused `guestRows` (oxlint warning, not in `src/`).
-- `control-chameleon browser resize` reports ok but records nothing, on
-  `main` as well as on this branch (checked side by side on ports 14711 and
-  14712). Drag works. The harness's mouse path over `.react-resizable-handle`
-  is not reaching react-grid-layout's resize handler; resize was proven by
-  hand in the Day 6 demo, not by this harness.
 - Main chunk is ~1 MB minified; Recharts is already split out.
