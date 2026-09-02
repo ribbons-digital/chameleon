@@ -10,6 +10,7 @@ import { NumberInput } from '@astryxdesign/core/NumberInput'
 import { Selector } from '@astryxdesign/core/Selector'
 import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
+import { useToast } from '@astryxdesign/core/Toast'
 import { VStack } from '@astryxdesign/core/VStack'
 import { useState, type FormEvent } from 'react'
 import type { Field, FormWidget as FormWidgetModel } from '../model/types'
@@ -183,6 +184,7 @@ export function FormWidgetView({
     initialValues(fields),
   )
   const [error, setError] = useState<string>()
+  const showToast = useToast()
 
   if (fields.length === 0) {
     return (
@@ -217,6 +219,17 @@ export function FormWidgetView({
     }
     setError(undefined)
     setValues(initialValues(fields))
+    showToast({
+      type: 'success',
+      body: (
+        <Text>
+          Logged to “{widget.title}” ({result.rowCount}{' '}
+          {result.rowCount === 1 ? 'entry' : 'entries'})
+        </Text>
+      ),
+      uniqueID: `form-${widget.id}-${result.rowIds[0]}`,
+      isAutoHide: true,
+    })
   }
 
   return (
