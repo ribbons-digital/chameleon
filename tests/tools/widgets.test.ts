@@ -232,6 +232,37 @@ describe('update_widget', () => {
     })
   })
 
+  it('rejects a stale mutation before it can overwrite a newer change', async () => {
+    const before = useBoardStore.getState()
+    const widgetId = before.document.widgets[0].id
+    const result = await executeTool(updateWidget, {
+      widgetId,
+      title: 'Stale agent title',
+      expectedStateVersion: before.document.stateVersion - 1,
+    })
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatchObject({
+      code: 'STALE_STATE',
+      details: {
+        expectedStateVersion: before.document.stateVersion - 1,
+        currentStateVersion: before.document.stateVersion,
+      },
+    })
+    const after = useBoardStore.getState()
+    expect(after.document.widgets[0].title).toBe('Menu')
+    expect(after.commands).toHaveLength(before.commands.length)
+
+    const retried = await executeTool(updateWidget, {
+      widgetId,
+      title: 'Fresh agent title',
+      expectedStateVersion: after.document.stateVersion,
+    })
+    expect(retried.ok).toBe(true)
+    expect(useBoardStore.getState().document.widgets[0].title).toBe(
+      'Fresh agent title',
+    )
+  })
+
   it('clears a config key when patched to null', async () => {
     const widgetId = useBoardStore.getState().document.widgets[0].id
     await executeTool(updateWidget, {

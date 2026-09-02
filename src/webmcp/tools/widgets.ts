@@ -19,7 +19,12 @@ import {
 } from '../../store/selectors'
 import { makeTool } from '../makeTool'
 import { err, ok } from '../result'
-import { Position, Rationale, WidgetId, WidgetTypeEnum } from '../schemas'
+import {
+  MutationFields,
+  Position,
+  WidgetId,
+  WidgetTypeEnum,
+} from '../schemas'
 
 export const AddWidgetInput = z
   .object({
@@ -39,7 +44,7 @@ export const AddWidgetInput = z
         'Column schema at creation (same as bind_data). Prefer this when you already know the columns. Fields alone leave "No rows yet" — call add_rows next. For kanban include a select field matching config.groupByField (default key "status") plus a title field (default key "title").',
       ),
     position: Position.optional(),
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 
@@ -186,7 +191,7 @@ export const UpdateWidgetInput = z
         "Partial config patch, validated against the widget's type schema after merge.",
       ),
     position: Position.optional(),
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 
@@ -269,7 +274,7 @@ export const updateWidget = makeTool({
 export const RemoveWidgetInput = z
   .object({
     widgetId: WidgetId,
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 

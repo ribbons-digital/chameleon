@@ -39,7 +39,7 @@ type BoardStore = {
     meta: MutationMeta,
     recipe: (draft: Draft<BoardDocument>) => void,
   ) => number
-  undo: (actor?: Actor) => Command | undefined
+  undo: (actor?: Actor, rationale?: string) => Command | undefined
   reset: () => void
   loadSample: () => void
   resetHumanEditCount: () => number
@@ -97,7 +97,7 @@ export const useBoardStore = create<BoardStore>()(
         return nextVersion
       },
 
-      undo: (actor: Actor = 'human') => {
+      undo: (actor: Actor = 'human', rationale?: string) => {
         const state = get()
         const index = state.commands.findLastIndex(
           (command) => !command.undone && command.action !== 'undo',
@@ -126,6 +126,7 @@ export const useBoardStore = create<BoardStore>()(
             actor,
             action: 'undo',
             summary: `Undid: ${target.summary}`,
+            rationale,
             inversePatches: [],
             undone: false,
           })

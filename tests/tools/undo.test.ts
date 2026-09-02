@@ -12,13 +12,17 @@ describe('undo tool', () => {
   it('reverts the latest mutation as the agent', async () => {
     await executeTool(addWidget, { type: 'note', title: 'One' })
     await executeTool(addWidget, { type: 'note', title: 'Two' })
-    const result = await executeTool(undoBoard, { steps: 1 })
+    const result = await executeTool(undoBoard, {
+      steps: 1,
+      rationale: 'The human asked me to remove the second note.',
+    })
     expect(result.ok).toBe(true)
     expect(useBoardStore.getState().document.widgets).toHaveLength(1)
     expect(useBoardStore.getState().document.widgets[0].title).toBe('One')
     expect(useBoardStore.getState().commands.at(-1)).toMatchObject({
       action: 'undo',
       actor: 'agent',
+      rationale: 'The human asked me to remove the second note.',
     })
   })
 

@@ -17,6 +17,20 @@ export const Rationale = z
     'One sentence explaining why you are making this change. Shown to the human in the activity log.',
   )
 
+export const ExpectedStateVersion = z
+  .number()
+  .int()
+  .min(0)
+  .optional()
+  .describe(
+    'The stateVersion from your latest describe_current_state call. Pass it on static mutations to avoid overwriting a newer human or agent change. If stale, the tool returns STALE_STATE without changing the board.',
+  )
+
+export const MutationFields = {
+  expectedStateVersion: ExpectedStateVersion,
+  rationale: Rationale,
+} as const
+
 export const Position = z
   .object({
     x: z.number().int().min(0).max(LIMITS.gridCols - 1),

@@ -9,7 +9,7 @@ import {
 } from '../minted'
 import { makeTool, toDraft7Schema } from '../makeTool'
 import { err, ok } from '../result'
-import { Rationale, WidgetId } from '../schemas'
+import { MutationFields, WidgetId } from '../schemas'
 
 const ToolName = z
   .string()
@@ -31,14 +31,14 @@ export const CreateFormToolInput = z
       .describe(
         'Written for the next agent. Say what one call records, name the fields and units or options, and give one example invocation in prose.',
       ),
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 
 export const RemoveMintedToolInput = z
   .object({
     toolName: ToolName,
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 

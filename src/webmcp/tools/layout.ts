@@ -5,7 +5,7 @@ import { useBoardStore } from '../../store/boardStore'
 import { mutate } from '../../store/mutate'
 import { makeTool } from '../makeTool'
 import { err, ok } from '../result'
-import { Position, Rationale, WidgetId } from '../schemas'
+import { MutationFields, Position, WidgetId } from '../schemas'
 
 const LayoutItem = z
   .object({
@@ -26,7 +26,7 @@ export const SetLayoutInput = z
       .describe(
         'Widgets to move or resize. Unlisted widgets keep their position but may be pushed down.',
       ),
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 
@@ -47,7 +47,7 @@ export const SetThemeInput = z
       .describe('Astryx theme name. matcha suits a health log; neutral suits a job search.'),
     mode: z.enum(['light', 'dark']).optional(),
     density: z.enum(['comfortable', 'compact']).optional(),
-    rationale: Rationale,
+    ...MutationFields,
   })
   .strict()
 
