@@ -415,3 +415,66 @@ Upload that file as a public YouTube video and paste the four sections from
 
 Tag `v1.0.0`. Package version is `1.0.0`. Persist key stays `chameleon-board-v1`
 version 3.
+
+## 2026-09-02 — Final audit
+
+Read-through of `src/`, `tests/`, docs, and the verify harness before the
+Sep 3 deadline. Lint, `tsc -b`, 135 tests, and `vite build` were green on
+`main` at `3a89930`; the changes below keep them green (150 tests after).
+
+**Removed.** Vite scaffold leftovers (`App.css`, `src/assets/*`), the
+`PlaceholderWidget` whose copy still said chart and form "will ship", the
+single-route `@tanstack/react-router` (plus the unused router plugin), and
+dead exports: `DAY2_STATIC_TOOLS`, `datasetWidget`, `ConfigByType`,
+`getBootResult`, `getModelContext`, `ToolRegistry.unregisterAll` /
+`lastRegisterError`, and the store's write-only `hydrated` flag.
+`AppShell data-density` was read by nothing in Astryx.
+
+**Bugs fixed.**
+
+- Human drag or resize only wrote the dragged widget. react-grid-layout
+  compacts and pushes neighbours, so `describe_current_state` reported
+  widgets overlapping at stale coordinates until an agent `set_layout`
+  happened to touch them. `humanApplyLayout` now writes every changed
+  position in one command; undo restores the pushed neighbour too.
+- `update_widget.position` skipped `clampPosition`, so `x: 10, w: 6`
+  overflowed the 12-column grid in the stored document. Clamped; the
+  applied position is returned.
+- Table cell edits that failed validation (text in a number column) closed
+  the editor with no message and no change. The editor stays open with the
+  error, commits on Enter or blur, and select columns use a `Selector`.
+  Kanban `Add card` into `No status` on a required status field failed
+  silently; the input shows why.
+- `set_theme density` was a no-op; Table, List, and Markdown density now
+  follow it.
+- A human undo did not count toward `humanEditsSinceLastDescribe`, and
+  inverse patches rewound the counter on every undo. Both fixed.
+- `set_theme` with only `boardTitle` logged `Set theme to neutral light`.
+  It now logs `Renamed board to “…”`.
+- A persisted checklist with `fields: []` rendered blank and rejected adds;
+  `createWidget` restores the fixed schema.
+
+**Added for human–agent collaboration.**
+
+- `describe_current_state.humanChangesSinceLastDescribe`: the human
+  commands behind the counter, newest first, so one call answers "what did
+  the human change?" (spec: `docs/01-tool-spec.md` §3.1).
+- Header `Add widget` (note, checklist, table) and `Rename board`. Both are
+  human commands in the same log. A hand-made table is `unfinished`
+  `bind_data` work for the agent, which is the handoff the table empty
+  state already described.
+- Form submit toasts `Logged to “…” (N entries)`; activity rows show the
+  time.
+
+**Left alone, worth a look later.**
+
+- Stored positions are agent intent; the grid compacts vertically on
+  render, so a widget placed at `y: 10` under nothing is drawn at `y: 0`
+  while `describe_current_state` still says 10. `applyLayout` could run
+  the same compaction.
+- No redo. The `undo` tool says so; the header button has no redo either.
+- Humans cannot rename a widget or bind fields by hand; both stay
+  agent-only.
+- `.cursor/skills/verify-chameleon/scripts/record-day6-demo.mjs` has an
+  unused `guestRows` (oxlint warning, not in `src/`).
+- Main chunk is ~1 MB minified; Recharts is already split out.
