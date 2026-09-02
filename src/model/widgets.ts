@@ -302,9 +302,12 @@ export function createWidget(input: {
         ...input,
         type: 'checklist',
         config: input.config as ChecklistConfig,
-        dataset: input.dataset ?? {
-          fields: structuredClone(CHECKLIST_FIELDS),
-          rows: [],
+        dataset: {
+          // The schema is fixed, so a persisted checklist with no fields heals here.
+          fields: input.dataset?.fields.length
+            ? input.dataset.fields
+            : structuredClone(CHECKLIST_FIELDS),
+          rows: input.dataset?.rows ?? [],
         },
       } satisfies ChecklistWidget
     case 'chart':

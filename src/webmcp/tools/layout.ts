@@ -156,11 +156,21 @@ export const setTheme = makeTool({
       return err('NO_CHANGES', 'No theme, mode, density, or title change was provided.')
     }
 
+    const themeChanged =
+      theme.name !== current.theme.name ||
+      theme.mode !== current.theme.mode ||
+      theme.density !== current.theme.density
+    const summary = [
+      themeChanged ? `Set theme to ${theme.name} ${theme.mode} ${theme.density}` : '',
+      boardTitle !== current.title ? `Renamed board to “${boardTitle}”` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ')
     mutate(
       {
         actor: 'agent',
         action: 'set_theme',
-        summary: `Set theme to ${theme.name} ${theme.mode}`,
+        summary,
         rationale: input.rationale,
       },
       (draft) => {

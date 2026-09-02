@@ -116,4 +116,22 @@ describe('board command log', () => {
       actor: 'agent',
     })
   })
+
+  it('counts a human undo as a human edit the agent has not seen', () => {
+    useBoardStore.getState().mutate(
+      {
+        actor: 'agent',
+        action: 'update_widget',
+        summary: 'Renamed',
+      },
+      (draft) => {
+        draft.widgets[0].title = 'Renamed'
+      },
+    )
+    expect(useBoardStore.getState().document.humanEditsSinceLastDescribe).toBe(0)
+    useBoardStore.getState().undo('human')
+    expect(useBoardStore.getState().document.humanEditsSinceLastDescribe).toBe(1)
+    useBoardStore.getState().undo('agent')
+    expect(useBoardStore.getState().document.humanEditsSinceLastDescribe).toBe(1)
+  })
 })

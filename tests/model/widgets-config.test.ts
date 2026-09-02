@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest'
+import { CHECKLIST_FIELDS } from '../../src/model/fields'
+import { migrateDocument } from '../../src/store/migrateDocument'
 import { validateConfig } from '../../src/model/widgets'
+
+describe('checklist schema', () => {
+  it('heals a persisted checklist that lost its fixed fields', () => {
+    const document = migrateDocument({
+      widgets: [
+        {
+          id: 'w_checklist1',
+          type: 'checklist',
+          title: 'This week',
+          dataset: { fields: [], rows: [] },
+        },
+      ],
+    })
+    expect(document.widgets[0].dataset?.fields).toEqual(CHECKLIST_FIELDS)
+  })
+})
 
 describe('kanban / checklist config', () => {
   it('requires groupByField to be a select field', () => {

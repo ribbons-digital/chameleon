@@ -86,4 +86,15 @@ describe('set_theme', () => {
     })
     expect((identical.error as { code: string }).code).toBe('NO_CHANGES')
   })
+
+  it('summarises a title-only change as a rename', async () => {
+    await executeTool(setTheme, { boardTitle: 'Wedding, June 2027' })
+    expect(useBoardStore.getState().commands.at(-1)?.summary).toBe(
+      'Renamed board to “Wedding, June 2027”',
+    )
+    await executeTool(setTheme, { mode: 'dark' })
+    expect(useBoardStore.getState().commands.at(-1)?.summary).toBe(
+      'Set theme to neutral dark comfortable',
+    )
+  })
 })
