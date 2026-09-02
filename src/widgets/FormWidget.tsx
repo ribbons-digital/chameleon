@@ -220,7 +220,7 @@ export function FormWidgetView({
     setError(undefined)
     setValues(initialValues(fields))
     showToast({
-      type: 'success',
+      type: 'info',
       body: (
         <Text>
           Logged to “{widget.title}” ({result.rowCount}{' '}
