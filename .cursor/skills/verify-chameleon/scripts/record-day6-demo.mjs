@@ -231,6 +231,7 @@ async function typePrompt(page, text) {
 
 async function resetCanvas(page) {
   await page.getByRole('button', { name: 'Reset canvas' }).click()
+  await page.getByRole('button', { name: 'Reset workspace' }).click()
   await sleep(500)
 }
 
