@@ -95,6 +95,8 @@ async function resetCanvas(page) {
   const button = page.getByRole('button', { name: 'Reset canvas' })
   if (await button.count()) {
     await button.click()
+    const confirm = page.getByRole('button', { name: 'Reset workspace' })
+    if (await confirm.count()) await confirm.click()
     await sleep(400)
   }
 }
