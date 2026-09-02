@@ -32,7 +32,12 @@ export const SetLayoutInput = z
 
 export const SetThemeInput = z
   .object({
-    boardTitle: z.string().trim().min(1).max(60).optional(),
+    boardTitle: z
+      .string()
+      .min(1)
+      .max(60)
+      .regex(/\S/, 'Board title must include a non-whitespace character.')
+      .optional(),
     theme: z
       .enum([
         'neutral',
@@ -146,7 +151,7 @@ export const setTheme = makeTool({
       mode: input.mode ?? current.theme.mode,
       density: input.density ?? current.theme.density,
     }
-    const boardTitle = input.boardTitle ?? current.title
+    const boardTitle = input.boardTitle?.trim() ?? current.title
     if (
       theme.name === current.theme.name &&
       theme.mode === current.theme.mode &&
