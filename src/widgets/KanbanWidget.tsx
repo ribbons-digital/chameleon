@@ -71,6 +71,7 @@ function dropIndexFromPoint(
 
 export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dropHint, setDropHint] = useState<{ column: string; index: number } | null>(
     null,
@@ -114,7 +115,12 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
     const values: Record<string, unknown> = { [titleField.key]: title }
     if (column !== KANBAN_UNGROUPED) values[groupField.key] = column
     const result = humanAddRow(widget.id, values, `Added “${title}”`)
-    if (result.ok) setDrafts((current) => ({ ...current, [column]: '' }))
+    if (result.ok) {
+      setDrafts((current) => ({ ...current, [column]: '' }))
+      setErrors((current) => ({ ...current, [column]: '' }))
+      return
+    }
+    setErrors((current) => ({ ...current, [column]: result.message }))
   }
 
   const readRowId = (transfer: DataTransfer) =>
@@ -241,9 +247,15 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
                 size="sm"
                 placeholder="Add a card"
                 value={drafts[column] ?? ''}
-                onChange={(value) =>
-                  setDrafts((current) => ({ ...current, [column]: value }))
+                status={
+                  errors[column]
+                    ? { type: 'error', message: errors[column] }
+                    : undefined
                 }
+                onChange={(value) => {
+                  setDrafts((current) => ({ ...current, [column]: value }))
+                  setErrors((current) => ({ ...current, [column]: '' }))
+                }}
                 onEnter={() => addCard(column)}
                 width="100%"
               />
