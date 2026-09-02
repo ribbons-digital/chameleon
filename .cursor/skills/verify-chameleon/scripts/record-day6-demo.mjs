@@ -298,7 +298,6 @@ await beat(BEATS[1], async () => {
 
 let checklist
 let guests
-let guestRows
 let vendors
 let note
 
@@ -331,7 +330,7 @@ await beat(BEATS[2], async () => {
     ],
     rationale: 'Track 80 guests.',
   }, 'table')
-  guestRows = await agentCall(page, 'add_rows', {
+  await agentCall(page, 'add_rows', {
     widgetId: guests.widgetId,
     rows: [
       { name: 'Avery Chen', rsvp: 'pending' },
