@@ -6,14 +6,13 @@ import { useBoardStore } from '../store/boardStore'
 export function AgentPulse() {
   const lastCommand = useBoardStore((state) => state.commands.at(-1))
   const showToast = useToast()
-  const seenSeq = useRef<number | undefined>(undefined)
+  // Seed from persisted history during render: that command should stay
+  // quiet on reload. If the board starts empty, the first later command is
+  // genuinely new and must not be swallowed.
+  const seenSeq = useRef(lastCommand?.seq)
 
   useEffect(() => {
     if (!lastCommand) return
-    if (seenSeq.current === undefined) {
-      seenSeq.current = lastCommand.seq
-      return
-    }
     if (lastCommand.seq === seenSeq.current) return
     seenSeq.current = lastCommand.seq
     if (lastCommand.actor !== 'agent') return
