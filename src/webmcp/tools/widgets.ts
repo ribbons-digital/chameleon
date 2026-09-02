@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { fieldSchema } from '../../model/fields'
 import { createWidgetId } from '../../model/ids'
-import { autoPlace } from '../../model/layout'
+import { autoPlace, clampPosition } from '../../model/layout'
 import { LIMITS } from '../../model/limits'
 import type { Field } from '../../model/types'
 import {
@@ -240,7 +240,7 @@ export const updateWidget = makeTool({
         )
         if (!target) return
         if (input.title !== undefined) target.title = input.title
-        if (input.position) target.position = input.position
+        if (input.position) target.position = clampPosition(input.position)
         if (input.config) {
           const merged = mergeConfig(target.config, input.config)
           const validated = validateConfig(
@@ -256,7 +256,13 @@ export const updateWidget = makeTool({
       },
     )
 
-    return ok({ widgetId: input.widgetId })
+    const updated = useBoardStore
+      .getState()
+      .document.widgets.find((candidate) => candidate.id === input.widgetId)
+    return ok({
+      widgetId: input.widgetId,
+      ...(input.position && updated ? { position: updated.position } : {}),
+    })
   },
 })
 

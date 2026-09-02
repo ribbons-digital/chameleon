@@ -216,6 +216,22 @@ describe('update_widget', () => {
     expect(widget.position).toEqual({ x: 2, y: 1, w: 4, h: 5 })
   })
 
+  it('clamps a position that would overflow the 12-column grid', async () => {
+    const widgetId = useBoardStore.getState().document.widgets[0].id
+    const result = await executeTool(updateWidget, {
+      widgetId,
+      position: { x: 10, y: 0, w: 6, h: 4 },
+    })
+    expect(result.ok).toBe(true)
+    expect(result.position).toEqual({ x: 6, y: 0, w: 6, h: 4 })
+    expect(useBoardStore.getState().document.widgets[0].position).toEqual({
+      x: 6,
+      y: 0,
+      w: 6,
+      h: 4,
+    })
+  })
+
   it('clears a config key when patched to null', async () => {
     const widgetId = useBoardStore.getState().document.widgets[0].id
     await executeTool(updateWidget, {

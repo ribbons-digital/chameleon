@@ -12,11 +12,11 @@ import { SUGGESTED_PROMPTS } from '../app/suggestedPrompts'
 import { LIMITS } from '../model/limits'
 import { stackMobileLayout } from '../model/layout'
 import { useBoardStore } from '../store/boardStore'
+import { humanApplyLayout } from '../store/human'
 import { WidgetView } from '../widgets/registry'
 
 export function BoardGrid() {
   const widgets = useBoardStore((state) => state.document.widgets)
-  const mutate = useBoardStore((state) => state.mutate)
   const loadSample = useBoardStore((state) => state.loadSample)
   const { width, mounted, containerRef } = useContainerWidth({
     initialWidth: 1200,
@@ -34,33 +34,16 @@ export function BoardGrid() {
   const layoutWidth = Math.min(width, viewport)
   const stacked = layoutWidth < LIMITS.mobileStackBelowPx
 
-  const savePosition = (item: LayoutItem | null, action: 'move' | 'resize') => {
-    if (stacked) return
-    if (!item) return
-    const widget = widgets.find((candidate) => candidate.id === item.i)
-    if (!widget) return
-    const next = { x: item.x, y: item.y, w: item.w, h: item.h }
-    if (
-      widget.position.x === next.x &&
-      widget.position.y === next.y &&
-      widget.position.w === next.w &&
-      widget.position.h === next.h
-    ) {
-      return
-    }
-    mutate(
-      {
-        actor: 'human',
-        action: action === 'move' ? 'move_widget' : 'resize_widget',
-        summary: `${action === 'move' ? 'Moved' : 'Resized'} “${widget.title}”`,
-      },
-      (draft) => {
-        const target = draft.widgets.find((candidate) => candidate.id === item.i)
-        if (!target) return
-        target.position = next
-        target.updatedAt = new Date().toISOString()
-        target.lastModifiedBy = 'human'
-      },
+  const saveLayout = (
+    nextLayout: readonly LayoutItem[],
+    item: LayoutItem | null,
+    action: 'move' | 'resize',
+  ) => {
+    if (stacked || !item) return
+    humanApplyLayout(
+      nextLayout.map(({ i, x, y, w, h }) => ({ widgetId: i, x, y, w, h })),
+      item.i,
+      action,
     )
   }
 
@@ -141,11 +124,11 @@ export function BoardGrid() {
               enabled: !stacked,
               handles: ['se'],
             }}
-            onDragStop={(_layout, _oldItem, newItem) =>
-              savePosition(newItem, 'move')
+            onDragStop={(nextLayout, _oldItem, newItem) =>
+              saveLayout(nextLayout, newItem, 'move')
             }
-            onResizeStop={(_layout, _oldItem, newItem) =>
-              savePosition(newItem, 'resize')
+            onResizeStop={(nextLayout, _oldItem, newItem) =>
+              saveLayout(nextLayout, newItem, 'resize')
             }
           >
             {widgets.map((widget) => (

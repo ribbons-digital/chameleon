@@ -1,7 +1,7 @@
 import { createRowId } from '../model/ids'
 import { parseRowValues, validateValue } from '../model/fields'
 import { KANBAN_UNGROUPED, placeRowInColumn } from '../model/kanbanOrder'
-import type { Actor, Field, Row, Widget } from '../model/types'
+import type { Actor, Field, GridPosition, Row, Widget } from '../model/types'
 import { useBoardStore } from './boardStore'
 import { mutate } from './mutate'
 
@@ -14,6 +14,56 @@ function widgetById(widgetId: string): Widget | undefined {
 function stamp(widget: Widget, actor: Actor, timestamp: string) {
   widget.updatedAt = timestamp
   widget.lastModifiedBy = actor
+}
+
+function samePosition(left: GridPosition, right: GridPosition): boolean {
+  return (
+    left.x === right.x &&
+    left.y === right.y &&
+    left.w === right.w &&
+    left.h === right.h
+  )
+}
+
+/**
+ * Persist the grid layout after a human drag or resize. The grid compacts and
+ * pushes neighbours while one widget moves, so every widget whose position
+ * changed is written in the same command; otherwise the stored board (what
+ * the agent reads) drifts from what the human sees on screen.
+ */
+export function humanApplyLayout(
+  layout: Array<GridPosition & { widgetId: string }>,
+  primaryWidgetId: string,
+  action: 'move' | 'resize',
+): boolean {
+  const widgets = useBoardStore.getState().document.widgets
+  const primary = widgets.find((widget) => widget.id === primaryWidgetId)
+  if (!primary) return false
+  const next = new Map(
+    layout.map(({ widgetId, x, y, w, h }) => [widgetId, { x, y, w, h }]),
+  )
+  const changed = widgets.filter((widget) => {
+    const position = next.get(widget.id)
+    return position !== undefined && !samePosition(widget.position, position)
+  })
+  if (changed.length === 0) return false
+  const timestamp = now()
+  mutate(
+    {
+      actor: 'human',
+      action: action === 'move' ? 'move_widget' : 'resize_widget',
+      summary: `${action === 'move' ? 'Moved' : 'Resized'} “${primary.title}”`,
+    },
+    (draft) => {
+      for (const widget of draft.widgets) {
+        const position = next.get(widget.id)
+        if (!position || samePosition(widget.position, position)) continue
+        widget.position = position
+        stamp(widget, 'human', timestamp)
+      }
+    },
+  )
+  return true
 }
 
 export function humanDeleteWidget(widgetId: string): void {
