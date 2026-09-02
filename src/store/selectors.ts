@@ -1,5 +1,6 @@
 import { CHECKLIST_FIELDS } from '../model/fields'
 import { LIMITS } from '../model/limits'
+import { areLogCompanions } from '../model/logCompanions'
 import type {
   ActivityEntry,
   BoardDocument,
@@ -13,6 +14,19 @@ import { useBoardStore } from './boardStore'
 
 export function isRepeatedLogTitle(title: string): boolean {
   return /blood[\s-]?sugar|glucose|diabetes|readings?|\blog\b/i.test(title)
+}
+
+function hasMintedCompanion(
+  table: Extract<Widget, { type: 'table' }>,
+  document: BoardDocument,
+): boolean {
+  return document.mintedTools.some((record) => {
+    const form = document.widgets.find(
+      (candidate) =>
+        candidate.id === record.widgetId && candidate.type === 'form',
+    )
+    return form?.type === 'form' && areLogCompanions(table, form)
+  })
 }
 
 export function effectiveDataset(
@@ -146,7 +160,7 @@ export function unfinishedWidgets(document: BoardDocument): UnfinishedWidget[] {
     if (
       widget.type === 'table' &&
       isRepeatedLogTitle(widget.title) &&
-      document.mintedTools.length === 0
+      !hasMintedCompanion(widget, document)
     ) {
       unfinished.push({
         widgetId: widget.id,
@@ -195,17 +209,15 @@ export type BoardSnapshot = {
   recentActivity: Array<Omit<ActivityEntry, 'undone'>>
   humanEditsSinceLastDescribe: number
   /** The hand edits behind that count, newest first, so one call answers "what did the human change?" */
-  humanChangesSinceLastDescribe: Array<Omit<ActivityEntry, 'undone'>>
+  humanChangesSinceLastDescribe: ActivityEntry[]
 }
 
 export function humanChangesSince(
   commands: Command[],
   count: number,
-): Array<Omit<ActivityEntry, 'undone'>> {
+): ActivityEntry[] {
   if (count <= 0) return []
-  return activityEntries(commands, { actor: 'human', limit: count }).map(
-    ({ undone: _undone, ...entry }) => entry,
-  )
+  return activityEntries(commands, { actor: 'human', limit: count })
 }
 
 export function snapshot(

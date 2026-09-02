@@ -4,6 +4,7 @@ import { VStack } from '@astryxdesign/core/VStack'
 import { useEffect, useState } from 'react'
 import {
   GridLayout,
+  noCompactor,
   useContainerWidth,
   type LayoutItem,
 } from 'react-grid-layout'
@@ -109,6 +110,7 @@ export function BoardGrid() {
           <GridLayout
             width={layoutWidth}
             layout={layout}
+            compactor={noCompactor}
             gridConfig={{
               cols: stacked ? 1 : LIMITS.gridCols,
               rowHeight: LIMITS.rowHeightPx,

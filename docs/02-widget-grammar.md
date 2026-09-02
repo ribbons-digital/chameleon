@@ -279,7 +279,8 @@ The exact JSON an agent sees mid-way through the health-log demo (this doubles a
   "humanEditsSinceLastDescribe": 1,
   "humanChangesSinceLastDescribe": [
     { "seq": 41, "at": "2026-08-30T14:10:05Z", "actor": "human",
-      "action": "update_rows", "summary": "Checked off \"Morning fasting reading\" in Daily routine" }
+      "action": "update_rows", "summary": "Checked off \"Morning fasting reading\" in Daily routine",
+      "undone": false }
   ]
 }
 ```

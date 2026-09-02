@@ -17,7 +17,7 @@ export const DescribeInput = z
 export const describeCurrentState = makeTool({
   name: 'describe_current_state',
   description:
-    'Returns the board snapshot plus unfinished. Empty tables, kanban, and checklists need add_rows (or bind_data first). A form with fields but no minted tool needs create_form_tool. add_rows does not mint. Also: title, theme, widgets (id, type, title, position, config, fields, rowCount, sample rows), mintedTools, last 10 activity entries, stateVersion, and humanChangesSinceLastDescribe: every hand edit (drag, cell edit, delete, undo) the human made since your last call, newest first. Read it before reorganizing so you build on their changes rather than over them. Pass the returned stateVersion as expectedStateVersion on your next static mutation; STALE_STATE means re-read before retrying.',
+    'Returns the board snapshot plus unfinished. Empty tables, kanban, and checklists need add_rows (or bind_data first). A form with fields but no minted tool needs create_form_tool. add_rows does not mint. Also: title, theme, widgets (id, type, title, position, config, fields, rowCount, sample rows), mintedTools, last 10 activity entries, stateVersion, and humanChangesSinceLastDescribe: every human create, rename, drag, edit, delete, undo, or sample-load command since your last call, newest first with undone state. Read it before reorganizing so you build on their changes rather than over them. Pass stateVersion as expectedStateVersion on your next static mutation; STALE_STATE means re-read.',
   input: DescribeInput,
   handler: (input) => {
     const snapshot = currentSnapshot(input.include_sample_rows)

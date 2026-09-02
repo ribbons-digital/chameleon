@@ -6,6 +6,7 @@ import {
   getActivityLog,
 } from '../../src/webmcp/tools/describe'
 import { addRows } from '../../src/webmcp/tools/data'
+import { createFormTool } from '../../src/webmcp/tools/mint'
 import { addWidget } from '../../src/webmcp/tools/widgets'
 import { executeTool, emptyBoard, resetBoard } from '../helpers'
 
@@ -101,10 +102,19 @@ describe('describe_current_state', () => {
     const result = await executeTool(describeCurrentState, {})
     expect(result.humanEditsSinceLastDescribe).toBe(3)
     expect(
-      (result.humanChangesSinceLastDescribe as Array<{ summary: string; actor: string }>).map(
+      (result.humanChangesSinceLastDescribe as Array<{
+        summary: string
+        actor: string
+        undone: boolean
+      }>).map(
         (entry) => entry.summary,
       ),
     ).toEqual(['Undid: Second hand edit', 'Second hand edit', 'First hand edit'])
+    expect(
+      (result.humanChangesSinceLastDescribe as Array<{ undone: boolean }>).map(
+        (entry) => entry.undone,
+      ),
+    ).toEqual([false, true, false])
 
     const after = await executeTool(describeCurrentState, {})
     expect(after.humanChangesSinceLastDescribe).toEqual([])
@@ -184,6 +194,71 @@ describe('describe_current_state', () => {
         action: 'create_form_tool',
       }),
     ])
+  })
+
+  it('does not let an unrelated minted tool finish a repeated log', async () => {
+    resetBoard(emptyBoard())
+    const unrelated = await executeTool(addWidget, {
+      type: 'form',
+      title: 'Add contact',
+      fields: [
+        { key: 'name', label: 'Name', type: 'text', required: true },
+      ],
+    })
+    await executeTool(createFormTool, {
+      widgetId: unrelated.widgetId,
+      toolName: 'add_contact',
+      description:
+        'Adds one contact with a required name. Example: add Ada Lovelace.',
+    })
+    const table = await executeTool(addWidget, {
+      type: 'table',
+      title: 'Blood Sugar Log',
+      fields: [
+        { key: 'glucose', label: 'Glucose', type: 'number', required: true },
+      ],
+    })
+    await executeTool(addRows, {
+      widgetId: table.widgetId,
+      rows: [{ glucose: 102 }],
+    })
+    const result = await executeTool(describeCurrentState, {})
+    expect(result.unfinished).toEqual([
+      expect.objectContaining({
+        title: 'Blood Sugar Log',
+        action: 'create_form_tool',
+      }),
+    ])
+  })
+
+  it('finishes a filled repeated table only with a compatible minted form', async () => {
+    resetBoard(emptyBoard())
+    const table = await executeTool(addWidget, {
+      type: 'table',
+      title: 'Blood Sugar Log',
+      fields: [
+        { key: 'glucose', label: 'Glucose', type: 'number', required: true },
+      ],
+    })
+    await executeTool(addRows, {
+      widgetId: table.widgetId,
+      rows: [{ glucose: 102 }],
+    })
+    const form = await executeTool(addWidget, {
+      type: 'form',
+      title: 'Log a reading',
+      fields: [
+        { key: 'glucose', label: 'Glucose', type: 'number', required: true },
+      ],
+    })
+    await executeTool(createFormTool, {
+      widgetId: form.widgetId,
+      toolName: 'log_blood_sugar',
+      description:
+        'Logs one blood sugar value in mg/dL. Example: log glucose 102.',
+    })
+    const result = await executeTool(describeCurrentState, {})
+    expect(result.unfinished).toEqual([])
   })
 
   it('matches a stable snapshot of the empty board', async () => {

@@ -483,13 +483,9 @@ has screenshot + ARIA proof under `artifacts/skill-maintenance/`. Artifacts:
 
 **Left alone, worth a look later.**
 
-- Stored positions are agent intent; the grid compacts vertically on
-  render, so a widget placed at `y: 10` under nothing is drawn at `y: 0`
-  while `describe_current_state` still says 10. `applyLayout` could run
-  the same compaction.
 - No redo. The `undo` tool says so; the header button has no redo either.
-- Humans cannot rename a widget or bind fields by hand; both stay
-  agent-only.
+- Humans cannot bind fields by hand; that remains an intentional agent
+  handoff.
 - Main chunk is ~1 MB minified; Recharts is already split out.
 
 ## 2026-09-02 — PR #15 re-audit against the WebMCP challenge
@@ -528,6 +524,12 @@ Additional fixes from the same pass:
 - The first live agent mutation now toasts. Persisted history remains quiet on
   reload.
 - Human row creation obeys the same 5,000-row limit as agent tools.
+- Rendering uses `noCompactor`, so an intentional stored `y` gap is no longer
+  silently collapsed only on screen.
+- A repeated-log table is complete only when a compatible form owns a minted
+  tool; an unrelated minted tool elsewhere no longer hides the handoff.
+- Human deltas retain `undone`, so an agent can distinguish a reverted edit
+  without parsing the undo summary.
 - Architecture and submission docs no longer describe the removed router or
   aspirational files as shipped code.
 
