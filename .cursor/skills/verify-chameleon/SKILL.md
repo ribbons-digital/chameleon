@@ -57,7 +57,7 @@ It checks:
 - Buttons `Copy wedding planner prompt` and `Load a sample board`
 - Buttons `Add widget` and `Rename board`
 - Activity copy `Drag, edit, or ask an agent to create the first activity entry.`
-- Footer matching `state vN · 0 commands` (middle dot is `·`). A fresh profile is `v0`. Reset keeps the current `N` and clears the log, so a reset board can be `state v1 · 0 commands`.
+- Footer matching `state vN · 0 commands` (middle dot is `·`). A fresh profile is `v0`. Reset increments `N` and clears the log, so stale agents can detect that the board was replaced.
 - `Undo last change` disabled
 
 `--expect-sample` requires headings `A canvas that listens` and `What happens next` after `Load a sample board`.

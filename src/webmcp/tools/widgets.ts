@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import { fieldSchema } from '../../model/fields'
 import { createWidgetId } from '../../model/ids'
-import { autoPlace, clampPosition } from '../../model/layout'
+import { applyLayout, autoPlace } from '../../model/layout'
 import { LIMITS } from '../../model/limits'
-import type { Field } from '../../model/types'
+import type { Field, WidgetConfig } from '../../model/types'
 import {
   createWidget,
   defaultConfig,
@@ -216,6 +216,7 @@ export const updateWidget = makeTool({
       return err('WIDGET_NOT_FOUND', `No widget has id "${input.widgetId}".`)
     }
 
+    let nextConfig: WidgetConfig | undefined
     if (input.config) {
       const merged = mergeConfig(widget.config, input.config)
       const validated = validateConfig(
@@ -230,8 +231,10 @@ export const updateWidget = makeTool({
           validated.error.details,
         )
       }
+      nextConfig = validated.config
     }
 
+    const timestamp = new Date().toISOString()
     mutate(
       {
         actor: 'agent',
@@ -245,18 +248,34 @@ export const updateWidget = makeTool({
         )
         if (!target) return
         if (input.title !== undefined) target.title = input.title
-        if (input.position) target.position = clampPosition(input.position)
-        if (input.config) {
-          const merged = mergeConfig(target.config, input.config)
-          const validated = validateConfig(
-            target.type,
-            merged,
-            target.dataset?.fields,
+        if (nextConfig) target.config = nextConfig
+        if (input.position) {
+          const resolved = applyLayout(draft.widgets, [
+            { widgetId: input.widgetId, ...input.position },
+          ])
+          const positions = new Map(
+            resolved.map((item) => [item.widgetId, item]),
           )
-          if ('error' in validated) return
-          target.config = validated.config
+          for (const candidate of draft.widgets) {
+            const position = positions.get(candidate.id)
+            if (!position) continue
+            const changed =
+              candidate.position.x !== position.x ||
+              candidate.position.y !== position.y ||
+              candidate.position.w !== position.w ||
+              candidate.position.h !== position.h
+            if (!changed) continue
+            candidate.position = {
+              x: position.x,
+              y: position.y,
+              w: position.w,
+              h: position.h,
+            }
+            candidate.updatedAt = timestamp
+            candidate.lastModifiedBy = 'agent'
+          }
         }
-        target.updatedAt = new Date().toISOString()
+        target.updatedAt = timestamp
         target.lastModifiedBy = 'agent'
       },
     )

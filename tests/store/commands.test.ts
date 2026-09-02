@@ -81,7 +81,7 @@ describe('board command log', () => {
     expect(useBoardStore.getState().commands).toHaveLength(0)
   })
 
-  it('does not rewind stateVersion to 0 on reset', () => {
+  it('advances stateVersion on reset so stale agents can detect replacement', () => {
     useBoardStore.getState().mutate(
       {
         actor: 'human',
@@ -94,7 +94,7 @@ describe('board command log', () => {
     )
     expect(useBoardStore.getState().document.stateVersion).toBe(1)
     useBoardStore.getState().reset()
-    expect(useBoardStore.getState().document.stateVersion).toBe(1)
+    expect(useBoardStore.getState().document.stateVersion).toBe(2)
     expect(useBoardStore.getState().document.widgets).toHaveLength(0)
     expect(useBoardStore.getState().commands).toHaveLength(0)
   })

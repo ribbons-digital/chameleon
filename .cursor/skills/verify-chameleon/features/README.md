@@ -12,7 +12,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 ## Driving conventions
 
-- Start every recipe from the empty canvas unless its preconditions say otherwise. Recipes that drag or edit widgets first choose `Load a sample board`. `Reset canvas` returns the empty canvas and an empty log inside the same profile. It does not rewind `stateVersion` to 0.
+- Start every recipe from the empty canvas unless its preconditions say otherwise. Recipes that drag or edit widgets first choose `Load a sample board`. `Reset canvas` returns the empty canvas and an empty log inside the same profile. It increments `stateVersion` so an agent holding an older snapshot can detect the replacement.
 - Prefer ARIA roles and accessible names over CSS selectors or DOM position. The drag handle class `widget-drag-handle` and resize handle `.react-resizable-handle` are the exceptions the grid requires.
 - Treat every command as literal. Keep quoted names, curly quotes in activity copy, and the middle dot in `state v0 · 0 commands` unchanged.
 - Run browser actions through `control-chameleon browser`. Open editors and the activity list must finish in that same command.

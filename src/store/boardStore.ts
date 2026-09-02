@@ -139,7 +139,10 @@ export const useBoardStore = create<BoardStore>()(
       },
 
       reset: () => {
-        const version = get().document.stateVersion
+        // Reset clears history, but still advances the monotonic version so an
+        // agent holding an older snapshot can detect that the human replaced
+        // the board.
+        const version = get().document.stateVersion + 1
         const document = structuredClone(initialDocument)
         document.stateVersion = version
         set({

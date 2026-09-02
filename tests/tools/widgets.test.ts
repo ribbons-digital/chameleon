@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { LIMITS } from '../../src/model/limits'
-import { useBoardStore } from '../../src/store/boardStore'
+import {
+  createSampleDocument,
+  useBoardStore,
+} from '../../src/store/boardStore'
 import {
   addWidget,
   removeWidget,
@@ -229,6 +232,30 @@ describe('update_widget', () => {
       y: 0,
       w: 6,
       h: 4,
+    })
+  })
+
+  it('persists collision pushes when one agent-moved widget overlaps another', async () => {
+    resetBoard(createSampleDocument())
+    const result = await executeTool(updateWidget, {
+      widgetId: 'w_welcome',
+      position: { x: 5, y: 0, w: 5, h: 5 },
+    })
+    expect(result).toMatchObject({
+      ok: true,
+      position: { x: 5, y: 0, w: 5, h: 5 },
+    })
+    const positions = Object.fromEntries(
+      useBoardStore
+        .getState()
+        .document.widgets.map((candidate) => [
+          candidate.id,
+          candidate.position,
+        ]),
+    )
+    expect(positions).toEqual({
+      w_welcome: { x: 5, y: 0, w: 5, h: 5 },
+      w_first_steps: { x: 5, y: 5, w: 7, h: 5 },
     })
   })
 

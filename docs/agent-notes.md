@@ -151,7 +151,8 @@ do not recreate it. Day 2 is on `main` as well (PR #2).
 - `Widget` is a `type` discriminant union. Renderers switch on `widget.type`, not duck-typed config.
 - `mutate` runs `produceWithPatches` *before* `set`. A throwing recipe leaves the store unchanged.
 - Persist version 3 drops command-log entries whose inverse patches still mention Day 1 `content`. Persist key remains `chameleon-board-v1`.
-- Reset keeps the current `stateVersion` (does not rewind to 0) and clears the log.
+- Reset advances `stateVersion` and clears the log, so an agent holding an
+  older snapshot detects that the human replaced the board.
 - Store `undo(actor)` records the caller. The undo tool passes `'agent'`. The header button still defaults to `'human'`.
 
 **UI:** table cells edit through `mutate(actor: 'human')`; checklist and kanban render for real; widget delete, activity list, and an agent toast are wired. Chart and form stay shells.
