@@ -15,6 +15,7 @@ import { useState, type FormEvent } from 'react'
 import type { Field, FormWidget as FormWidgetModel } from '../model/types'
 import { formatCell } from '../store/human'
 import { submitFormValues } from '../store/submit'
+import { useBoardDensity } from './density'
 import {
   collectFormSubmission,
   type FormValue,
@@ -177,6 +178,7 @@ export function FormWidgetView({
   widget: FormWidgetModel
 }) {
   const fields = widget.dataset.fields
+  const density = useBoardDensity()
   const [values, setValues] = useState<FormValues>(() =>
     initialValues(fields),
   )
@@ -263,7 +265,7 @@ export function FormWidgetView({
       </form>
       {recent.length > 0 && (
         <List
-          density="compact"
+          density={density.rows}
           hasDividers
           header={<Text weight="semibold">Recent submissions</Text>}
         >

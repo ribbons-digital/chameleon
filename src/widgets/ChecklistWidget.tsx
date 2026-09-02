@@ -10,6 +10,7 @@ import { VStack } from '@astryxdesign/core/VStack'
 import { useState } from 'react'
 import type { ChecklistWidget as ChecklistWidgetModel, Row } from '../model/types'
 import { humanAddRow, humanDeleteRow, humanUpdateCell } from '../store/human'
+import { useBoardDensity } from './density'
 
 function sortItems(rows: Row[], sortBy: ChecklistWidgetModel['config']['sortBy']): Row[] {
   if (sortBy === 'manual') return rows
@@ -25,6 +26,7 @@ function sortItems(rows: Row[], sortBy: ChecklistWidgetModel['config']['sortBy']
 
 export function ChecklistWidgetView({ widget }: { widget: ChecklistWidgetModel }) {
   const [draft, setDraft] = useState('')
+  const density = useBoardDensity()
   const fields = widget.dataset.fields
   const textField = fields.find((field) => field.key === 'text')
   const doneField = fields.find((field) => field.key === 'done')
@@ -64,7 +66,7 @@ export function ChecklistWidgetView({ widget }: { widget: ChecklistWidgetModel }
           description="Add a checklist item, or ask the agent to fill this list."
         />
       ) : (
-        <List density="compact" hasDividers header={<Text type="label">Items</Text>}>
+        <List density={density.rows} hasDividers header={<Text type="label">Items</Text>}>
           {visible.map((row) => {
             const label = typeof row.text === 'string' ? row.text : 'Untitled'
             const due = typeof row.due === 'string' ? row.due : undefined
