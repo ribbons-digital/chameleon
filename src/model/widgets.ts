@@ -148,7 +148,7 @@ function referencedKeys(type: WidgetType, config: WidgetConfig): string[] {
       const chart = config as ChartConfig
       return [chart.xField, ...chart.yFields].filter((key) => !key.startsWith('_'))
     }
-    case 'checklist':
+    case 'checklist': {
     case 'note':
     case 'form':
       return []
@@ -298,18 +298,26 @@ export function createWidget(input: {
         dataset: input.dataset ?? { fields: [], rows: [] },
       } satisfies KanbanWidget
     case 'checklist':
+      const checklistFields = input.dataset?.fields ?? []
+      const hasFixedChecklistFields = CHECKLIST_FIELDS.every((required) =>
+        checklistFields.some(
+          (field) =>
+            field.key === required.key && field.type === required.type,
+        ),
+      )
       return {
         ...input,
         type: 'checklist',
         config: input.config as ChecklistConfig,
         dataset: {
-          // The schema is fixed, so a persisted checklist with no fields heals here.
-          fields: input.dataset?.fields.length
-            ? input.dataset.fields
+          // The schema is fixed, so an empty or partial persisted schema heals here.
+          fields: hasFixedChecklistFields
+            ? checklistFields
             : structuredClone(CHECKLIST_FIELDS),
           rows: input.dataset?.rows ?? [],
         },
       } satisfies ChecklistWidget
+    }
     case 'chart':
       return {
         ...input,

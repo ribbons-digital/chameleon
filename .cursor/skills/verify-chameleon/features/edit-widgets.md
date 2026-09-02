@@ -12,7 +12,7 @@ Edit widgets by hand lets a user change the welcome note's markdown, change a se
 
 ## How to get to it (user POV)
 
-- Click the welcome note body, type markdown, and leave the field (blur).
+- Choose `Edit note` (or click the rendered note body), type markdown, and leave the field (blur).
 - Click a Step cell in `What happens next`, type a new value, and press Enter.
 - Enter more than 2,000 characters in that cell to see inline validation.
 - Choose `Add row` under that table.

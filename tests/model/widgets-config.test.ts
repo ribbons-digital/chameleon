@@ -4,14 +4,19 @@ import { migrateDocument } from '../../src/store/migrateDocument'
 import { validateConfig } from '../../src/model/widgets'
 
 describe('checklist schema', () => {
-  it('heals a persisted checklist that lost its fixed fields', () => {
+  it('heals a persisted checklist that lost part of its fixed schema', () => {
     const document = migrateDocument({
       widgets: [
         {
           id: 'w_checklist1',
           type: 'checklist',
           title: 'This week',
-          dataset: { fields: [], rows: [] },
+          dataset: {
+            fields: [
+              { key: 'text', label: 'Item', type: 'text', required: true },
+            ],
+            rows: [],
+          },
         },
       ],
     })

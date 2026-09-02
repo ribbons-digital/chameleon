@@ -88,10 +88,18 @@ export function NoteWidget({ widget }: { widget: NoteWidgetModel }) {
   }
 
   const markdown = (
-    <VStack gap={2} onClick={startEditing}>
-      <Markdown headingLevelStart={3} density={density.prose} contentWidth="100%">
-        {config.markdown}
-      </Markdown>
+    <VStack gap={2}>
+      <VStack gap={2} onClick={startEditing}>
+        <Markdown headingLevelStart={3} density={density.prose} contentWidth="100%">
+          {config.markdown}
+        </Markdown>
+      </VStack>
+      <Button
+        label="Edit note"
+        variant="ghost"
+        size="sm"
+        onClick={startEditing}
+      />
     </VStack>
   )
 
