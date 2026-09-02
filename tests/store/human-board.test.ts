@@ -4,6 +4,8 @@ import { LIMITS } from '../../src/model/limits'
 import { useBoardStore } from '../../src/store/boardStore'
 import {
   humanAddWidget,
+  humanAddBlankRow,
+  humanAddRow,
   humanRenameBoard,
   humanRenameWidget,
 } from '../../src/store/human'
@@ -65,6 +67,45 @@ describe('humanAddWidget', () => {
     expect(useBoardStore.getState().document.widgets).toHaveLength(
       LIMITS.widgetsPerBoard,
     )
+  })
+})
+
+describe('human row limits', () => {
+  it('applies the same hard row limit to hand edits as agent tools', () => {
+    resetBoard(emptyBoard())
+    const added = humanAddWidget('checklist')
+    if (!added.ok) throw new Error(added.message)
+    useBoardStore.getState().mutate(
+      {
+        actor: 'agent',
+        action: 'seed_limit',
+        summary: 'Filled the checklist',
+      },
+      (draft) => {
+        const widget = draft.widgets[0]
+        if (widget.type !== 'checklist') return
+        widget.dataset.rows = Array.from(
+          { length: LIMITS.rowsPerWidget },
+          (_, index) => ({
+            _id: `r_limit_${index}`,
+            _createdAt: '2026-09-02T00:00:00.000Z',
+            _updatedAt: '2026-09-02T00:00:00.000Z',
+            _createdBy: 'agent' as const,
+            text: `Item ${index}`,
+          }),
+        )
+      },
+    )
+    const commandCount = useBoardStore.getState().commands.length
+    expect(humanAddRow(added.widgetId, { text: 'Overflow' })).toEqual({
+      ok: false,
+      message: `This widget already has ${LIMITS.rowsPerWidget} rows.`,
+    })
+    expect(humanAddBlankRow(added.widgetId)).toEqual({
+      ok: false,
+      message: `This widget already has ${LIMITS.rowsPerWidget} rows.`,
+    })
+    expect(useBoardStore.getState().commands).toHaveLength(commandCount)
   })
 })
 

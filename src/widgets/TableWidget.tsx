@@ -9,6 +9,7 @@ import { TextInput } from '@astryxdesign/core/TextInput'
 import { VStack } from '@astryxdesign/core/VStack'
 import type { TableColumn } from '@astryxdesign/core/Table'
 import { useState } from 'react'
+import { LIMITS } from '../model/limits'
 import type { Field, Row, TableWidget } from '../model/types'
 import {
   formatCell,
@@ -138,6 +139,7 @@ export function TableWidgetView({ widget }: { widget: TableWidget }) {
   const config = widget.config
   const fields = widget.dataset.fields
   const rows = widget.dataset.rows as TableRow[]
+  const full = rows.length >= LIMITS.rowsPerWidget
   const orderedFields = orderFields(fields, config.columnOrder)
   const sortedRows = sortRows(rows, orderedFields, config.sort)
 
@@ -209,6 +211,10 @@ export function TableWidgetView({ widget }: { widget: TableWidget }) {
         label="Add row"
         variant="secondary"
         size="sm"
+        isDisabled={full}
+        tooltip={
+          full ? `This table already has ${LIMITS.rowsPerWidget} rows.` : undefined
+        }
         onClick={() => humanAddBlankRow(widget.id)}
       />
     </VStack>

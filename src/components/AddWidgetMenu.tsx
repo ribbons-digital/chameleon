@@ -1,6 +1,4 @@
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu'
-import { useToast } from '@astryxdesign/core/Toast'
-import { Text } from '@astryxdesign/core/Text'
 import { LIMITS } from '../model/limits'
 import { useBoardStore } from '../store/boardStore'
 import { humanAddWidget, type HumanWidgetType } from '../store/human'
@@ -29,24 +27,22 @@ const OPTIONS: Array<{
 
 export function AddWidgetMenu() {
   const widgetCount = useBoardStore((state) => state.document.widgets.length)
-  const showToast = useToast()
   const full = widgetCount >= LIMITS.widgetsPerBoard
 
   const add = (type: HumanWidgetType) => {
-    const result = humanAddWidget(type)
-    if (!result.ok) {
-      showToast({
-        type: 'error',
-        body: <Text>{result.message}</Text>,
-        uniqueID: 'add-widget-error',
-        isAutoHide: true,
-      })
-    }
+    humanAddWidget(type)
   }
 
   return (
     <DropdownMenu
-      button={{ label: 'Add widget', variant: 'secondary', isDisabled: full }}
+      button={{
+        label: 'Add widget',
+        variant: 'secondary',
+        isDisabled: full,
+        tooltip: full
+          ? `This board already has ${LIMITS.widgetsPerBoard} widgets.`
+          : undefined,
+      }}
       menuWidth="max-content"
       items={OPTIONS.map((option) => ({
         id: option.type,

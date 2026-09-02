@@ -206,6 +206,12 @@ export function humanAddBlankRow(widgetId: string): { ok: true; rowId: string } 
   if (!widget || widget.type === 'note' || !widget.dataset) {
     return { ok: false, message: 'This widget has no dataset.' }
   }
+  if (widget.dataset.rows.length >= LIMITS.rowsPerWidget) {
+    return {
+      ok: false,
+      message: `This widget already has ${LIMITS.rowsPerWidget} rows.`,
+    }
+  }
   const rowId = createRowId()
   const timestamp = now()
   mutate(
@@ -237,6 +243,12 @@ export function humanAddRow(
   const widget = widgetById(widgetId)
   if (!widget || widget.type === 'note' || !widget.dataset) {
     return { ok: false, message: 'This widget has no dataset.' }
+  }
+  if (widget.dataset.rows.length >= LIMITS.rowsPerWidget) {
+    return {
+      ok: false,
+      message: `This widget already has ${LIMITS.rowsPerWidget} rows.`,
+    }
   }
   const parsed = parseRowValues(widget.dataset.fields, values, {
     index: 0,

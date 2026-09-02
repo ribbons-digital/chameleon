@@ -8,6 +8,7 @@ import { Text } from '@astryxdesign/core/Text'
 import { TextInput } from '@astryxdesign/core/TextInput'
 import { VStack } from '@astryxdesign/core/VStack'
 import { useState } from 'react'
+import { LIMITS } from '../model/limits'
 import type { ChecklistWidget as ChecklistWidgetModel, Row } from '../model/types'
 import { humanAddRow, humanDeleteRow, humanUpdateCell } from '../store/human'
 import { useBoardDensity } from './density'
@@ -38,6 +39,7 @@ export function ChecklistWidgetView({ widget }: { widget: ChecklistWidgetModel }
   })
   const doneCount = widget.dataset.rows.filter((row) => row.done === true).length
   const total = widget.dataset.rows.length
+  const full = total >= LIMITS.rowsPerWidget
 
   const addItem = () => {
     const text = draft.trim()
@@ -113,11 +115,24 @@ export function ChecklistWidgetView({ widget }: { widget: ChecklistWidgetModel }
         isLabelHidden
         placeholder="Add an item"
         value={draft}
+        isDisabled={full}
+        disabledMessage={`This checklist already has ${LIMITS.rowsPerWidget} items.`}
         onChange={setDraft}
         onEnter={addItem}
         width="100%"
       />
-      <Button label="Add item" variant="secondary" size="sm" onClick={addItem} />
+      <Button
+        label="Add item"
+        variant="secondary"
+        size="sm"
+        isDisabled={full}
+        tooltip={
+          full
+            ? `This checklist already has ${LIMITS.rowsPerWidget} items.`
+            : undefined
+        }
+        onClick={addItem}
+      />
     </VStack>
   )
 }

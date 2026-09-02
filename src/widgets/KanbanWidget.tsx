@@ -12,6 +12,7 @@ import {
   dropInsertIndex,
   KANBAN_UNGROUPED,
 } from '../model/kanbanOrder'
+import { LIMITS } from '../model/limits'
 import type { Field, KanbanWidget as KanbanWidgetModel, Row } from '../model/types'
 import { humanAddRow, humanMoveKanbanCard } from '../store/human'
 import { widgetStyles } from './styles'
@@ -85,6 +86,7 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
   const detailFields = widget.config.cardDetailFields
     .map((key) => widget.dataset.fields.find((field) => field.key === key))
     .filter((field): field is Field => Boolean(field))
+  const full = widget.dataset.rows.length >= LIMITS.rowsPerWidget
 
   if (widget.dataset.fields.length === 0 || !groupField || groupField.type !== 'select') {
     return (
@@ -247,6 +249,8 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
                 size="sm"
                 placeholder="Add a card"
                 value={drafts[column] ?? ''}
+                isDisabled={full}
+                disabledMessage={`This board already has ${LIMITS.rowsPerWidget} cards.`}
                 status={
                   errors[column]
                     ? { type: 'error', message: errors[column] }
@@ -264,6 +268,12 @@ export function KanbanWidgetView({ widget }: { widget: KanbanWidgetModel }) {
               label="Add card"
               variant="secondary"
               size="sm"
+              isDisabled={full}
+              tooltip={
+                full
+                  ? `This board already has ${LIMITS.rowsPerWidget} cards.`
+                  : undefined
+              }
               onClick={() => addCard(column)}
             />
           </VStack>
