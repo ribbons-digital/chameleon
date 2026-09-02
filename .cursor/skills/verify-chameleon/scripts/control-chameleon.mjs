@@ -48,6 +48,7 @@ Commands:
   browser cell --from <button-label> --value <text> [--field <textbox-name>]
   browser menu --name <button> --item <menuitem-name-prefix>
   browser rename --value <board-name>
+  browser rename-widget --name <heading> --value <widget-name>
   browser drag --name <heading> --dx <px> --dy <px>
   browser resize --name <heading> --dx <px> --dy <px>
   browser measure --name <heading>
@@ -608,6 +609,28 @@ async function browserCommand(subcommand, flags) {
         await box.fill(String(flags.value))
         await box.press('Enter')
         return { renamed: flags.value, ...(await maybeFollowup(page, flags)) }
+      }
+      case 'rename-widget': {
+        if (!flags.name || flags.name === true) fail('Missing --name')
+        if (flags.value === undefined || flags.value === true) fail('Missing --value')
+        await page
+          .getByRole('button', {
+            name: `Rename ${flags.name}`,
+            exact: true,
+          })
+          .click()
+        const box = page.getByRole('textbox', {
+          name: 'Widget name',
+          exact: true,
+        })
+        await box.waitFor({ state: 'visible' })
+        await box.fill(String(flags.value))
+        await box.press('Enter')
+        return {
+          renamedWidget: flags.name,
+          value: flags.value,
+          ...(await maybeFollowup(page, flags)),
+        }
       }
       case 'wait': {
         if (!flags.text) fail('Missing --text')

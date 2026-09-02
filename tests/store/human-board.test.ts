@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { CHECKLIST_FIELDS } from '../../src/model/fields'
 import { LIMITS } from '../../src/model/limits'
 import { useBoardStore } from '../../src/store/boardStore'
-import { humanAddWidget, humanRenameBoard } from '../../src/store/human'
+import {
+  humanAddWidget,
+  humanRenameBoard,
+  humanRenameWidget,
+} from '../../src/store/human'
 import { unfinishedWidgets } from '../../src/store/selectors'
 import { emptyBoard, resetBoard } from '../helpers'
 
@@ -89,5 +93,37 @@ describe('humanRenameBoard', () => {
   it('does not log an unchanged name', () => {
     expect(humanRenameBoard('Untitled workspace')).toEqual({ ok: true })
     expect(useBoardStore.getState().commands).toHaveLength(0)
+  })
+})
+
+describe('humanRenameWidget', () => {
+  beforeEach(() => {
+    resetBoard(emptyBoard())
+    humanAddWidget('note')
+  })
+
+  it('lets the human correct a widget name for the agent', () => {
+    const widgetId = useBoardStore.getState().document.widgets[0].id
+    expect(humanRenameWidget(widgetId, '  Project brief ')).toEqual({
+      ok: true,
+    })
+    const { document, commands } = useBoardStore.getState()
+    expect(document.widgets[0]).toMatchObject({
+      title: 'Project brief',
+      lastModifiedBy: 'human',
+    })
+    expect(commands.at(-1)).toMatchObject({
+      actor: 'human',
+      action: 'update_widget',
+      summary: 'Renamed “New note” to “Project brief”',
+    })
+  })
+
+  it('rejects blank or oversized widget names', () => {
+    const widgetId = useBoardStore.getState().document.widgets[0].id
+    const commandCount = useBoardStore.getState().commands.length
+    expect(humanRenameWidget(widgetId, ' ').ok).toBe(false)
+    expect(humanRenameWidget(widgetId, 'x'.repeat(81)).ok).toBe(false)
+    expect(useBoardStore.getState().commands).toHaveLength(commandCount)
   })
 })

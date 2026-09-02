@@ -25,6 +25,7 @@ const HUMAN_WIDGET_TITLES: Record<HumanWidgetType, string> = {
 }
 
 export const BOARD_TITLE_MAX = 60
+export const WIDGET_TITLE_MAX = 80
 
 const now = () => new Date().toISOString()
 
@@ -145,6 +146,40 @@ export function humanRenameBoard(
     },
     (draft) => {
       draft.title = next
+    },
+  )
+  return { ok: true }
+}
+
+export function humanRenameWidget(
+  widgetId: string,
+  title: string,
+): { ok: true } | { ok: false; message: string } {
+  const widget = widgetById(widgetId)
+  if (!widget) return { ok: false, message: 'This widget is no longer on the board.' }
+  const next = title.trim()
+  if (!next) return { ok: false, message: 'Give the widget a name.' }
+  if (next.length > WIDGET_TITLE_MAX) {
+    return {
+      ok: false,
+      message: `Keep the name to ${WIDGET_TITLE_MAX} characters.`,
+    }
+  }
+  if (next === widget.title) return { ok: true }
+  const timestamp = now()
+  mutate(
+    {
+      actor: 'human',
+      action: 'update_widget',
+      summary: `Renamed “${widget.title}” to “${next}”`,
+    },
+    (draft) => {
+      const target = draft.widgets.find(
+        (candidate) => candidate.id === widgetId,
+      )
+      if (!target) return
+      target.title = next
+      stamp(target, 'human', timestamp)
     },
   )
   return { ok: true }
