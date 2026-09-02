@@ -81,9 +81,10 @@ are append-only submissions and intentionally expose only their form-derived fie
 The desktop board is a 12-column `react-grid-layout`. Human drag/resize callbacks persist every
 position changed by grid collision-push, not only the grabbed widget. Agent `set_layout` and
 `update_widget.position` use the same pure `applyLayout()` collision resolution. Therefore the
-coordinates an agent reads match the arrangement the human sees. Under 700px, rendering uses a
-derived one-column stack and disables drag/resize so mobile coordinates never overwrite the
-desktop layout.
+coordinates an agent reads match the arrangement the human sees. The grid uses `noCompactor`:
+intentional empty rows stay visible instead of moving upward only in the renderer. Under 700px,
+rendering uses a derived one-column stack and disables drag/resize so mobile coordinates never
+overwrite the desktop layout.
 
 ### 2.4 Data and minted tools
 
