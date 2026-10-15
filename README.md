@@ -8,7 +8,7 @@ When the agent builds a form and calls `create_form_tool`, Chameleon registers a
 
 Built for the [OpenAI WebMCP Challenge](https://webmcp.devpost.com/) (deadline Sep 3, 2026).
 
-[MIT](LICENSE) · live app: [chameleon-webmcp.ryan-970.workers.dev](https://chameleon-webmcp.ryan-970.workers.dev) · demo: [1:24 video](docs/chameleon-demo.mp4)
+[MIT](LICENSE) · live app: [chameleon-webmcp.ryan-970.workers.dev](https://chameleon-webmcp.ryan-970.workers.dev) · demo: [1:24 video](https://chameleon-webmcp.ryan-970.workers.dev/demo.mp4)
 
 ## Try it with an agent
 
@@ -96,15 +96,13 @@ Human drags and agent tool calls share one Immer `produceWithPatches` gate. That
 
 ## Demo video
 
-[![The 15 → 16 tools moment from the demo video. Click to watch.](docs/chameleon-demo-poster.jpg)](docs/chameleon-demo.mp4)
+[![The 15 → 16 tools moment from the demo video. Click to watch.](docs/chameleon-demo-poster.jpg)](public/demo.mp4)
 
-[Watch the 1:24 demo](docs/chameleon-demo.mp4) (1080p, with voiceover).
+[Watch the 1:24 demo](public/demo.mp4) (1080p, with voiceover). The live app also serves it at [/demo.mp4](https://chameleon-webmcp.ryan-970.workers.dev/demo.mp4).
 It starts on a blank page, builds a wedding planner, shows human edits in the shared activity log, switches to a job-search board, then builds a health log.
 There, `create_form_tool` turns the form into a new tool, `log_blood_sugar`, and the tool count goes from 15 to 16.
 The new tool logs a reading and is still there after a reload.
 The footage shows the app's real tools, called by a script through a `document.modelContext` stand-in, not a live AI agent.
-
-The original [2:24 screen recording](https://chameleon-webmcp.ryan-970.workers.dev/demo.mp4) from Chrome 154 is still served by the live app from `public/demo.mp4`.
 
 Still images live in [docs/gallery](docs/gallery).
 
